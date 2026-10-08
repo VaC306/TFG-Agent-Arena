@@ -28,9 +28,10 @@ deben usar el mismo modelo; los prompts pueden diferir. El simulador permite
 verificar el sistema sin descargar modelos. La API expone presets y resultados,
 y el worker se ejecuta como proceso independiente.
 
-Se proponen para los siguientes hitos una interfaz de comparación, monitorización
-periódica y shadow testing simultáneo sobre datos sintéticos. PENDIENTE: validación
-con un modelo real y elección final de la interfaz. No se implementan Kubernetes,
+La primera interfaz de comparación está implementada en Angular con TypeScript,
+HTML y CSS. Se proponen para los siguientes hitos edición visual de configuraciones,
+monitorización periódica y shadow testing simultáneo. PENDIENTE: validación
+con un modelo real. No se implementan Kubernetes,
 OpenStack, entrenamiento de modelos ni acceso al razonamiento interno.
 
 ## 3. Estado del arte y herramientas relacionadas
@@ -58,6 +59,7 @@ No se atribuyen resultados publicados que no hayan sido consultados.
 | RF04 | Guardar eventos y resultados con estados explícitos | Implementado y probado |
 | RF05 | Exportar métricas y evidencia original | Implementado y probado |
 | RF06 | Comparación simultánea | Propuesto, pendiente |
+| RF07 | Consultar y lanzar comparaciones desde una interfaz web | Implementado y verificado con simulación |
 | RNF01 | Operar en una máquina sin orquestador de clúster | Verificado con simulador nativo |
 | RNF02 | Registrar configuración, datos y versiones | Implementado en snapshots y eventos |
 | RNF03 | Limitar tiempo, llamadas y generación | Implementado y probado con simulación |
@@ -83,8 +85,8 @@ requiere recuperación manual para no repetir silenciosamente trabajo incierto.
 
 Python simplifica la integración entre runner, validación y análisis. Se mantiene
 FastAPI para el primer hito. La experiencia declarada del equipo en C#/.NET y
-Angular motiva recomendar Angular/TypeScript para la futura interfaz, frente a
-React inicialmente previsto; esa elección sigue pendiente. La separación de API
+Angular motiva elegir Angular/TypeScript para la interfaz, frente a
+React inicialmente previsto; la elección ha sido confirmada e implementada. La separación de API
 y worker permite reconsiderar ASP.NET Core sin acoplarlo al bucle del agente.
 
 Cada rama recibe una copia profunda del entorno y un historial nuevo. Sus decisiones
@@ -125,6 +127,37 @@ Los snapshots conservan configuración efectiva, tareas, datos, hashes, fuentes 
 motor, versiones de paquetes, sistema y política de ejecución. Los eventos añaden
 versión de Ollama, metadatos del modelo y observaciones de recursos. Un nuevo
 experimento conserva el anterior; las exportaciones no sobrescriben directorios.
+
+### 6.1. Interfaz de comparación
+
+El frontend utiliza Angular 20.3.33, TypeScript 5.9.3 y plantillas HTML con CSS
+propio. Las versiones se eligieron por compatibilidad con Node 22.16.0 [3]. Los
+componentes standalone y signals gestionan el estado visible, y un servicio tipado
+separa las solicitudes HTTP de la presentación. El historial expone resúmenes,
+evitando descargar todos los snapshots para construir la navegación.
+
+La pantalla permite elegir un preset, lanzar una comparación y seguir su progreso.
+Dos tarjetas muestran éxito y tiempo medio por rama; una tabla ofrece estados,
+tokens, duración y herramientas por ejecución. El usuario puede filtrar por rama,
+consultar eventos y respuesta final, solicitar una cancelación o descargar el CSV.
+Las configuraciones se consultan, pero todavía se editan en archivos JSON.
+
+El polling de la comparación seleccionada se activa solo mientras haya ejecuciones
+no terminales, con un intervalo de 2,5 segundos y sin peticiones de actualización
+solapadas. Las selecciones usan identificadores de solicitud para evitar que una
+respuesta antigua sustituya la comparación actual. Los errores de conexión se
+muestran manteniendo los resultados previos como potencialmente desactualizados.
+
+La tasa de éxito visible utiliza ejecuciones terminales y conserva cancelaciones
+y fallos en su denominador. Un tiempo ausente se muestra como «—»; la media solo
+considera tiempos disponibles. El frontend distingue la simulación de Ollama y
+advierte de que sus tokens son sintéticos. La API y el worker siguen separados.
+
+![Figura 1. Primera interfaz de comparación de Agent Arena Local.](figuras/interfaz-angular.png)
+
+Figura 1. Historial, lanzamiento, progreso, métricas A/B y tabla de ejecuciones.
+Los datos corresponden a una prueba funcional simulada con una cancelación
+intencionada en B; la diferencia de éxito no representa calidad de los prompts.
 
 ## 7. Metodología experimental y métricas
 
@@ -185,11 +218,13 @@ Las versiones exactas del entorno están en requirements.lock y en cada snapshot
 
 ### 8.2. Validación automatizada
 
-Se han ejecutado 42 pruebas con pytest, todas satisfactorias. Cubren las ocho
+Se han ejecutado 43 pruebas con pytest, todas satisfactorias. Cubren las ocho
 tareas, aislamiento de datos y resultados, rutas distintas A/B, rechazo de importes
 incorrectos y formatos ambiguos, restricciones, operaciones seguras, acumulación
 de métricas, límites, timeouts, errores de herramientas, cancelación, interrupción,
 recuperación, API, exportación, snapshots sin Git y payload HTTP nativo simulado.
+La ampliación de interfaz verifica el catálogo de presets, el historial, su orden,
+los límites de consulta y los contadores de finalización después de cancelar.
 
 La instalación editable del paquete se ha verificado. La batería emite una
 advertencia de deprecación de TestClient de Starlette con AnyIO; no impide la
@@ -214,7 +249,8 @@ como evidencia histórica con sus hashes.
 ### 8.4. Validación del código final
 
 Tras los ajustes de robustez se ejecutaron nuevamente los presets. Los hashes de
-fuentes de ambos snapshots coinciden con el motor entregado.
+fuentes de ambos snapshots coinciden con el motor del primer hito. La ampliación
+posterior de la API para el frontend queda identificada en la prueba de interfaz.
 
 | Conjunto | Repeticiones | Ejecuciones | Éxitos A | Éxitos B | Evidencia |
 | --- | --- | --- | --- | --- | --- |
@@ -224,6 +260,27 @@ fuentes de ambos snapshots coinciden con el motor entregado.
 Todas estas ejecuciones utilizaron el adaptador simulado. Se verificó también la
 consistencia de dependencias mediante pip check, sin incompatibilidades declaradas.
 PENDIENTE: primera comparación real con Ollama y mediciones de hardware completas.
+
+### 8.5. Validación de la interfaz
+
+Se verificó `npm run build` con Node 22.16.0 y npm 10.9.2. El bundle inicial final
+ocupa aproximadamente 226 kB sin comprimir (estimación de transferencia: 63,5 kB).
+La instalación de dependencias no reportó vulnerabilidades conocidas en npm audit
+en el momento de ejecutarse; esto no sustituye futuras revisiones.
+
+La prueba en navegador recorrió el lanzamiento simulado, actualización automática,
+cancelación en cola, filtro B, apertura de trazas y descarga CSV. Se lanzaron
+dieciséis ejecuciones; una de B se canceló intencionadamente y las quince restantes
+terminaron correctamente. A obtuvo 8/8 y B 7/8: 100 % y 87,5 % respectivamente
+(la tarjeta redondea B a 88 %). La evidencia se conserva en
+[ui-smoke-2026-10-08](../experiments/ui-smoke-2026-10-08/summary.json).
+Su finalidad es validar la interfaz y el tratamiento de fallos, no comparar prompts.
+
+La presentación se inspeccionó en el navegador de escritorio y en un viewport
+móvil de 390 px. Se corrigieron un desbordamiento horizontal y la presentación de
+tiempos ausentes. La tabla conserva su desplazamiento horizontal dentro del panel.
+PENDIENTE: suite de regresión visual automatizada y validación de accesibilidad
+completa. No se ha ejecutado un experimento Ollama desde la interfaz.
 
 ## 9. Limitaciones y amenazas a la validez
 
@@ -253,8 +310,8 @@ La evidencia disponible respalda el funcionamiento de la plataforma bajo pruebas
 controladas, sin permitir todavía conclusiones sobre rendimiento de modelos.
 
 La siguiente prioridad es validar una comparación real y fijar el protocolo de
-calentamiento. Después se desarrollarán la interfaz de comparación y el muestreo
-periódico. El modo simultáneo deberá etiquetar competencia por recursos y conservar
+calentamiento. La primera interfaz ya permite explorar las comparaciones; se
+ampliará con edición de configuración y muestreo periódico. El modo simultáneo deberá etiquetar competencia por recursos y conservar
 la independencia de ramas. PENDIENTE: acordar planificación de los dos autores y
 reservar tiempo para experimentos, análisis y redacción final.
 
@@ -266,6 +323,9 @@ reservar tiempo para experimentos, análisis y redacción final.
 [2] Ollama. “List models”. Documentación oficial de la API.
 <https://docs.ollama.com/api/tags>. Consultado el 8 de octubre de 2026.
 
+[3] Angular. “Version compatibility”. Documentación oficial.
+<https://angular.dev/reference/versions>. Consultado el 8 de octubre de 2026.
+
 PENDIENTE: incorporar referencias académicas verificadas y adaptar el estilo
 bibliográfico a la normativa de la universidad.
 
@@ -275,8 +335,15 @@ El [README](../README.md) contiene instalación fijada, comandos nativos, API,
 worker, recuperación, exportación y preparación de Ollama. Los datos originales
 están en [data](../data/tasks.jsonl) y los presets en [configs](../configs/simulated.json).
 Para conservar evidencia, cada exportación debe utilizar una carpeta nueva bajo
-`experiments/`. Las figuras futuras y sus versiones exportables se guardarán en
-`docs/figuras/`; actualmente no se presentan figuras ni resultados gráficos.
+`experiments/`. Las figuras y sus versiones exportables se guardan en
+`docs/figuras/`; se incluye una captura PNG de la primera interfaz Angular.
+
+Para reproducir la interfaz se inicia FastAPI en el puerto 8000, el worker en
+otro proceso y `npm start` desde frontend en el puerto 4200, después de `npm ci`.
+El proxy de desarrollo conserva el mismo origen en el navegador. El build de
+producción necesita un servidor estático y proxy equivalentes; no está integrado
+en Compose todavía. Las pruebas funcionales de UI constan en
+[frontend/VERIFICACION.md](../frontend/VERIFICACION.md).
 
 Antes de una campaña real deben registrarse hardware, modelo y cuantización,
 versiones, configuración, conjunto de tareas, procedimiento, repeticiones, orden,

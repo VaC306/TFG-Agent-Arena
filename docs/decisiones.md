@@ -16,7 +16,7 @@ durante la inferencia y no se necesitan Kubernetes ni OpenStack. SQLite utiliza
 WAL y conexiones breves; solo se permite una ejecución activa globalmente en
 el modo secuencial. PENDIENTE: estrategia explícita para concurrencia shadow.
 
-## D02. Lenguajes y futura interfaz
+## D02. Lenguajes e interfaz
 
 **Fecha:** 8 de octubre de 2026.
 
@@ -26,11 +26,12 @@ el modo secuencial. PENDIENTE: estrategia explícita para concurrencia shadow.
 completo. Para interfaz: React, Angular o una interfaz Python.
 
 **Elección vigente:** conservar Python para API, ejecución y análisis, con
-contratos Pydantic. La familiaridad de uno de los autores con C#/.NET y Angular
-hace recomendable Angular/TypeScript frente al React inicialmente propuesto.
-No se ha implementado frontend ni confirmado ese cambio. Una API .NET sería
+contratos Pydantic. Se confirma Angular con TypeScript, HTML y CSS para el frontend,
+aprovechando la experiencia del equipo y sustituyendo el React inicialmente
+propuesto. La primera interfaz está implementada con componentes standalone,
+signals y CSS propio, sin biblioteca de componentes externa. Una API .NET sería
 posible por la separación de componentes, pero añadiría un segundo entorno al
-primer hito. PENDIENTE: acordar la elección con ambos autores antes del hito de UI.
+primer hito.
 
 ## D03. Comparación secuencial del mismo modelo
 
@@ -92,3 +93,30 @@ con contadores sintéticos identificados. No representa capacidad de comprensió
 de un LLM. Dependencias directas fijadas en pyproject y entorno completo fijado
 en requirements.lock. El rango de Python admitido es 3.11–3.12; solo 3.11.9 se
 ha verificado. Docker Compose está preparado, pendiente de ejecución.
+
+## D07. Primera interfaz y comunicación con la API
+
+**Fecha:** 8 de octubre de 2026.
+
+**Problema:** explorar comparaciones sin depender de comandos, manteniendo una
+interfaz pequeña y sin trasladar la ejecución del agente al navegador.
+
+**Alternativas:** editor completo desde el inicio; dashboard desconectado con datos
+de muestra; pantalla conectada a presets y resultados persistidos.
+
+**Elección:** pantalla conectada con historial, lanzamiento, tarjetas A/B, progreso,
+filtro de ramas, cancelación, trazas y CSV. El backend incorpora GET /experiments
+con límite acotado y GET /presets. La interfaz consulta cada 2,5 segundos mientras
+la comparación seleccionada tiene ejecuciones pendientes; las solicitudes no se
+solapan y las respuestas de selecciones anteriores se descartan.
+
+Angular 20.3.33 y TypeScript 5.9.3 son compatibles con Node 22.16.0 del equipo según
+la [tabla oficial](https://angular.dev/reference/versions), consultada el 8 de octubre
+de 2026. CLI/build 20.3.39, dependencias y lockfile quedan fijados. El desarrollo usa
+un proxy de mismo origen `/api`, sin añadir CORS abierto. El build estático está
+verificado; su despliegue en Compose es PENDIENTE.
+
+La presentación diferencia ramas y estados por texto y color, permite navegación
+con teclado y utiliza desplazamiento horizontal solo dentro de tablas e historial
+móvil. El éxito incluye cancelaciones y fallos; las métricas ausentes no se sustituyen
+por cero. La prueba de interfaz cancela intencionadamente una rama para verificarlo.

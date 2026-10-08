@@ -68,6 +68,39 @@ todos los workers, ejecuta `arena.cli recover --workers-stopped`: conserva la
 ejecución como `interrupted`, sin reintento automático. Encola un nuevo
 experimento para repetir. La recuperación manual no debe usarse con un worker vivo.
 
+## Interfaz Angular
+
+La interfaz utiliza Angular 20, TypeScript, HTML y CSS propios. Permite lanzar los
+presets simulado/Ollama, consultar las últimas 50 comparaciones, seguir el progreso,
+comparar tasas de éxito y tiempos, filtrar por rama, inspeccionar trazas, cancelar
+ejecuciones pendientes y descargar CSV. Los resultados proceden de SQLite; no se
+incluyen métricas de demostración inventadas en el frontend.
+
+Con la API y el worker anteriores activos, abre una tercera terminal:
+
+```powershell
+cd frontend
+npm ci
+npm start
+```
+
+Abre <http://127.0.0.1:4200>. Se ha verificado con Node 22.16.0 y npm 10.9.2.
+Las versiones exactas están fijadas en package.json y package-lock.json. No hace
+falta instalar Angular CLI globalmente. `npm run build` genera el bundle estático
+en `frontend/dist/arena/browser`.
+
+El servidor de desarrollo reenvía `/api` a `http://127.0.0.1:8000` mediante
+`frontend/proxy.conf.json`. Para otro puerto de backend, modifica ese destino.
+La compilación de producción necesita un servidor estático con la misma regla
+de proxy; todavía no se integra el frontend en Docker Compose.
+
+Los presets y prompts se pueden consultar desde la pantalla, pero se editan en
+`configs/`. La selección de tareas y un editor de prompts se dejan para la
+siguiente iteración. Si los trabajos permanecen en cola, comprueba el worker:
+la interfaz no lo arranca automáticamente. El porcentaje de éxito considera
+solo ejecuciones terminales e incluye fallos y cancelaciones; durante una ejecución
+se muestra como resultado provisional. Los tiempos ausentes se muestran como «—».
+
 ## Comparación real con Ollama
 
 El adaptador nativo está implementado y su payload se prueba con HTTP simulado.
@@ -154,11 +187,13 @@ configuración de red del host. La ejecución nativa es la ruta verificada.
 - [Desarrollo, código final](experiments/simulated-dev-final-2026-10-08/summary.json): 16/16 ejecuciones simuladas correctas.
 - [Evaluación, código final](experiments/simulated-eval-2026-10-08/summary.json): 8/8 ejecuciones simuladas correctas.
 
-Validación nativa: 42 pruebas satisfactorias, instalación editable y `pip check`
-correctos. TestClient emite una advertencia de deprecación de Starlette/AnyIO;
-no afecta a los resultados de esta batería.
+Validación nativa: 43 pruebas satisfactorias, instalación editable y `pip check`
+correctos. Angular compila en producción. Se comprobó en navegador el lanzamiento,
+actualización, cancelación, filtro, trazas y descarga CSV, además de la adaptación
+a un viewport móvil de 390 px. TestClient emite una advertencia de deprecación de
+Starlette/AnyIO; no afecta a los resultados de esta batería.
 
-Pendientes: validación real, interfaz de comparación, monitorización periódica
-y shadow testing simultáneo. Angular con TypeScript es la recomendación para
-la interfaz por la experiencia del equipo; la elección final está pendiente.
-FastAPI y worker Python permanecen implementados; no hay frontend todavía.
+Pendientes: validación real, edición de configuraciones desde la interfaz,
+monitorización periódica y shadow testing simultáneo. Angular con TypeScript,
+HTML y CSS es la elección confirmada para el frontend; FastAPI y worker Python
+se mantienen para el backend.

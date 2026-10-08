@@ -1,0 +1,92 @@
+<a class="skip-link" href="#main">Ir al contenido</a>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-icon">a<span>∕</span>a</span><div>Agent Arena<small>LOCAL EXPERIMENT LAB</small></div></div>
+    <div class="nav-current"><span>◫</span> Comparaciones <span class="count">{{ experiments().length }}</span></div>
+    <div class="history-heading">RECIENTES <span>Últimas 50</span></div>
+    <nav aria-label="Historial de comparaciones">
+      @for (experiment of experiments(); track experiment.id) {
+        <button class="history-item" [class.selected]="selectedId() === experiment.id" [attr.aria-current]="selectedId() === experiment.id ? 'true' : null" (click)="select(experiment.id)">
+          <span class="history-title">{{ experiment.name }}</span>
+          <span>{{ experiment.created_at * 1000 | date:'dd/MM · HH:mm' }} <span class="history-mode">{{ experiment.adapter === 'simulated' ? 'Simulado' : 'Ollama' }}</span></span>
+          <span class="history-progress">{{ experiment.completed }}/{{ experiment.total }} completadas</span>
+        </button>
+      } @empty { <p class="sidebar-empty">Tus comparaciones aparecerán aquí.</p> }
+    </nav>
+    <div class="sidebar-footer"><span class="local-dot"></span> Entorno local <small>Una máquina. Dos agentes.</small></div>
+  </aside>
+
+  <main id="main">
+    <header class="page-header"><div><p class="eyebrow">AGENT ARENA / EXPERIMENTOS</p><h1>Comparaciones</h1><p class="subheading">Explora modelos, prompts y datos. Compara resultados observables.</p></div><button class="secondary" (click)="refresh()" [disabled]="loading()">↻ Actualizar</button></header>
+    @if (error()) { <div class="alert error" role="alert">{{ error() }}</div> }
+    @if (notice()) { <div class="alert" role="status">{{ notice() }}</div> }
+
+    <arena-composer (created)="customCreated($event)" />
+    <details class="benchmark-toggle"><summary>Benchmark de pedidos · tareas con evaluación automática</summary>
+    <section class="launch panel" aria-labelledby="launch-title">
+      <div><span class="step">01</span><h2 id="launch-title">Benchmark de pedidos</h2><p>Ejecuta A y B de forma secuencial sobre pedidos ficticios.</p></div>
+      <form (ngSubmit)="create()">
+        <label for="preset">Adaptador</label>
+        <div class="launch-actions"><select id="preset" name="preset" [(ngModel)]="preset" [disabled]="creating() || !presets().length"><option value="simulated">Simulado · sin descargar modelos</option><option value="ollama">Ollama · modelo local</option></select><button class="primary" type="submit" [disabled]="creating() || !presets().length">{{ creating() ? 'Creando…' : 'Lanzar comparación' }} <span aria-hidden="true">↗</span></button></div>
+        <p class="hint">{{ preset === 'simulated' ? 'Los tokens y TPS del simulador son sintéticos.' : 'Requiere Ollama activo y el modelo del preset instalado.' }}</p>
+      </form>
+      @for (item of presets(); track item.id) {
+        @if (item.id === preset) {
+          <details class="preset-details"><summary>Ver configuración del preset <span>{{ item.config.agents.A.model }} · {{ item.config.repetitions }} repeticiones · {{ item.config.split }}</span></summary><div class="prompt-grid"><div><h3>Agente A</h3><p>{{ item.config.agents.A.system_prompt }}</p></div><div><h3>Agente B</h3><p>{{ item.config.agents.B.system_prompt }}</p></div></div><p class="hint">En esta primera versión, los presets se editan en los archivos de configuración.</p></details>
+        }
+      }
+    </section>
+
+    </details>
+
+    @if (loading()) { <div class="empty panel" role="status">Cargando comparación…</div> }
+    @else if (detail(); as experiment) {
+      <section class="results" aria-labelledby="results-title">
+        <div class="section-header"><div><p class="eyebrow">02 / RESULTADOS</p><h2 id="results-title">{{ experiment.snapshot.config.name }}</h2><p class="run-id">{{ selectedId() }}</p></div><a class="secondary" [href]="'/api/experiments/' + selectedId() + '/metrics.csv'" download="metrics.csv">↓ Exportar CSV</a></div>
+        <div class="experiment-meta"><span class="tag">{{ experiment.snapshot.config.adapter === 'simulated' ? 'SIMULACIÓN' : 'OLLAMA' }}</span><span>Secuencial A/B</span><span>A: {{ experiment.snapshot.config.agents.A.model }}</span><span>B: {{ experiment.snapshot.config.agents.B.model }}</span><span>{{ completed() }}/{{ experiment.runs.length }} finalizadas</span></div>
+        <progress [value]="completed()" [max]="experiment.runs.length" aria-label="Ejecuciones finalizadas"></progress>
+        @if (pending()) { <p class="queue-notice">Actualización automática cada 2,5 s. Si las ejecuciones siguen en cola, comprueba que el worker esté en marcha.</p> }
+        <div class="comparison-grid">
+          @for (summary of summaries(); track summary.branch) {
+            <article class="agent-card panel"><div class="agent-title"><span class="branch" [class.branch-b]="summary.branch === 'B'">{{ summary.branch }}</span><h3>Agente {{ summary.branch }}</h3><span class="hint">{{ summary.completed }}/{{ summary.total }} finalizadas</span></div><div class="agent-stats"><div><p class="metric-label">Éxito</p><strong>{{ summary.evaluated ? ((summary.success / summary.evaluated * 100 | number:'1.0-0') + '%') : '—' }}</strong><small>{{ summary.evaluated ? (summary.success + " correctas de " + summary.evaluated + " evaluables") : "Calidad sin evaluar" }}</small></div><div><p class="metric-label">Tiempo medio</p><strong>{{ summary.mean === null ? '—' : (summary.mean | number:'1.2-2') }} <span class="unit">{{ summary.mean === null ? '' : 's' }}</span></strong><small>Sobre tiempos disponibles</small></div></div></article>
+          }
+        </div>
+        <p class="hint metric-note">El éxito se calcula solo cuando hay criterios o referencia e incluye fallos y cancelaciones. Completar una consulta libre no implica una respuesta correcta.</p>
+        @if (experiment.snapshot.conditions?.inputs_shared === false) { <p class="alert">Entradas independientes: las diferencias no pueden atribuirse únicamente al prompt. No se calcula un contraste emparejado.</p> }
+        <details class="saved-config panel"><summary>Ver prompts y entradas guardados</summary><div class="prompt-grid">
+          @for (branch of ['A', 'B']; track branch) {
+            <div><h3>Agente {{ branch }}</h3><pre>{{ branch === 'A' ? experiment.snapshot.config.agents.A.system_prompt : experiment.snapshot.config.agents.B.system_prompt }}</pre>
+              @if (savedTask(branch === 'A' ? 'A' : 'B'); as task) { <h3>Entrada</h3><pre>{{ task.input }}</pre>@for (file of task.attachments ?? []; track file.sha256) { <p class="hint">{{ file.name }} · {{ file.size }} bytes · SHA-256: {{ file.sha256 }}</p> } }
+            </div>
+          }
+        </div></details>
+        <div class="answer-grid">
+          @for (branch of ['A', 'B']; track branch) {
+            @if (answers(branch === 'A' ? 'A' : 'B').length) { <article class="panel answer-card"><h3>Respuestas {{ branch }}</h3>
+              @for (run of answers(branch === 'A' ? 'A' : 'B'); track run.id) { <details><summary>{{ run.task_id }} · Repetición {{ run.repetition + 1 }}</summary><pre>{{ run.result?.answer }}</pre></details> }
+            </article> }
+          }
+        </div>
+        <section class="panel runs-panel" aria-labelledby="runs-title"><div class="table-heading"><h3 id="runs-title">Ejecuciones <span class="muted">/ {{ visibleRuns().length }}</span></h3><label class="filter">Rama <select aria-label="Filtrar por rama" [ngModel]="branchFilter()" (ngModelChange)="branchFilter.set($event)"><option value="all">Todas</option><option value="A">A</option><option value="B">B</option></select></label></div>
+          <div class="table-scroll"><table><thead><tr><th>Tarea</th><th>Rama</th><th>Estado</th><th>Tiempo</th><th>Tokens E / S</th><th>Herramientas</th><th><span class="sr-only">Acciones</span></th></tr></thead><tbody>
+            @for (run of visibleRuns(); track run.id) {
+              <tr [class.active-row]="selectedRun()?.id === run.id"><td><span class="task-name">{{ run.task_id }}</span><small>Repetición {{ run.repetition + 1 }}</small></td><td><span class="branch small" [class.branch-b]="run.branch === 'B'">{{ run.branch }}</span></td><td><span class="status" [attr.data-status]="run.status">{{ labels[run.status] }}</span></td><td>{{ run.result?.agent_s == null ? '—' : ((run.result?.agent_s | number:'1.2-2') + ' s') }}</td><td class="numeric">{{ run.result?.input_tokens ?? '—' }} / {{ run.result?.output_tokens ?? '—' }}{{ run.result?.usage_complete === false ? ' *' : '' }}</td><td>{{ run.result?.tool_calls ?? '—' }}</td><td><button class="text-button" (click)="showTrace(run)" [attr.aria-label]="'Ver traza de ' + run.task_id + ', rama ' + run.branch + ', repetición ' + (run.repetition + 1)">Ver traza ↗</button>@if (!isTerminal(run)) { <button class="text-button danger" (click)="cancel(run)" [disabled]="!!cancelling()">{{ cancelling() === run.id ? 'Solicitando…' : 'Cancelar' }}</button> }</td></tr>
+            }
+          </tbody></table></div><p class="table-footnote">E / S: tokens de entrada / salida acumulados. * Uso parcial; una llamada no devolvió contadores completos.</p>
+        </section>
+      </section>
+    } @else { <section class="empty panel"><span class="empty-symbol">A ⇄ B</span><h2>Tu primera comparación empieza aquí</h2><p>Lanza el simulador para explorar resultados y trazas sin instalar un modelo.</p></section> }
+
+    @if (selectedRun(); as run) {
+      <section class="panel trace-panel" aria-labelledby="trace-title"><div class="section-header"><div><p class="eyebrow">TRAZA DE EJECUCIÓN / {{ run.branch }}</p><h2 id="trace-title" tabindex="-1">{{ run.task_id }}</h2><p class="hint">Repetición {{ run.repetition + 1 }} · {{ labels[run.status] }}</p></div><button class="secondary" (click)="closeTrace()">Cerrar traza</button></div>
+        @if (run.result?.error) { <p class="alert error">{{ run.result?.error }}</p> }
+        @if (run.result?.reason) { <p class="hint">Evaluación: {{ run.result?.reason }}</p> }
+        @if (run.result?.answer) { <h3>Respuesta final</h3><pre>{{ run.result?.answer }}</pre> }
+        @if (traceError()) { <div role="alert" class="alert error">{{ traceError() }} <button class="text-button" (click)="showTrace(run)">Reintentar</button></div> }
+        @if (traceLoading()) { <p role="status">Cargando eventos…</p> }
+        <div class="events">@for (event of events(); track event.seq) { <details><summary><span class="event-kind">{{ event.kind }}</span><time>{{ event.at * 1000 | date:'HH:mm:ss.SSS' }}</time></summary><pre>{{ event.payload | json }}</pre></details> } @empty { @if (!traceLoading() && !traceError()) { <p class="hint">Todavía no hay eventos para esta ejecución.</p> } }</div>
+      </section>
+    }
+    <footer class="page-footer"><span>Agent Arena Local</span><span>TFG · Comparación reproducible de agentes</span></footer>
+  </main>
+</div>

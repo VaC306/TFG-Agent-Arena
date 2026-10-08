@@ -5,8 +5,15 @@ from .tools import SCHEMAS
 
 
 class Ollama:
-    def __init__(self, url):
+    def __init__(self, url, keep_alive='5m'):
         self.url = url.rstrip("/")
+        self.keep_alive = keep_alive
+
+    async def models(self):
+        async with httpx.AsyncClient(timeout=5, trust_env=False) as client:
+            response = await client.get(self.url + '/api/tags')
+            response.raise_for_status()
+        return response.json()['models']
 
     async def metadata(self, model):
         async with httpx.AsyncClient(timeout=30, trust_env=False) as client:
@@ -26,9 +33,11 @@ class Ollama:
         if config.seed is not None:
             options["seed"] = config.seed
         async with httpx.AsyncClient(timeout=None, trust_env=False) as client:
-            response = await client.post(self.url + "/api/chat", json={
-                "model": config.model, "messages": messages, "tools": SCHEMAS,
-                "stream": False, "options": options, "keep_alive": "5m"})
+            payload = {"model": config.model, "messages": messages,
+                       "stream": False, "options": options, "keep_alive": self.keep_alive}
+            if config.tools_enabled:
+                payload['tools'] = SCHEMAS
+            response = await client.post(self.url + "/api/chat", json=payload)
             response.raise_for_status()
             data = response.json()
         # Never require or persist the model's private thinking field.
@@ -44,6 +53,13 @@ class Simulated:
 
     async def chat(self, messages, config, remaining):
         user = next(m["content"] for m in messages if m["role"] == "user")
+        if not config.tools_enabled:
+            images = sum(len(m.get('images', [])) for m in messages)
+            return {'message': {'role': 'assistant', 'content':
+                f'SIMULACIÓN — modelo {config.model}. Entrada recibida:\n{user[:1800]}\n'
+                f'Imágenes recibidas: {images}. El simulador no interpreta imágenes ni mide calidad del modelo.'},
+                'done': True, 'done_reason': 'stop', 'prompt_eval_count': 10 * len(messages),
+                'eval_count': min(8, remaining), 'eval_duration': 8_000_000, 'simulated': True}
         customer = re.search(r"cliente=(\w+)", user).group(1)
         month = re.search(r"mes=(\d{4}-\d{2})", user).group(1)
         outputs = [m for m in messages if m["role"] == "tool"]

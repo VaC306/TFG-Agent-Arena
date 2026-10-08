@@ -179,6 +179,28 @@ def test_api(tmp_path):
         assert client.post('/experiments',json={'config':'../../etc/passwd'}).status_code == 422
 
 
+def test_frontend_catalog_and_history(tmp_path):
+    from arena.api import create_app
+    path = tmp_path/'ui.sqlite'
+    with TestClient(create_app(path, ROOT)) as client:
+        assert client.get('/experiments').json() == []
+        presets = client.get('/presets').json()
+        assert [p['id'] for p in presets] == ['simulated', 'ollama']
+        assert all(p['config']['agents']['A']['model'] == p['config']['agents']['B']['model'] for p in presets)
+        first = client.post('/experiments', json={'config':'simulated'}).json()['id']
+        second = client.post('/experiments', json={'config':'simulated'}).json()['id']
+        history = client.get('/experiments').json()
+        assert [e['id'] for e in history] == [second, first]
+        assert history[0]['completed'] == 0 and history[0]['total'] == 16
+        assert 'snapshot' not in history[0]
+        assert len(client.get('/experiments?limit=1').json()) == 1
+        assert client.get('/experiments?limit=0').status_code == 422
+        assert client.get('/experiments?limit=201').status_code == 422
+        run_id = client.get(f'/experiments/{second}').json()['runs'][0]['id']
+        client.post(f'/runs/{run_id}/cancel')
+        assert client.get('/experiments').json()[0]['completed'] == 1
+
+
 def test_native_ollama_payload(monkeypatch):
     import httpx
     requests = []

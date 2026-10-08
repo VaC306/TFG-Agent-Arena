@@ -20,6 +20,17 @@ class AgentConfig(Contract):
     seed: int | None = 42
     num_ctx: int = Field(default=8192, ge=512)
     limits: Limits = Field(default_factory=Limits)
+    prompt_template: str = "custom"
+    tools_enabled: bool = True
+
+
+class Attachment(Contract):
+    name: str
+    media_type: str
+    size: int
+    sha256: str
+    data_base64: str
+    text: str | None = None
 
 
 class Criteria(Contract):
@@ -33,7 +44,9 @@ class Task(Contract):
     split: Literal["dev", "eval"]
     input: str
     environment: str
-    criteria: Criteria
+    criteria: Criteria | None = None
+    expected_answer: str | None = None
+    attachments: list[Attachment] = Field(default_factory=list)
 
 
 class Experiment(Contract):
@@ -45,17 +58,21 @@ class Experiment(Contract):
     repetitions: int = Field(default=1, ge=1, le=100)
     order_seed: int = 42
     ollama_url: str = "http://127.0.0.1:11434"
+    comparison: Literal["same_model", "different_models"] = "same_model"
 
     @model_validator(mode="after")
     def paired_model(self):
         if set(self.agents) != {"A", "B"}:
             raise ValueError("Se requieren exactamente las ramas A y B")
-        if self.agents["A"].model != self.agents["B"].model:
-            raise ValueError("El primer hito compara el mismo modelo")
+        models = [a.model if ':' in a.model else a.model + ':latest' for a in self.agents.values()]
+        if self.comparison == "same_model" and models[0] != models[1]:
+            raise ValueError("El modo un modelo exige el mismo modelo en A y B")
+        if self.comparison == "different_models" and models[0] == models[1]:
+            raise ValueError("Selecciona dos modelos distintos")
         return self
 
 
-Status = Literal["queued", "running", "succeeded", "failed", "timeout", "limit", "cancelled", "interrupted"]
+Status = Literal["queued", "running", "completed", "succeeded", "failed", "timeout", "limit", "cancelled", "interrupted"]
 
 
 class Run(Contract):

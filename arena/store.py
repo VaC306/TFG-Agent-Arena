@@ -51,6 +51,20 @@ class Store:
                               "ORDER BY rowid", (experiment_id,) if experiment_id else ()).fetchall()
             return [json.loads(r[0]) for r in rows]
 
+    def list_experiments(self, limit=50):
+        with self.connect() as db:
+            rows = db.execute("""
+                SELECT e.id, json_extract(e.snapshot, '$.config.name') AS name,
+                       json_extract(e.snapshot, '$.config.adapter') AS adapter,
+                       json_extract(e.snapshot, '$.config.split') AS split,
+                       COUNT(r.id) AS total,
+                       SUM(CASE WHEN r.status NOT IN ('queued','running') THEN 1 ELSE 0 END) AS completed,
+                       MIN(json_extract(r.data, '$.queued_at')) AS created_at
+                FROM experiments e LEFT JOIN runs r ON r.experiment_id=e.id
+                GROUP BY e.id ORDER BY e.rowid DESC LIMIT ?
+            """, (limit,)).fetchall()
+            return [dict(row) for row in rows]
+
     def claim(self):
         with self.connect() as db:
             db.execute("BEGIN IMMEDIATE")
@@ -88,7 +102,7 @@ class Store:
                 raise KeyError(run_id)
             if row["status"] == "queued":
                 run = json.loads(row["data"])
-                run.update(status="cancelled", finished_at=time.time(), result={"success": False, "format_ok": False, "error": "Cancelled before execution"})
+                run.update(status="cancelled", finished_at=time.time(), result=self.failure_result(db, run, 'Cancelled before execution'))
                 db.execute("UPDATE runs SET status='cancelled',data=?,cancel_requested=1 WHERE id=?", (json.dumps(run), run_id))
             elif row["status"] == "running":
                 db.execute("UPDATE runs SET cancel_requested=1 WHERE id=?", (run_id,))
@@ -102,7 +116,7 @@ class Store:
                 return row["status"]
             if row["cancel_requested"]:
                 status = "cancelled"
-                result.update(success=False, error="Cancelled")
+                result.update(success=False if result.get('success') is not None else None, error="Cancelled")
             run.update(status=status, finished_at=time.time(), result=result)
             db.execute("UPDATE runs SET status=?,data=? WHERE id=?", (status, json.dumps(run), run["id"]))
             db.execute("INSERT INTO events(run_id,kind,at,payload) VALUES (?,?,?,?)",
@@ -114,4 +128,15 @@ class Store:
         for run in self.list_runs():
             if run["status"] == "running":
                 self.event(run["id"], "interruption", {"reason": "Manual recovery after worker loss"})
-                self.finish(run, {"success": False, "format_ok": False, "error": "Worker interrupted; partial metrics in events"}, "interrupted")
+                with self.connect() as db:
+                    result = self.failure_result(db, run, 'Worker interrupted; partial metrics in events')
+                self.finish(run, result, "interrupted")
+
+    @staticmethod
+    def failure_result(db, run, error):
+        snapshot = json.loads(db.execute('SELECT snapshot FROM experiments WHERE id=?', (run['experiment_id'],)).fetchone()[0])
+        task = (snapshot['branch_tasks'][run['branch']] if snapshot.get('branch_tasks') else
+                next(t for t in snapshot['tasks'] if t['id'] == run['task_id']))
+        evaluated = task.get('criteria') is not None or task.get('expected_answer') is not None
+        return {'success': False if evaluated else None, 'format_ok': False if task.get('criteria') else None,
+                'evaluation': 'failed_before_evaluation' if evaluated else 'not_evaluated', 'error': error}

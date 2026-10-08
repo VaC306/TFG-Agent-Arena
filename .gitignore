@@ -5,3 +5,8 @@ __pycache__/
 *.sqlite*
 runtime/
 .env
+node_modules/
+.angular/
+dist/
+frontend/test-results/
+frontend/playwright-report/

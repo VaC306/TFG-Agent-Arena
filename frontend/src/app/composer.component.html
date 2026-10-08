@@ -1,0 +1,45 @@
+<section class="panel composer" aria-labelledby="composer-title">
+  <div class="composer-heading"><div><p class="eyebrow">01 / DISEÑA TU EXPERIMENTO</p><h2 id="composer-title">Modelos, prompts y archivos</h2></div><span class="tag">SECUENCIAL A/B</span></div>
+  <form #form="ngForm" (ngSubmit)="submit()">
+    <fieldset [disabled]="busy()">
+      <div class="mode-switch" role="group" aria-label="Tipo de comparación">
+        <button type="button" [class.active]="mode === 'same_model'" [attr.aria-pressed]="mode === 'same_model'" (click)="mode = 'same_model'">Un modelo <small>Entradas y archivos independientes</small></button>
+        <button type="button" [class.active]="mode === 'different_models'" [attr.aria-pressed]="mode === 'different_models'" (click)="mode = 'different_models'">Dos modelos <small>Misma entrada y archivos</small></button>
+      </div>
+      <div class="composer-settings">
+        <div><label for="comparison-name">Nombre</label><input id="comparison-name" name="name" [(ngModel)]="name" required maxlength="120"></div>
+        <div><label for="custom-adapter">Ejecución</label><select id="custom-adapter" name="adapter" [(ngModel)]="adapter"><option value="simulated">Simulado · prueba de plataforma</option><option value="ollama">Ollama · inferencia real local</option></select></div>
+        <div><label for="repetitions">Repeticiones</label><input id="repetitions" name="repetitions" type="number" min="1" max="10" [(ngModel)]="repetitions" required></div>
+      </div>
+      <p class="hint mode-explanation">{{ mode === 'same_model' ? 'El modelo será el mismo para A y B. Cada rama tiene sus propios datos; esta prueba no aísla el efecto del prompt.' : 'A y B pueden usar modelos y prompts distintos, pero reciben exactamente los mismos archivos y entrada.' }}</p>
+      @if (adapter === 'simulated') { <p class="simulation-note">El simulador confirma la recepción de texto y archivos. No interpreta imágenes ni ejecuta los modelos indicados.</p> }
+      @else { <div class="models-help"><button type="button" class="text-button" (click)="loadModels()">↻ Consultar modelos de Ollama</button><span class="hint">{{ modelNotice() }}</span></div><p class="hint">Las imágenes requieren un modelo con visión. No se descargan modelos automáticamente.</p> }
+      <datalist id="installed-models">@for (model of models(); track model) { <option [value]="model"></option> }</datalist>
+      <div class="composer-columns">
+        <section class="branch-editor" aria-label="Configuración A">
+          <h3><span class="branch">A</span> Agente A</h3>
+          <label for="model-a">{{ mode === 'same_model' ? 'Modelo compartido A/B' : 'Modelo A' }}</label>
+          <input id="model-a" name="modelA" list="installed-models" [(ngModel)]="modelA" required maxlength="120" placeholder="Nombre exacto en Ollama">
+          <label for="template-a">Tipo de prompt A</label>
+          <select id="template-a" name="templateA" [(ngModel)]="promptA.template" (change)="setTemplate('A')">@for (template of templates(); track template.id) { <option [value]="template.id">{{ template.name }}</option> }</select>
+          <label for="prompt-a">Prompt de sistema A</label>
+          <textarea id="prompt-a" name="promptA" [(ngModel)]="promptA.text" (input)="promptA.template = 'custom'" rows="4" maxlength="6000" required></textarea>
+          @if (mode === 'same_model') { <arena-input-editor slot="a" title="Entrada A" [value]="inputA" (readingChange)="readingA = $event" /> }
+        </section>
+        <section class="branch-editor" aria-label="Configuración B">
+          <h3><span class="branch branch-b">B</span> Agente B</h3>
+          @if (mode === 'different_models') { <label for="model-b">Modelo B</label><input id="model-b" name="modelB" list="installed-models" [(ngModel)]="modelB" required maxlength="120" placeholder="Otro modelo instalado"> }
+          @else { <label for="model-b-shared">Modelo compartido A/B</label><input id="model-b-shared" [value]="modelA" readonly> }
+          <label for="template-b">Tipo de prompt B</label>
+          <select id="template-b" name="templateB" [(ngModel)]="promptB.template" (change)="setTemplate('B')">@for (template of templates(); track template.id) { <option [value]="template.id">{{ template.name }}</option> }</select>
+          <label for="prompt-b">Prompt de sistema B</label>
+          <textarea id="prompt-b" name="promptB" [(ngModel)]="promptB.text" (input)="promptB.template = 'custom'" rows="4" maxlength="6000" required></textarea>
+          @if (mode === 'same_model') { <arena-input-editor slot="b" title="Entrada B" [value]="inputB" (readingChange)="readingB = $event" /> }
+        </section>
+      </div>
+      @if (mode === 'different_models') { <div class="shared-input"><span class="tag">COMPARTIDO POR A Y B</span><arena-input-editor slot="shared" title="Entrada compartida" [value]="shared" (readingChange)="readingShared = $event" /></div> }
+      <div class="composer-footer"><p class="hint">Archivos, prompts y parámetros se guardan con la comparación.<br>Sin respuesta esperada, se miden recursos y tiempos; la calidad queda sin evaluar.</p><button type="submit" class="primary" [disabled]="form.invalid || busy() || readingA || readingB || readingShared || !templates().length">{{ busy() ? 'Guardando…' : 'Ejecutar comparación' }} ↗</button></div>
+    </fieldset>
+  </form>
+  @if (error()) { <div class="alert error" role="alert">{{ error() }} @if (!templates().length) { <button class="text-button" (click)="loadTemplates()">Reintentar plantillas</button> }</div> }
+</section>

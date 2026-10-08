@@ -9,6 +9,11 @@ class Answer(Contract):
 
 
 def evaluate(content: str, task: Task, tool_names: list[str]) -> dict:
+    if task.criteria is None:
+        if task.expected_answer is None:
+            return {'success': None, 'format_ok': None, 'evaluation': 'not_evaluated', 'reason': 'Sin referencia: calidad no evaluada'}
+        return {'success': content.strip() == task.expected_answer.strip(), 'format_ok': None,
+                'evaluation': 'exact_match', 'reason': 'Comparación exacta con la respuesta esperada (sin espacios en los extremos)'}
     try:
         answer = Answer.model_validate(json.loads(content))
     except (ValueError, TypeError):

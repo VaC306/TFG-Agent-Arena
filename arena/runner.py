@@ -6,6 +6,7 @@ import httpx
 from .evaluator import evaluate
 from .tools import Tools
 from .resources import sample
+from .attachments import user_message
 
 
 class LimitReached(Exception):
@@ -19,11 +20,13 @@ class Cancelled(Exception):
 async def execute(run, task, environment, config, adapter, store):
     started = time.perf_counter()
     tools = Tools(environment)
-    messages = [{"role": "system", "content": config.system_prompt}, {"role": "user", "content": task.input}]
+    messages = [{"role": "system", "content": config.system_prompt}, user_message(task)]
     names = []
     metrics = {"success": False, "format_ok": False, "queue_s": max(0, run["started_at"] - run["queued_at"]),
                "input_tokens": 0, "output_tokens": 0, "server_eval_s": 0., "calls": 0,
                "tool_calls": 0, "tool_errors": 0, "tool_s": 0., "usage_complete": True}
+    if task.criteria is None and task.expected_answer is None:
+        metrics.update(success=None, format_ok=None, evaluation='not_evaluated')
     store.event(run["id"], "input", {"messages": messages, "environment": environment})
     store.event(run["id"], "resources", sample())
 
@@ -43,6 +46,9 @@ async def execute(run, task, environment, config, adapter, store):
     async def loop():
         metadata = await checked(adapter.metadata(config.model))
         store.event(run["id"], "inference_metadata", metadata)
+        if any(a.media_type.startswith('image/') for a in task.attachments):
+            if 'simulated' not in metadata.get('adapter', '') and 'vision' not in metadata.get('show', {}).get('capabilities', []):
+                raise ValueError('El modelo no declara capacidad de visión; no se enviaron las imágenes')
         for _ in range(config.limits.max_calls):
             if store.cancelled(run["id"]):
                 raise Cancelled()
@@ -77,7 +83,11 @@ async def execute(run, task, environment, config, adapter, store):
             if not calls:
                 metrics["answer"] = message.get("content", "")
                 metrics.update(evaluate(metrics["answer"], task, names))
+                if metrics['success'] is None:
+                    return 'completed'
                 return "succeeded" if metrics["success"] else "failed"
+            if not config.tools_enabled:
+                raise ValueError('Esta comparación de archivos no permite llamadas a herramientas')
             for call in calls:
                 if store.cancelled(run["id"]):
                     raise Cancelled()

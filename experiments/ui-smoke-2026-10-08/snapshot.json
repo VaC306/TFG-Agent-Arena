@@ -1,0 +1,347 @@
+{
+  "config": {
+    "name": "prompts-pedidos-v1",
+    "adapter": "simulated",
+    "mode": "sequential",
+    "agents": {
+      "A": {
+        "model": "qwen2.5:3b",
+        "system_prompt": "Eres un asistente de pedidos. Usa las herramientas para resolver la consulta. Trabaja en céntimos enteros. Devuelve únicamente el JSON pedido.",
+        "temperature": 0.0,
+        "seed": 42,
+        "num_ctx": 8192,
+        "limits": {
+          "timeout_s": 120.0,
+          "max_calls": 12,
+          "max_tool_calls": 30,
+          "max_output_tokens": 4096
+        }
+      },
+      "B": {
+        "model": "qwen2.5:3b",
+        "system_prompt": "Eres un auditor de pedidos. Comprueba cliente, mes, estado delivered y devoluciones. Consulta pedidos en orden inverso. Verifica el importe con calculate. Devuelve únicamente el JSON pedido.",
+        "temperature": 0.0,
+        "seed": 42,
+        "num_ctx": 8192,
+        "limits": {
+          "timeout_s": 120.0,
+          "max_calls": 12,
+          "max_tool_calls": 30,
+          "max_output_tokens": 4096
+        }
+      }
+    },
+    "split": "dev",
+    "repetitions": 2,
+    "order_seed": 42,
+    "ollama_url": "http://127.0.0.1:11434"
+  },
+  "tasks": [
+    {
+      "id": "dev-partial-return",
+      "split": "dev",
+      "input": "cliente=C1 mes=2026-01. Calcula el gasto en pedidos delivered de ese mes, excluyendo unidades devueltas. Incluye solo IDs con unidades no devueltas. Devuelve JSON exacto con total_cents (entero) y order_ids (lista).",
+      "environment": "orders.json",
+      "criteria": {
+        "total_cents": 3500,
+        "order_ids": [
+          "O1",
+          "O2"
+        ],
+        "allowed_tools": [
+          "search_orders",
+          "order_lines",
+          "calculate"
+        ]
+      }
+    },
+    {
+      "id": "dev-month-boundary",
+      "split": "dev",
+      "input": "cliente=C1 mes=2026-02. Calcula el gasto en pedidos delivered de ese mes, excluyendo unidades devueltas. Incluye solo IDs con unidades no devueltas. Devuelve JSON exacto con total_cents (entero) y order_ids (lista).",
+      "environment": "orders.json",
+      "criteria": {
+        "total_cents": 250,
+        "order_ids": [
+          "O4"
+        ],
+        "allowed_tools": [
+          "search_orders",
+          "order_lines",
+          "calculate"
+        ]
+      }
+    },
+    {
+      "id": "dev-no-customer",
+      "split": "dev",
+      "input": "cliente=C9 mes=2026-01. Calcula el gasto en pedidos delivered de ese mes, excluyendo unidades devueltas. Incluye solo IDs con unidades no devueltas. Devuelve JSON exacto con total_cents (entero) y order_ids (lista).",
+      "environment": "orders.json",
+      "criteria": {
+        "total_cents": 0,
+        "order_ids": [],
+        "allowed_tools": [
+          "search_orders",
+          "order_lines",
+          "calculate"
+        ]
+      }
+    },
+    {
+      "id": "dev-integer-money",
+      "split": "dev",
+      "input": "cliente=C2 mes=2026-01. Calcula el gasto en pedidos delivered de ese mes, excluyendo unidades devueltas. Incluye solo IDs con unidades no devueltas. Devuelve JSON exacto con total_cents (entero) y order_ids (lista).",
+      "environment": "orders.json",
+      "criteria": {
+        "total_cents": 1998,
+        "order_ids": [
+          "O5"
+        ],
+        "allowed_tools": [
+          "search_orders",
+          "order_lines",
+          "calculate"
+        ]
+      }
+    }
+  ],
+  "environments": {
+    "orders.json": {
+      "currency": "EUR",
+      "orders": [
+        {
+          "id": "O1",
+          "customer_id": "C1",
+          "date": "2026-01-03",
+          "status": "delivered",
+          "lines": [
+            {
+              "product_id": "P1",
+              "name": "Cuaderno",
+              "unit_cents": 500,
+              "quantity": 3,
+              "returned_quantity": 1
+            },
+            {
+              "product_id": "P2",
+              "name": "Lápiz",
+              "unit_cents": 250,
+              "quantity": 2,
+              "returned_quantity": 0
+            }
+          ]
+        },
+        {
+          "id": "O2",
+          "customer_id": "C1",
+          "date": "2026-01-25",
+          "status": "delivered",
+          "lines": [
+            {
+              "product_id": "P3",
+              "name": "Mochila",
+              "unit_cents": 2000,
+              "quantity": 1,
+              "returned_quantity": 0
+            }
+          ]
+        },
+        {
+          "id": "O3",
+          "customer_id": "C1",
+          "date": "2026-01-15",
+          "status": "cancelled",
+          "lines": [
+            {
+              "product_id": "P3",
+              "name": "Mochila",
+              "unit_cents": 2000,
+              "quantity": 1,
+              "returned_quantity": 0
+            }
+          ]
+        },
+        {
+          "id": "O4",
+          "customer_id": "C1",
+          "date": "2026-02-01",
+          "status": "delivered",
+          "lines": [
+            {
+              "product_id": "P2",
+              "name": "Lápiz",
+              "unit_cents": 250,
+              "quantity": 1,
+              "returned_quantity": 0
+            }
+          ]
+        },
+        {
+          "id": "O5",
+          "customer_id": "C2",
+          "date": "2026-01-31",
+          "status": "delivered",
+          "lines": [
+            {
+              "product_id": "P4",
+              "name": "Carpeta",
+              "unit_cents": 999,
+              "quantity": 2,
+              "returned_quantity": 0
+            }
+          ]
+        },
+        {
+          "id": "O6",
+          "customer_id": "C2",
+          "date": "2026-02-28",
+          "status": "delivered",
+          "lines": [
+            {
+              "product_id": "P4",
+              "name": "Carpeta",
+              "unit_cents": 999,
+              "quantity": 1,
+              "returned_quantity": 1
+            }
+          ]
+        },
+        {
+          "id": "O7",
+          "customer_id": "C3",
+          "date": "2026-02-01",
+          "status": "pending",
+          "lines": [
+            {
+              "product_id": "P1",
+              "name": "Cuaderno",
+              "unit_cents": 500,
+              "quantity": 1,
+              "returned_quantity": 0
+            }
+          ]
+        },
+        {
+          "id": "O8",
+          "customer_id": "C3",
+          "date": "2026-03-31",
+          "status": "delivered",
+          "lines": [
+            {
+              "product_id": "P5",
+              "name": "Regla",
+              "unit_cents": 333,
+              "quantity": 3,
+              "returned_quantity": 1
+            }
+          ]
+        },
+        {
+          "id": "O9",
+          "customer_id": "C3",
+          "date": "2026-04-01",
+          "status": "delivered",
+          "lines": [
+            {
+              "product_id": "P5",
+              "name": "Regla",
+              "unit_cents": 333,
+              "quantity": 2,
+              "returned_quantity": 0
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "host": {
+    "platform": "Windows-10-10.0.26200-SP0",
+    "python": "3.11.9",
+    "cpu": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "logical_cpus": 32,
+    "ram_total_bytes": 33959383040,
+    "packages": {
+      "agent-arena-local": "0.1.0",
+      "annotated-types": "0.8.0",
+      "anyio": "4.15.1",
+      "certifi": "2026.7.22",
+      "click": "8.5.0",
+      "colorama": "0.4.6",
+      "fastapi": "0.115.12",
+      "h11": "0.16.0",
+      "httpcore": "1.0.9",
+      "httpx": "0.28.1",
+      "idna": "3.20",
+      "iniconfig": "2.3.1",
+      "numpy": "2.4.6",
+      "packaging": "26.3",
+      "pandas": "2.2.3",
+      "pip": "24.0",
+      "pluggy": "1.6.0",
+      "psutil": "7.0.0",
+      "pydantic": "2.11.5",
+      "pydantic_core": "2.33.2",
+      "pytest": "8.3.5",
+      "python-dateutil": "2.9.0.post0",
+      "pytz": "2026.5",
+      "scipy": "1.15.3",
+      "setuptools": "80.9.0",
+      "six": "1.17.0",
+      "starlette": "0.46.2",
+      "typing_extensions": "4.16.0",
+      "typing-inspection": "0.4.4",
+      "tzdata": "2026.5",
+      "uvicorn": "0.34.2",
+      "wheel": "0.45.1"
+    },
+    "resources": {
+      "at": 1791475293.3577907,
+      "scope": "host_and_worker",
+      "ram_available_bytes": 18993487872,
+      "worker_rss_bytes": 147484672,
+      "gpu": null,
+      "unavailable": [
+        "NVML: ModuleNotFoundError"
+      ]
+    }
+  },
+  "git_commit": "eb6a43794a1927b432c9cbffefcf7ab869ab1d3a",
+  "source_sha256": {
+    "adapters.py": "64c6099b23d2deeb8495317a64f3aa1e6f02be57b65bec6417785bc5a95e6d2a",
+    "api.py": "0c53ce1fa9843a2b3edbdb2c5d92d5348401092243629a5ff0cb1b8cfb3debcb",
+    "cli.py": "24adfdf5e7d9b094abcebae1b6ff4590a4196faa224f3683fb9d51a7ede0e7ef",
+    "contracts.py": "02dbfea092b61503b1c2f2362e5f06edfd519fc2a7a095bdc12f4f383942ec50",
+    "evaluator.py": "2be61fa7e0f4078f36fa16299c2e545b015438edf0e3c7bdf5d682f86428c832",
+    "export.py": "087431d9794af4dee2f0beed411bcac4764b017f20175abb22ad7bc424a0d328",
+    "resources.py": "5fa55346518460f6ddc169cf26eb071b0531e082f628baccd127b6b07f3da488",
+    "runner.py": "7f5b8fd6ab4ed0c6df3a6b7b49b72b3901807888888bf8eb1ab02688996f5abe",
+    "scheduler.py": "035accbff767d068af0fac81f0bc88d2dea03339f0bc5bea484df5984a047ad8",
+    "store.py": "364470c45b9f10422aad7e98420be695367b6eb5805ce31de4ab7969fd21718a",
+    "tools.py": "12a3c582510b2bb070c8a0b1ee4f706db80f4810da7a6be4968619a4a7b6f172",
+    "worker.py": "d735270f1121ae10e7f8167ad3fa8b8f44c51756a48af484198772329864889a",
+    "__init__.py": "91447944015cec709e8aa7655f7e9d64e1e4508e7023a57fe3746911c0fc6fed"
+  },
+  "source": {
+    "adapters.py": "import json\nimport re\nimport httpx\nfrom .tools import SCHEMAS\n\n\nclass Ollama:\n    def __init__(self, url):\n        self.url = url.rstrip(\"/\")\n\n    async def metadata(self, model):\n        async with httpx.AsyncClient(timeout=30, trust_env=False) as client:\n            version = await client.get(self.url + \"/api/version\")\n            version.raise_for_status()\n            show = await client.post(self.url + \"/api/show\", json={\"model\": model})\n            show.raise_for_status()\n            tags = await client.get(self.url + \"/api/tags\")\n            tags.raise_for_status()\n        matching = [m for m in tags.json()[\"models\"] if m[\"name\"] in {model, model + \":latest\"}]\n        if not matching:\n            raise ValueError(\"El modelo debe estar instalado localmente y aparecer en /api/tags\")\n        return {\"version\": version.json(), \"show\": show.json(), \"model\": matching[0]}\n\n    async def chat(self, messages, config, remaining):\n        options = {\"temperature\": config.temperature, \"num_predict\": remaining, \"num_ctx\": config.num_ctx}\n        if config.seed is not None:\n            options[\"seed\"] = config.seed\n        async with httpx.AsyncClient(timeout=None, trust_env=False) as client:\n            response = await client.post(self.url + \"/api/chat\", json={\n                \"model\": config.model, \"messages\": messages, \"tools\": SCHEMAS,\n                \"stream\": False, \"options\": options, \"keep_alive\": \"5m\"})\n            response.raise_for_status()\n            data = response.json()\n        # Never require or persist the model's private thinking field.\n        data[\"message\"].pop(\"thinking\", None)\n        return data\n\n\nclass Simulated:\n    \"\"\"Deterministic fixture agent; derives answers only from input and tool results.\"\"\"\n    async def metadata(self, model):\n        return {\"adapter\": \"simulated-v1\", \"model\": model, \"quantization\": None,\n                \"warning\": \"Synthetic token counts and durations; not model quality evidence\"}\n\n    async def chat(self, messages, config, remaining):\n        user = next(m[\"content\"] for m in messages if m[\"role\"] == \"user\")\n        customer = re.search(r\"cliente=(\\w+)\", user).group(1)\n        month = re.search(r\"mes=(\\d{4}-\\d{2})\", user).group(1)\n        outputs = [m for m in messages if m[\"role\"] == \"tool\"]\n\n        def call(name, args):\n            return {\"role\": \"assistant\", \"content\": \"\", \"tool_calls\": [{\"function\": {\"name\": name, \"arguments\": args}}]}\n\n        if not outputs:\n            message = call(\"search_orders\", {\"customer_id\": customer})\n        else:\n            orders = json.loads(outputs[0][\"content\"])\n            ids = [o[\"id\"] for o in orders if o[\"status\"] == \"delivered\" and o[\"date\"].startswith(month)]\n            if \"inverso\" in config.system_prompt:\n                ids.reverse()\n            lines = [json.loads(m[\"content\"]) for m in outputs if m[\"tool_name\"] == \"order_lines\"]\n            if len(lines) < len(ids):\n                message = call(\"order_lines\", {\"order_id\": ids[len(lines)]})\n            elif outputs[-1][\"tool_name\"] != \"calculate\":\n                amounts = [l[\"unit_cents\"] * (l[\"quantity\"] - l[\"returned_quantity\"]) for group in lines for l in group]\n                message = call(\"calculate\", {\"operation\": \"sum\", \"values\": amounts or [0]})\n            else:\n                included = [oid for oid, group in zip(ids, lines) if any(l[\"quantity\"] > l[\"returned_quantity\"] for l in group)]\n                message = {\"role\": \"assistant\", \"content\": json.dumps({\"total_cents\": json.loads(outputs[-1][\"content\"])[\"value\"], \"order_ids\": included})}\n        return {\"message\": message, \"done\": True, \"done_reason\": \"stop\",\n                \"prompt_eval_count\": 10 * len(messages), \"eval_count\": min(8, remaining),\n                \"eval_duration\": 8_000_000, \"simulated\": True}\n",
+    "api.py": "import os\nfrom pathlib import Path\nfrom fastapi import FastAPI, HTTPException, Query\nfrom fastapi.responses import Response\nfrom typing import Literal\nfrom .contracts import Contract, Experiment\nfrom .store import Store\nfrom .scheduler import submit\nfrom .export import csv_text\n\n\nclass Submission(Contract):\n    config: Literal[\"simulated\", \"ollama\"] = \"simulated\"\n\n\ndef create_app(db_path=None, root=None):\n    app = FastAPI(title=\"Agent Arena Local\", version=\"0.1.0\")\n    store = Store(db_path or os.environ.get(\"ARENA_DB\", \"runtime/arena.sqlite\"))\n    root = Path(root or os.environ.get(\"ARENA_ROOT\", \".\"))\n\n    @app.get(\"/experiments\")\n    def list_experiments(limit: int = Query(default=50, ge=1, le=200)):\n        return store.list_experiments(limit)\n\n    @app.get(\"/presets\")\n    def presets():\n        return [{\"id\": name, \"config\": Experiment.model_validate_json(\n            (root / \"configs\" / f\"{name}.json\").read_text(encoding=\"utf-8\")\n        ).model_dump()} for name in (\"simulated\", \"ollama\")]\n\n    @app.post(\"/experiments\", status_code=201)\n    def create(body: Submission):\n        return {\"id\": submit(store, root / \"configs\" / f\"{body.config}.json\", root / \"data/tasks.jsonl\")}\n\n    @app.get(\"/experiments/{experiment_id}\")\n    def get(experiment_id: str):\n        try:\n            return {\"snapshot\": store.snapshot(experiment_id), \"runs\": store.list_runs(experiment_id)}\n        except KeyError:\n            raise HTTPException(404, \"Experimento inexistente\")\n\n    @app.get(\"/experiments/{experiment_id}/metrics.csv\")\n    def export(experiment_id: str):\n        try:\n            return Response(csv_text(store, experiment_id), media_type=\"text/csv\")\n        except KeyError:\n            raise HTTPException(404, \"Experimento inexistente\")\n\n    @app.get(\"/runs/{run_id}/events\")\n    def events(run_id: str):\n        return store.events(run_id)\n\n    @app.post(\"/runs/{run_id}/cancel\")\n    def cancel(run_id: str):\n        try:\n            store.cancel(run_id)\n            return {\"requested\": True}\n        except KeyError:\n            raise HTTPException(404, \"Ejecución inexistente\")\n\n    return app\n\n\napp = create_app()\n",
+    "cli.py": "import argparse\nimport asyncio\nimport json\nfrom .store import Store\nfrom .scheduler import submit\nfrom .worker import work\nfrom .export import export_bundle\nfrom .resources import provenance\n\n\ndef main():\n    parser = argparse.ArgumentParser(description=\"Agent Arena Local\")\n    parser.add_argument(\"--db\", default=\"runtime/arena.sqlite\")\n    commands = parser.add_subparsers(dest=\"command\", required=True)\n    for command in (\"submit\", \"demo\"):\n        sub = commands.add_parser(command)\n        sub.add_argument(\"--config\", default=\"configs/simulated.json\")\n        sub.add_argument(\"--tasks\", default=\"data/tasks.jsonl\")\n        if command == \"demo\":\n            sub.add_argument(\"--output\", required=True)\n    worker = commands.add_parser(\"worker\")\n    worker.add_argument(\"--once\", action=\"store_true\", help=\"Drena la cola disponible y termina\")\n    export = commands.add_parser(\"export\")\n    export.add_argument(\"experiment_id\")\n    export.add_argument(\"--output\", required=True)\n    cancel = commands.add_parser(\"cancel\")\n    cancel.add_argument(\"run_id\")\n    commands.add_parser(\"status\")\n    commands.add_parser(\"hardware\")\n    recover = commands.add_parser(\"recover\")\n    recover.add_argument(\"--workers-stopped\", action=\"store_true\", required=True)\n    args = parser.parse_args()\n    store = Store(args.db)\n    if args.command in {\"submit\", \"demo\"}:\n        experiment_id = submit(store, args.config, args.tasks)\n        print(experiment_id)\n        if args.command == \"demo\":\n            asyncio.run(work(store, once=True))\n            export_bundle(store, experiment_id, args.output)\n    elif args.command == \"worker\":\n        asyncio.run(work(store, once=args.once))\n    elif args.command == \"export\":\n        export_bundle(store, args.experiment_id, args.output)\n    elif args.command == \"cancel\":\n        store.cancel(args.run_id)\n    elif args.command == \"recover\":\n        store.recover()\n    elif args.command == \"hardware\":\n        print(json.dumps(provenance(), indent=2))\n    elif args.command == \"status\":\n        print(json.dumps(store.list_runs(), indent=2))\n\n\nif __name__ == \"__main__\":\n    main()\n",
+    "contracts.py": "from typing import Literal\nfrom pydantic import BaseModel, ConfigDict, Field, model_validator\n\n\nclass Contract(BaseModel):\n    model_config = ConfigDict(extra=\"forbid\")\n\n\nclass Limits(Contract):\n    timeout_s: float = Field(default=120, gt=0, le=3600)\n    max_calls: int = Field(default=12, ge=1, le=100)\n    max_tool_calls: int = Field(default=30, ge=0, le=300)\n    max_output_tokens: int = Field(default=4096, ge=1, le=65536)\n\n\nclass AgentConfig(Contract):\n    model: str = Field(min_length=1)\n    system_prompt: str = Field(min_length=1)\n    temperature: float = Field(default=0, ge=0, le=2)\n    seed: int | None = 42\n    num_ctx: int = Field(default=8192, ge=512)\n    limits: Limits = Field(default_factory=Limits)\n\n\nclass Criteria(Contract):\n    total_cents: int = Field(ge=0)\n    order_ids: list[str]\n    allowed_tools: list[str] = [\"search_orders\", \"order_lines\", \"calculate\"]\n\n\nclass Task(Contract):\n    id: str\n    split: Literal[\"dev\", \"eval\"]\n    input: str\n    environment: str\n    criteria: Criteria\n\n\nclass Experiment(Contract):\n    name: str\n    adapter: Literal[\"simulated\", \"ollama\"] = \"simulated\"\n    mode: Literal[\"sequential\"] = \"sequential\"\n    agents: dict[str, AgentConfig]\n    split: Literal[\"dev\", \"eval\"] = \"dev\"\n    repetitions: int = Field(default=1, ge=1, le=100)\n    order_seed: int = 42\n    ollama_url: str = \"http://127.0.0.1:11434\"\n\n    @model_validator(mode=\"after\")\n    def paired_model(self):\n        if set(self.agents) != {\"A\", \"B\"}:\n            raise ValueError(\"Se requieren exactamente las ramas A y B\")\n        if self.agents[\"A\"].model != self.agents[\"B\"].model:\n            raise ValueError(\"El primer hito compara el mismo modelo\")\n        return self\n\n\nStatus = Literal[\"queued\", \"running\", \"succeeded\", \"failed\", \"timeout\", \"limit\", \"cancelled\", \"interrupted\"]\n\n\nclass Run(Contract):\n    id: str\n    experiment_id: str\n    task_id: str\n    branch: Literal[\"A\", \"B\"]\n    repetition: int\n    position: int\n    status: Status = \"queued\"\n    queued_at: float\n    started_at: float | None = None\n    finished_at: float | None = None\n    result: dict | None = None\n\n\nclass Event(Contract):\n    run_id: str\n    kind: str\n    at: float\n    payload: dict\n\n\nclass ResourceSample(Contract):\n    at: float\n    scope: Literal[\"host_and_worker\"] = \"host_and_worker\"\n    ram_available_bytes: int | None = None\n    worker_rss_bytes: int | None = None\n    gpu: list[dict] | None = None\n    unavailable: list[str] = []\n",
+    "evaluator.py": "import json\nfrom pydantic import StrictInt, StrictStr\nfrom .contracts import Contract, Task\n\n\nclass Answer(Contract):\n    total_cents: StrictInt\n    order_ids: list[StrictStr]\n\n\ndef evaluate(content: str, task: Task, tool_names: list[str]) -> dict:\n    try:\n        answer = Answer.model_validate(json.loads(content))\n    except (ValueError, TypeError):\n        return {\"success\": False, \"format_ok\": False, \"reason\": \"Respuesta JSON inválida\"}\n    unique = len(answer.order_ids) == len(set(answer.order_ids))\n    correct = answer.total_cents == task.criteria.total_cents and set(answer.order_ids) == set(task.criteria.order_ids)\n    allowed = set(tool_names).issubset(task.criteria.allowed_tools)\n    return {\"success\": bool(unique and correct and allowed), \"format_ok\": True,\n            \"reason\": \"ok\" if unique and correct and allowed else \"Importe, identificadores o restricciones incorrectos\"}\n",
+    "export.py": "import csv\nimport io\nimport json\nfrom pathlib import Path\nimport pandas as pd\nfrom scipy.stats import binomtest\n\n\nFIELDS = [\"id\", \"experiment_id\", \"task_id\", \"branch\", \"repetition\", \"position\", \"status\", \"adapter\",\n          \"success\", \"format_ok\", \"queue_s\", \"agent_s\", \"input_tokens\", \"output_tokens\", \"usage_complete\",\n          \"calls\", \"tool_calls\", \"tool_errors\", \"tool_s\", \"server_eval_s\", \"server_tps\", \"agent_output_tps\", \"error\"]\n\n\ndef csv_text(store, experiment_id):\n    adapter = store.snapshot(experiment_id)[\"config\"][\"adapter\"]\n    output = io.StringIO(newline=\"\")\n    writer = csv.DictWriter(output, fieldnames=FIELDS, extrasaction=\"ignore\")\n    writer.writeheader()\n    for run in store.list_runs(experiment_id):\n        writer.writerow(run | {\"adapter\": adapter} | (run[\"result\"] or {}))\n    return output.getvalue()\n\n\ndef paired_summary(store, experiment_id):\n    runs = store.list_runs(experiment_id)\n    if any(r[\"status\"] in {\"queued\", \"running\"} for r in runs):\n        raise ValueError(\"Finaliza o cancela las ejecuciones antes de analizar\")\n    frame = pd.DataFrame([{**r, \"success\": int((r[\"result\"] or {}).get(\"success\", False))} for r in runs])\n    pairs = frame.pivot(index=[\"task_id\", \"repetition\"], columns=\"branch\", values=\"success\")\n    wins_a = int(((pairs.A == 1) & (pairs.B == 0)).sum())\n    wins_b = int(((pairs.B == 1) & (pairs.A == 0)).sum())\n    # Repetitions are clustered by task; avoid treating them as independent observations.\n    repeats = store.snapshot(experiment_id)[\"config\"][\"repetitions\"]\n    p_value = binomtest(wins_a, wins_a + wins_b).pvalue if wins_a + wins_b and repeats == 1 else None\n    return {\"pairs\": len(pairs), \"success_rate\": frame.groupby(\"branch\").success.mean().to_dict(),\n            \"A_only_success\": wins_a, \"B_only_success\": wins_b, \"mcnemar_exact_p\": p_value,\n            \"note\": \"Descriptive results; p omitted with repetitions or no discordant pairs. Synthetic tasks are not a population sample.\"}\n\n\ndef export_bundle(store, experiment_id, directory):\n    summary = paired_summary(store, experiment_id)\n    directory = Path(directory)\n    directory.mkdir(parents=True, exist_ok=False)\n    (directory / \"metrics.csv\").write_text(csv_text(store, experiment_id), encoding=\"utf-8\")\n    runs = store.list_runs(experiment_id)\n    (directory / \"snapshot.json\").write_text(json.dumps(store.snapshot(experiment_id), indent=2, ensure_ascii=False), encoding=\"utf-8\")\n    (directory / \"runs.json\").write_text(json.dumps(runs, indent=2, ensure_ascii=False), encoding=\"utf-8\")\n    with (directory / \"events.jsonl\").open(\"w\", encoding=\"utf-8\") as file:\n        for run in runs:\n            for event in store.events(run[\"id\"]):\n                file.write(json.dumps(event, ensure_ascii=False) + \"\\n\")\n    (directory / \"summary.json\").write_text(json.dumps(summary, indent=2), encoding=\"utf-8\")\n",
+    "resources.py": "import platform\nimport time\nimport importlib.metadata\nimport psutil\nfrom .contracts import ResourceSample\n\n\ndef sample():\n    result = ResourceSample(at=time.time())\n    try:\n        result.ram_available_bytes = psutil.virtual_memory().available\n        result.worker_rss_bytes = psutil.Process().memory_info().rss\n    except (OSError, psutil.Error) as exc:\n        result.unavailable.append(f\"RAM: {type(exc).__name__}\")\n    try:\n        import pynvml\n        pynvml.nvmlInit()\n        try:\n            result.gpu = []\n            for i in range(pynvml.nvmlDeviceGetCount()):\n                device = pynvml.nvmlDeviceGetHandleByIndex(i)\n                memory = pynvml.nvmlDeviceGetMemoryInfo(device)\n                result.gpu.append({\"index\": i, \"name\": pynvml.nvmlDeviceGetName(device),\n                                   \"total_bytes\": memory.total, \"used_bytes\": memory.used})\n        finally:\n            pynvml.nvmlShutdown()\n    except Exception as exc:\n        result.gpu = None\n        result.unavailable.append(f\"NVML: {type(exc).__name__}\")\n    return result.model_dump()\n\n\ndef provenance():\n    return {\"platform\": platform.platform(), \"python\": platform.python_version(),\n            \"cpu\": platform.processor(), \"logical_cpus\": psutil.cpu_count(),\n            \"ram_total_bytes\": psutil.virtual_memory().total,\n            \"packages\": {d.metadata[\"Name\"]: d.version for d in importlib.metadata.distributions()},\n            \"resources\": sample()}\n",
+    "runner.py": "import asyncio\nimport copy\nimport json\nimport time\nimport httpx\nfrom .evaluator import evaluate\nfrom .tools import Tools\nfrom .resources import sample\n\n\nclass LimitReached(Exception):\n    pass\n\n\nclass Cancelled(Exception):\n    pass\n\n\nasync def execute(run, task, environment, config, adapter, store):\n    started = time.perf_counter()\n    tools = Tools(environment)\n    messages = [{\"role\": \"system\", \"content\": config.system_prompt}, {\"role\": \"user\", \"content\": task.input}]\n    names = []\n    metrics = {\"success\": False, \"format_ok\": False, \"queue_s\": max(0, run[\"started_at\"] - run[\"queued_at\"]),\n               \"input_tokens\": 0, \"output_tokens\": 0, \"server_eval_s\": 0., \"calls\": 0,\n               \"tool_calls\": 0, \"tool_errors\": 0, \"tool_s\": 0., \"usage_complete\": True}\n    store.event(run[\"id\"], \"input\", {\"messages\": messages, \"environment\": environment})\n    store.event(run[\"id\"], \"resources\", sample())\n\n    async def checked(awaitable):\n        pending = asyncio.create_task(awaitable)\n        try:\n            while not pending.done():\n                if store.cancelled(run[\"id\"]):\n                    raise Cancelled()\n                await asyncio.wait({pending}, timeout=0.1)\n            return await pending\n        finally:\n            if not pending.done():\n                pending.cancel()\n                await asyncio.gather(pending, return_exceptions=True)\n\n    async def loop():\n        metadata = await checked(adapter.metadata(config.model))\n        store.event(run[\"id\"], \"inference_metadata\", metadata)\n        for _ in range(config.limits.max_calls):\n            if store.cancelled(run[\"id\"]):\n                raise Cancelled()\n            remaining = config.limits.max_output_tokens - metrics[\"output_tokens\"]\n            if remaining <= 0:\n                raise LimitReached(\"output_tokens\")\n            metrics[\"calls\"] += 1\n            store.event(run[\"id\"], \"inference_request\", {\"messages\": copy.deepcopy(messages), \"max_output_tokens\": remaining})\n            call_start = time.perf_counter()\n            try:\n                response = await checked(adapter.chat(copy.deepcopy(messages), config, remaining))\n            except BaseException:\n                metrics[\"usage_complete\"] = False\n                raise\n            message = response[\"message\"]\n            store.event(run[\"id\"], \"inference_response\", {\"response\": response, \"duration_s\": time.perf_counter() - call_start})\n            if not all(k in response for k in (\"prompt_eval_count\", \"eval_count\", \"eval_duration\")):\n                metrics[\"usage_complete\"] = False\n                raise ValueError(\"Missing inference usage counters\")\n            if any(type(response[k]) is not int or response[k] < 0 for k in (\"prompt_eval_count\", \"eval_count\", \"eval_duration\")):\n                metrics[\"usage_complete\"] = False\n                raise ValueError(\"Invalid inference usage counters\")\n            metrics[\"input_tokens\"] += response[\"prompt_eval_count\"]\n            metrics[\"output_tokens\"] += response[\"eval_count\"]\n            metrics[\"server_eval_s\"] += response[\"eval_duration\"] / 1e9\n            if response.get(\"done\") is not True:\n                raise ValueError(\"Incomplete server response\")\n            if response.get(\"done_reason\") == \"length\" or metrics[\"output_tokens\"] > config.limits.max_output_tokens:\n                raise LimitReached(\"output_tokens\")\n            messages.append(message)\n            calls = message.get(\"tool_calls\") or []\n            if not calls:\n                metrics[\"answer\"] = message.get(\"content\", \"\")\n                metrics.update(evaluate(metrics[\"answer\"], task, names))\n                return \"succeeded\" if metrics[\"success\"] else \"failed\"\n            for call in calls:\n                if store.cancelled(run[\"id\"]):\n                    raise Cancelled()\n                if metrics[\"tool_calls\"] >= config.limits.max_tool_calls:\n                    raise LimitReached(\"tool_calls\")\n                function = call[\"function\"]\n                name, arguments = function[\"name\"], function[\"arguments\"]\n                names.append(name)\n                metrics[\"tool_calls\"] += 1\n                tool_start = time.perf_counter()\n                store.event(run[\"id\"], \"tool_request\", {\"name\": name, \"arguments\": arguments})\n                error = None\n                try:\n                    result = tools.call(name, arguments)\n                except Exception as exc:\n                    error = str(exc)\n                    metrics[\"tool_errors\"] += 1\n                    result = {\"error\": error}\n                duration = time.perf_counter() - tool_start\n                metrics[\"tool_s\"] += duration\n                store.event(run[\"id\"], \"tool_result\", {\"name\": name, \"result\": result, \"error\": error, \"duration_s\": duration})\n                messages.append({\"role\": \"tool\", \"tool_name\": name, \"content\": json.dumps(result)})\n        raise LimitReached(\"model_calls\")\n\n    try:\n        async with asyncio.timeout(config.limits.timeout_s):\n            status = await loop()\n    except (TimeoutError, httpx.TimeoutException) as exc:\n        status, metrics[\"error\"] = \"timeout\", type(exc).__name__\n    except LimitReached as exc:\n        status, metrics[\"error\"] = \"limit\", str(exc)\n    except Cancelled:\n        status, metrics[\"error\"] = \"cancelled\", \"Cancelled by user\"\n    except asyncio.CancelledError:\n        status, metrics[\"error\"] = \"interrupted\", \"Worker interrupted\"\n    except Exception as exc:\n        status, metrics[\"error\"] = \"failed\", f\"{type(exc).__name__}: {exc}\"\n    metrics[\"agent_s\"] = time.perf_counter() - started\n    metrics[\"server_tps\"] = metrics[\"output_tokens\"] / metrics[\"server_eval_s\"] if metrics[\"server_eval_s\"] and metrics[\"usage_complete\"] else None\n    metrics[\"agent_output_tps\"] = metrics[\"output_tokens\"] / metrics[\"agent_s\"] if metrics[\"usage_complete\"] else None\n    store.event(run[\"id\"], \"resources\", sample())\n    return store.finish(run, metrics, status)\n",
+    "scheduler.py": "import hashlib\nimport json\nimport os\nimport random\nimport subprocess\nimport time\nimport uuid\nfrom pathlib import Path\nfrom .contracts import Experiment, Task, Run\nfrom .resources import provenance\n\n\ndef submit(store, config_path, tasks_path):\n    config_path, tasks_path = Path(config_path), Path(tasks_path)\n    config = Experiment.model_validate_json(config_path.read_text(encoding=\"utf-8\"))\n    if config.adapter == \"ollama\" and os.environ.get(\"ARENA_OLLAMA_URL\"):\n        config.ollama_url = os.environ[\"ARENA_OLLAMA_URL\"]\n    tasks = [Task.model_validate_json(line) for line in tasks_path.read_text(encoding=\"utf-8\").splitlines() if line.strip()]\n    if len({t.id for t in tasks}) != len(tasks):\n        raise ValueError(\"Identificadores de tareas duplicados\")\n    tasks = [t for t in tasks if t.split == config.split]\n    if not tasks:\n        raise ValueError(\"No hay tareas para el split seleccionado\")\n    environments = {t.environment: json.loads((tasks_path.parent / t.environment).read_text(encoding=\"utf-8\")) for t in tasks}\n    code_files = list(Path(__file__).parent.glob(\"*.py\"))\n    try:\n        git = subprocess.run([\"git\", \"rev-parse\", \"HEAD\"], capture_output=True, text=True)\n        commit = git.stdout.strip() or None\n    except FileNotFoundError:\n        commit = None\n    snapshot = {\"config\": config.model_dump(), \"tasks\": [t.model_dump() for t in tasks],\n                \"environments\": environments, \"host\": provenance(), \"git_commit\": commit,\n                \"source_sha256\": {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in code_files},\n                \"source\": {p.name: p.read_text(encoding=\"utf-8\") for p in code_files},\n                \"conditions\": {\"mode\": \"sequential\", \"warmup\": \"none\", \"keep_alive\": \"5m\", \"resource_scope\": \"host_and_worker\", \"seed_determinism\": \"not guaranteed\"}}\n    snapshot[\"data_sha256\"] = hashlib.sha256(json.dumps({\"tasks\": snapshot[\"tasks\"], \"environments\": environments}, sort_keys=True).encode()).hexdigest()\n    experiment_id = str(uuid.uuid4())\n    rng, runs = random.Random(config.order_seed), []\n    for repetition in range(config.repetitions):\n        for task in tasks:\n            branches = [\"A\", \"B\"]\n            rng.shuffle(branches)\n            for branch in branches:\n                runs.append(Run(id=str(uuid.uuid4()), experiment_id=experiment_id, task_id=task.id,\n                                branch=branch, repetition=repetition, position=len(runs), queued_at=time.time()))\n    store.create(experiment_id, snapshot, runs)\n    return experiment_id\n",
+    "store.py": "import json\nimport sqlite3\nimport time\nfrom contextlib import contextmanager\nfrom pathlib import Path\nfrom .contracts import Event\n\n\nclass Store:\n    def __init__(self, path):\n        self.path = str(path)\n        Path(path).parent.mkdir(parents=True, exist_ok=True)\n        with self.connect() as db:\n            db.executescript(\"\"\"\n                PRAGMA journal_mode=WAL;\n                CREATE TABLE IF NOT EXISTS experiments(id TEXT PRIMARY KEY, snapshot TEXT NOT NULL);\n                CREATE TABLE IF NOT EXISTS runs(\n                    id TEXT PRIMARY KEY, experiment_id TEXT NOT NULL REFERENCES experiments(id),\n                    position INTEGER NOT NULL, status TEXT NOT NULL, data TEXT NOT NULL,\n                    cancel_requested INTEGER NOT NULL DEFAULT 0);\n                CREATE TABLE IF NOT EXISTS events(\n                    seq INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT NOT NULL REFERENCES runs(id),\n                    kind TEXT NOT NULL, at REAL NOT NULL, payload TEXT NOT NULL);\n                CREATE INDEX IF NOT EXISTS events_run ON events(run_id, seq);\n            \"\"\")\n\n    @contextmanager\n    def connect(self):\n        with sqlite3.connect(self.path, timeout=30) as db:\n            db.row_factory = sqlite3.Row\n            db.execute(\"PRAGMA foreign_keys=ON\")\n            yield db\n\n    def create(self, experiment_id, snapshot, runs):\n        with self.connect() as db:\n            db.execute(\"INSERT INTO experiments VALUES (?,?)\", (experiment_id, json.dumps(snapshot)))\n            for run in runs:\n                db.execute(\"INSERT INTO runs(id,experiment_id,position,status,data) VALUES (?,?,?,?,?)\",\n                           (run.id, experiment_id, run.position, run.status, run.model_dump_json()))\n\n    def snapshot(self, experiment_id):\n        with self.connect() as db:\n            row = db.execute(\"SELECT snapshot FROM experiments WHERE id=?\", (experiment_id,)).fetchone()\n            if not row:\n                raise KeyError(experiment_id)\n            return json.loads(row[0])\n\n    def list_runs(self, experiment_id=None):\n        with self.connect() as db:\n            rows = db.execute(\"SELECT data FROM runs \" + (\"WHERE experiment_id=? \" if experiment_id else \"\") +\n                              \"ORDER BY rowid\", (experiment_id,) if experiment_id else ()).fetchall()\n            return [json.loads(r[0]) for r in rows]\n\n    def list_experiments(self, limit=50):\n        with self.connect() as db:\n            rows = db.execute(\"\"\"\n                SELECT e.id, json_extract(e.snapshot, '$.config.name') AS name,\n                       json_extract(e.snapshot, '$.config.adapter') AS adapter,\n                       json_extract(e.snapshot, '$.config.split') AS split,\n                       COUNT(r.id) AS total,\n                       SUM(CASE WHEN r.status NOT IN ('queued','running') THEN 1 ELSE 0 END) AS completed,\n                       MIN(json_extract(r.data, '$.queued_at')) AS created_at\n                FROM experiments e LEFT JOIN runs r ON r.experiment_id=e.id\n                GROUP BY e.id ORDER BY e.rowid DESC LIMIT ?\n            \"\"\", (limit,)).fetchall()\n            return [dict(row) for row in rows]\n\n    def claim(self):\n        with self.connect() as db:\n            db.execute(\"BEGIN IMMEDIATE\")\n            # A single active run globally preserves sequential resource conditions even with two workers.\n            if db.execute(\"SELECT 1 FROM runs WHERE status='running'\").fetchone():\n                return None\n            row = db.execute(\"SELECT * FROM runs WHERE status='queued' ORDER BY rowid LIMIT 1\").fetchone()\n            if not row:\n                return None\n            run = json.loads(row[\"data\"])\n            run.update(status=\"running\", started_at=time.time())\n            db.execute(\"UPDATE runs SET status='running',data=? WHERE id=?\", (json.dumps(run), run[\"id\"]))\n            return run\n\n    def event(self, run_id, kind, payload):\n        event = Event(run_id=run_id, kind=kind, payload=payload, at=time.time())\n        with self.connect() as db:\n            db.execute(\"INSERT INTO events(run_id,kind,at,payload) VALUES (?,?,?,?)\",\n                       (event.run_id, event.kind, event.at, json.dumps(event.payload)))\n\n    def events(self, run_id):\n        with self.connect() as db:\n            return [dict(row) | {\"payload\": json.loads(row[\"payload\"])} for row in\n                    db.execute(\"SELECT * FROM events WHERE run_id=? ORDER BY seq\", (run_id,))]\n\n    def cancelled(self, run_id):\n        with self.connect() as db:\n            return bool(db.execute(\"SELECT cancel_requested FROM runs WHERE id=?\", (run_id,)).fetchone()[0])\n\n    def cancel(self, run_id):\n        with self.connect() as db:\n            db.execute(\"BEGIN IMMEDIATE\")\n            row = db.execute(\"SELECT data,status FROM runs WHERE id=?\", (run_id,)).fetchone()\n            if not row:\n                raise KeyError(run_id)\n            if row[\"status\"] == \"queued\":\n                run = json.loads(row[\"data\"])\n                run.update(status=\"cancelled\", finished_at=time.time(), result={\"success\": False, \"format_ok\": False, \"error\": \"Cancelled before execution\"})\n                db.execute(\"UPDATE runs SET status='cancelled',data=?,cancel_requested=1 WHERE id=?\", (json.dumps(run), run_id))\n            elif row[\"status\"] == \"running\":\n                db.execute(\"UPDATE runs SET cancel_requested=1 WHERE id=?\", (run_id,))\n        self.event(run_id, \"cancel_requested\", {})\n\n    def finish(self, run, result, status):\n        with self.connect() as db:\n            db.execute(\"BEGIN IMMEDIATE\")\n            row = db.execute(\"SELECT status,cancel_requested FROM runs WHERE id=?\", (run[\"id\"],)).fetchone()\n            if row[\"status\"] != \"running\":\n                return row[\"status\"]\n            if row[\"cancel_requested\"]:\n                status = \"cancelled\"\n                result.update(success=False, error=\"Cancelled\")\n            run.update(status=status, finished_at=time.time(), result=result)\n            db.execute(\"UPDATE runs SET status=?,data=? WHERE id=?\", (status, json.dumps(run), run[\"id\"]))\n            db.execute(\"INSERT INTO events(run_id,kind,at,payload) VALUES (?,?,?,?)\",\n                       (run[\"id\"], \"finished\", run[\"finished_at\"], json.dumps({\"status\": status, **result})))\n            return status\n\n    def recover(self):\n        \"\"\"Explicit recovery only: caller must have stopped all workers first.\"\"\"\n        for run in self.list_runs():\n            if run[\"status\"] == \"running\":\n                self.event(run[\"id\"], \"interruption\", {\"reason\": \"Manual recovery after worker loss\"})\n                self.finish(run, {\"success\": False, \"format_ok\": False, \"error\": \"Worker interrupted; partial metrics in events\"}, \"interrupted\")\n",
+    "tools.py": "import copy\nfrom typing import Literal\nfrom pydantic import Field, StrictInt\nfrom .contracts import Contract\n\n\nclass SearchArgs(Contract):\n    customer_id: str\n\n\nclass LinesArgs(Contract):\n    order_id: str\n\n\nclass CalculateArgs(Contract):\n    operation: Literal[\"sum\", \"multiply\", \"subtract\"]\n    values: list[StrictInt] = Field(min_length=1, max_length=1000)\n\n\nARGUMENTS = {\"search_orders\": SearchArgs, \"order_lines\": LinesArgs, \"calculate\": CalculateArgs}\nDESCRIPTIONS = {\n    \"search_orders\": \"Busca pedidos por customer_id; devuelve id, fecha y estado, sin líneas.\",\n    \"order_lines\": \"Obtiene productos, cantidades, cantidades devueltas y precios en céntimos de un pedido.\",\n    \"calculate\": \"Aritmética entera en céntimos: sum suma; multiply multiplica; subtract resta del primer valor los restantes.\",\n}\nSCHEMAS = [{\"type\": \"function\", \"function\": {\"name\": name, \"description\": DESCRIPTIONS[name],\n            \"parameters\": cls.model_json_schema()}} for name, cls in ARGUMENTS.items()]\n\n\nclass Tools:\n    def __init__(self, environment):\n        self.environment = copy.deepcopy(environment)\n\n    def call(self, name, arguments):\n        if name not in ARGUMENTS:\n            raise ValueError(f\"Herramienta no permitida: {name}\")\n        args = ARGUMENTS[name].model_validate(arguments)\n        orders = self.environment[\"orders\"]\n        if name == \"search_orders\":\n            return [{k: v for k, v in o.items() if k != \"lines\"} for o in orders if o[\"customer_id\"] == args.customer_id]\n        if name == \"order_lines\":\n            for order in orders:\n                if order[\"id\"] == args.order_id:\n                    return copy.deepcopy(order[\"lines\"])\n            raise ValueError(\"Pedido inexistente\")\n        values = args.values\n        if any(abs(v) > 10**12 for v in values):\n            raise ValueError(\"Importe fuera de rango\")\n        if args.operation == \"sum\":\n            result = sum(values)\n        elif args.operation == \"subtract\":\n            result = values[0] - sum(values[1:])\n        else:\n            result = 1\n            for value in values:\n                result *= value\n                if abs(result) > 10**15:\n                    raise ValueError(\"Resultado fuera de rango\")\n        return {\"value\": result}\n",
+    "worker.py": "import asyncio\nfrom .adapters import Ollama, Simulated\nfrom .contracts import Experiment, Task\nfrom .runner import execute\n\n\nasync def work(store, once=False):\n    while True:\n        run = store.claim()\n        if run is None:\n            if once:\n                return\n            await asyncio.sleep(0.5)\n            continue\n        snapshot = store.snapshot(run[\"experiment_id\"])\n        config = Experiment.model_validate(snapshot[\"config\"])\n        task = next(Task.model_validate(t) for t in snapshot[\"tasks\"] if t[\"id\"] == run[\"task_id\"])\n        adapter = Simulated() if config.adapter == \"simulated\" else Ollama(config.ollama_url)\n        status = await execute(run, task, snapshot[\"environments\"][task.environment], config.agents[run[\"branch\"]], adapter, store)\n        if status == \"interrupted\":\n            return\n",
+    "__init__.py": "__version__ = \"0.1.0\"\n"
+  },
+  "conditions": {
+    "mode": "sequential",
+    "warmup": "none",
+    "keep_alive": "5m",
+    "resource_scope": "host_and_worker",
+    "seed_determinism": "not guaranteed"
+  },
+  "data_sha256": "469b2782c4ec90ad5aa0716a6ee43f3385e8a66aaca7963682ba109939864f98"
+}

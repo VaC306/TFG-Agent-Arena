@@ -1,6 +1,6 @@
 # Evidencia experimental
 
-Las tres carpetas fechadas el 8 de octubre de 2026 contienen exclusivamente
+Las carpetas fechadas el 8 de octubre de 2026 contienen exclusivamente
 ejecuciones del adaptador simulado. No hay resultados de inferencia real.
 
 | Carpeta | Alcance |
@@ -8,6 +8,7 @@ ejecuciones del adaptador simulado. No hay resultados de inferencia real.
 | simulated-dev-2026-10-08 | Primera ejecución de desarrollo; conserva la versión previa a los ajustes finales |
 | simulated-dev-final-2026-10-08 | Desarrollo con el motor final: cuatro tareas, dos ramas, dos repeticiones |
 | simulated-eval-2026-10-08 | Evaluación con el motor final: cuatro tareas, dos ramas, una repetición |
+| ui-smoke-2026-10-08 | Prueba funcional Angular: 16 ejecuciones, una cancelación B intencionada y 15 éxitos |
 
 Cada carpeta conserva configuración y entorno en snapshot.json, resultados
 individuales en runs.json, trazas en events.jsonl, métricas en metrics.csv y
