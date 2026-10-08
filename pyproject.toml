@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-arena-local"
+version = "0.1.0"
+description = "Comparaciones locales reproducibles de agentes con herramientas"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+  "fastapi==0.115.12", "pydantic==2.11.5", "uvicorn==0.34.2",
+  "httpx==0.28.1", "psutil==7.0.0", "pandas==2.2.3", "scipy==1.15.3"
+]
+
+[project.optional-dependencies]
+test = ["pytest==8.3.5"]
+gpu = ["nvidia-ml-py==12.575.51"]
+
+[project.scripts]
+arena = "arena.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["arena*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

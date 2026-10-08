@@ -1,0 +1,330 @@
+{
+  "config": {
+    "name": "prompts-pedidos-v1",
+    "adapter": "simulated",
+    "mode": "sequential",
+    "agents": {
+      "A": {
+        "model": "qwen2.5:3b",
+        "system_prompt": "Eres un asistente de pedidos. Usa las herramientas para resolver la consulta. Trabaja en céntimos enteros. Devuelve únicamente el JSON pedido.",
+        "temperature": 0.0,
+        "seed": 42,
+        "num_ctx": 8192,
+        "limits": {
+          "timeout_s": 120.0,
+          "max_calls": 12,
+          "max_tool_calls": 30,
+          "max_output_tokens": 4096
+        }
+      },
+      "B": {
+        "model": "qwen2.5:3b",
+        "system_prompt": "Eres un auditor de pedidos. Comprueba cliente, mes, estado delivered y devoluciones. Consulta pedidos en orden inverso. Verifica el importe con calculate. Devuelve únicamente el JSON pedido.",
+        "temperature": 0.0,
+        "seed": 42,
+        "num_ctx": 8192,
+        "limits": {
+          "timeout_s": 120.0,
+          "max_calls": 12,
+          "max_tool_calls": 30,
+          "max_output_tokens": 4096
+        }
+      }
+    },
+    "split": "dev",
+    "repetitions": 2,
+    "order_seed": 42,
+    "ollama_url": "http://127.0.0.1:11434"
+  },
+  "tasks": [
+    {
+      "id": "dev-partial-return",
+      "split": "dev",
+      "input": "cliente=C1 mes=2026-01. Calcula el gasto en pedidos delivered de ese mes, excluyendo unidades devueltas. Incluye solo IDs con unidades no devueltas. Devuelve JSON exacto con total_cents (entero) y order_ids (lista).",
+      "environment": "orders.json",
+      "criteria": {
+        "total_cents": 3500,
+        "order_ids": [
+          "O1",
+          "O2"
+        ],
+        "allowed_tools": [
+          "search_orders",
+          "order_lines",
+          "calculate"
+        ]
+      }
+    },
+    {
+      "id": "dev-month-boundary",
+      "split": "dev",
+      "input": "cliente=C1 mes=2026-02. Calcula el gasto en pedidos delivered de ese mes, excluyendo unidades devueltas. Incluye solo IDs con unidades no devueltas. Devuelve JSON exacto con total_cents (entero) y order_ids (lista).",
+      "environment": "orders.json",
+      "criteria": {
+        "total_cents": 250,
+        "order_ids": [
+          "O4"
+        ],
+        "allowed_tools": [
+          "search_orders",
+          "order_lines",
+          "calculate"
+        ]
+      }
+    },
+    {
+      "id": "dev-no-customer",
+      "split": "dev",
+      "input": "cliente=C9 mes=2026-01. Calcula el gasto en pedidos delivered de ese mes, excluyendo unidades devueltas. Incluye solo IDs con unidades no devueltas. Devuelve JSON exacto con total_cents (entero) y order_ids (lista).",
+      "environment": "orders.json",
+      "criteria": {
+        "total_cents": 0,
+        "order_ids": [],
+        "allowed_tools": [
+          "search_orders",
+          "order_lines",
+          "calculate"
+        ]
+      }
+    },
+    {
+      "id": "dev-integer-money",
+      "split": "dev",
+      "input": "cliente=C2 mes=2026-01. Calcula el gasto en pedidos delivered de ese mes, excluyendo unidades devueltas. Incluye solo IDs con unidades no devueltas. Devuelve JSON exacto con total_cents (entero) y order_ids (lista).",
+      "environment": "orders.json",
+      "criteria": {
+        "total_cents": 1998,
+        "order_ids": [
+          "O5"
+        ],
+        "allowed_tools": [
+          "search_orders",
+          "order_lines",
+          "calculate"
+        ]
+      }
+    }
+  ],
+  "environments": {
+    "orders.json": {
+      "currency": "EUR",
+      "orders": [
+        {
+          "id": "O1",
+          "customer_id": "C1",
+          "date": "2026-01-03",
+          "status": "delivered",
+          "lines": [
+            {
+              "product_id": "P1",
+              "name": "Cuaderno",
+              "unit_cents": 500,
+              "quantity": 3,
+              "returned_quantity": 1
+            },
+            {
+              "product_id": "P2",
+              "name": "Lápiz",
+              "unit_cents": 250,
+              "quantity": 2,
+              "returned_quantity": 0
+            }
+          ]
+        },
+        {
+          "id": "O2",
+          "customer_id": "C1",
+          "date": "2026-01-25",
+          "status": "delivered",
+          "lines": [
+            {
+              "product_id": "P3",
+              "name": "Mochila",
+              "unit_cents": 2000,
+              "quantity": 1,
+              "returned_quantity": 0
+            }
+          ]
+        },
+        {
+          "id": "O3",
+          "customer_id": "C1",
+          "date": "2026-01-15",
+          "status": "cancelled",
+          "lines": [
+            {
+              "product_id": "P3",
+              "name": "Mochila",
+              "unit_cents": 2000,
+              "quantity": 1,
+              "returned_quantity": 0
+            }
+          ]
+        },
+        {
+          "id": "O4",
+          "customer_id": "C1",
+          "date": "2026-02-01",
+          "status": "delivered",
+          "lines": [
+            {
+              "product_id": "P2",
+              "name": "Lápiz",
+              "unit_cents": 250,
+              "quantity": 1,
+              "returned_quantity": 0
+            }
+          ]
+        },
+        {
+          "id": "O5",
+          "customer_id": "C2",
+          "date": "2026-01-31",
+          "status": "delivered",
+          "lines": [
+            {
+              "product_id": "P4",
+              "name": "Carpeta",
+              "unit_cents": 999,
+              "quantity": 2,
+              "returned_quantity": 0
+            }
+          ]
+        },
+        {
+          "id": "O6",
+          "customer_id": "C2",
+          "date": "2026-02-28",
+          "status": "delivered",
+          "lines": [
+            {
+              "product_id": "P4",
+              "name": "Carpeta",
+              "unit_cents": 999,
+              "quantity": 1,
+              "returned_quantity": 1
+            }
+          ]
+        },
+        {
+          "id": "O7",
+          "customer_id": "C3",
+          "date": "2026-02-01",
+          "status": "pending",
+          "lines": [
+            {
+              "product_id": "P1",
+              "name": "Cuaderno",
+              "unit_cents": 500,
+              "quantity": 1,
+              "returned_quantity": 0
+            }
+          ]
+        },
+        {
+          "id": "O8",
+          "customer_id": "C3",
+          "date": "2026-03-31",
+          "status": "delivered",
+          "lines": [
+            {
+              "product_id": "P5",
+              "name": "Regla",
+              "unit_cents": 333,
+              "quantity": 3,
+              "returned_quantity": 1
+            }
+          ]
+        },
+        {
+          "id": "O9",
+          "customer_id": "C3",
+          "date": "2026-04-01",
+          "status": "delivered",
+          "lines": [
+            {
+              "product_id": "P5",
+              "name": "Regla",
+              "unit_cents": 333,
+              "quantity": 2,
+              "returned_quantity": 0
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "host": {
+    "platform": "Windows-10-10.0.26200-SP0",
+    "python": "3.11.9",
+    "cpu": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "logical_cpus": 32,
+    "ram_total_bytes": 33959383040,
+    "packages": {
+      "annotated-types": "0.8.0",
+      "anyio": "4.15.1",
+      "certifi": "2026.7.22",
+      "click": "8.5.0",
+      "colorama": "0.4.6",
+      "fastapi": "0.115.12",
+      "h11": "0.16.0",
+      "httpcore": "1.0.9",
+      "httpx": "0.28.1",
+      "idna": "3.20",
+      "iniconfig": "2.3.1",
+      "numpy": "2.4.6",
+      "packaging": "26.3",
+      "pandas": "2.2.3",
+      "pip": "24.0",
+      "pluggy": "1.6.0",
+      "psutil": "7.0.0",
+      "pydantic": "2.11.5",
+      "pydantic_core": "2.33.2",
+      "pytest": "8.3.5",
+      "python-dateutil": "2.9.0.post0",
+      "pytz": "2026.5",
+      "scipy": "1.15.3",
+      "setuptools": "65.5.0",
+      "six": "1.17.0",
+      "starlette": "0.46.2",
+      "typing_extensions": "4.16.0",
+      "typing-inspection": "0.4.4",
+      "tzdata": "2026.5",
+      "uvicorn": "0.34.2"
+    },
+    "resources": {
+      "at": 1791450501.9789448,
+      "scope": "host_and_worker",
+      "ram_available_bytes": 15555416064,
+      "worker_rss_bytes": 136458240,
+      "gpu": null,
+      "unavailable": [
+        "NVML: ModuleNotFoundError"
+      ]
+    }
+  },
+  "git_commit": "d8bae7c2399d1bda236871403f81a65a06b1dea0",
+  "source_sha256": {
+    "adapters.py": "64c6099b23d2deeb8495317a64f3aa1e6f02be57b65bec6417785bc5a95e6d2a",
+    "api.py": "df71c1016d411fd80d27cf10c7fc17006e946adff26e4f108b5b8a60e2e56dca",
+    "cli.py": "24adfdf5e7d9b094abcebae1b6ff4590a4196faa224f3683fb9d51a7ede0e7ef",
+    "contracts.py": "02dbfea092b61503b1c2f2362e5f06edfd519fc2a7a095bdc12f4f383942ec50",
+    "evaluator.py": "2be61fa7e0f4078f36fa16299c2e545b015438edf0e3c7bdf5d682f86428c832",
+    "export.py": "406dd5ccbdabdfa9b3f0f368321eee589e57e16ce19b33c67c4fd08d37c78913",
+    "resources.py": "5fa55346518460f6ddc169cf26eb071b0531e082f628baccd127b6b07f3da488",
+    "runner.py": "7ebd6ce9b40636a66e6f64794bb988c78ca16119afc2c1ebc2671701a7862206",
+    "scheduler.py": "8f77438a5cc6165aec45d4fea7e7889df861f8383363b5b91525e15c7651a373",
+    "store.py": "83c433f3fa93f5346d859822b34f64303e388064fe037a21fea1f696f43ca4ac",
+    "tools.py": "12a3c582510b2bb070c8a0b1ee4f706db80f4810da7a6be4968619a4a7b6f172",
+    "worker.py": "d735270f1121ae10e7f8167ad3fa8b8f44c51756a48af484198772329864889a",
+    "__init__.py": "91447944015cec709e8aa7655f7e9d64e1e4508e7023a57fe3746911c0fc6fed"
+  },
+  "conditions": {
+    "mode": "sequential",
+    "warmup": "none",
+    "keep_alive": "5m",
+    "resource_scope": "host_and_worker",
+    "seed_determinism": "not guaranteed"
+  },
+  "data_sha256": "469b2782c4ec90ad5aa0716a6ee43f3385e8a66aaca7963682ba109939864f98"
+}

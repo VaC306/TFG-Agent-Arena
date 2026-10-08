@@ -1,0 +1,21 @@
+services:
+  api:
+    build: .
+    command: python -m uvicorn arena.api:app --host 0.0.0.0 --port 8000
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      ARENA_OLLAMA_URL: http://host.docker.internal:11434
+    volumes:
+      - arena-data:/app/runtime
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+  worker:
+    build: .
+    command: python -m arena.cli worker
+    volumes:
+      - arena-data:/app/runtime
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+volumes:
+  arena-data:

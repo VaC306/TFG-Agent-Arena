@@ -1,0 +1,11 @@
+{
+  "pairs": 4,
+  "success_rate": {
+    "A": 1.0,
+    "B": 1.0
+  },
+  "A_only_success": 0,
+  "B_only_success": 0,
+  "mcnemar_exact_p": null,
+  "note": "Descriptive results; p omitted with repetitions or no discordant pairs. Synthetic tasks are not a population sample."
+}

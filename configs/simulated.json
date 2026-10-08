@@ -1,0 +1,36 @@
+{
+  "name": "prompts-pedidos-v1",
+  "adapter": "simulated",
+  "mode": "sequential",
+  "split": "dev",
+  "repetitions": 2,
+  "order_seed": 42,
+  "agents": {
+    "A": {
+      "model": "qwen2.5:3b",
+      "system_prompt": "Eres un asistente de pedidos. Usa las herramientas para resolver la consulta. Trabaja en céntimos enteros. Devuelve únicamente el JSON pedido.",
+      "temperature": 0,
+      "seed": 42,
+      "num_ctx": 8192,
+      "limits": {
+        "timeout_s": 120,
+        "max_calls": 12,
+        "max_tool_calls": 30,
+        "max_output_tokens": 4096
+      }
+    },
+    "B": {
+      "model": "qwen2.5:3b",
+      "system_prompt": "Eres un auditor de pedidos. Comprueba cliente, mes, estado delivered y devoluciones. Consulta pedidos en orden inverso. Verifica el importe con calculate. Devuelve únicamente el JSON pedido.",
+      "temperature": 0,
+      "seed": 42,
+      "num_ctx": 8192,
+      "limits": {
+        "timeout_s": 120,
+        "max_calls": 12,
+        "max_tool_calls": 30,
+        "max_output_tokens": 4096
+      }
+    }
+  }
+}
