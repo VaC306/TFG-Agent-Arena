@@ -25,7 +25,7 @@ export interface Run {
   id: string; task_id: string; branch: 'A' | 'B'; repetition: number;
   status: Status; result: Result | null;
 }
-export interface SavedTask { input: string; attachments?: {name: string; size: number; sha256: string}[] }
+export interface SavedTask { id: string; input: string; expected_answer?: string | null; attachments?: {name: string; size: number; sha256: string}[] }
 export interface ExperimentDetail { snapshot: { config: Config; tasks?: SavedTask[]; branch_tasks?: Record<string, SavedTask> | null; conditions?: {inputs_shared?: boolean} }; runs: Run[] }
 export interface PromptTemplate { id: string; name: string; text: string }
 export interface Upload { name: string; data_base64: string; preview: string; image: boolean; size: number }
@@ -34,7 +34,10 @@ export interface ComparisonBody {
   name: string; adapter: PresetId; comparison: 'same_model' | 'different_models'; repetitions: number;
   agents: Record<string, {model: string; system_prompt: string; prompt_template: string}>;
   shared_input?: unknown; branch_inputs?: Record<string, unknown>;
+  dataset?: DatasetCase[];
 }
+export interface DatasetCase { id: string; input: string; expected_answer: string | null }
+export interface DatasetPreview { cases: DatasetCase[]; count: number; scored: number }
 export interface ArenaEvent { seq: number; kind: string; at: number; payload: unknown }
 export const terminal = (run: Run) => !['queued', 'running'].includes(run.status);
 
@@ -46,6 +49,9 @@ export class ArenaService {
   presets() { return this.get<Preset[]>('/presets'); }
   prompts() { return this.get<PromptTemplate[]>('/prompt-templates'); }
   models() { return this.get<{available: boolean; models: {name: string}[]; error: string | null}>('/models'); }
+  validateDataset(filename: string, content: string) {
+    return firstValueFrom(this.http.post<DatasetPreview>('/api/datasets/validate', {filename, content}).pipe(timeout(30000)));
+  }
   compare(body: ComparisonBody) {
     return firstValueFrom(this.http.post<{id: string}>('/api/comparisons', body).pipe(timeout(30000)));
   }

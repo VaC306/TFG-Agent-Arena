@@ -156,6 +156,8 @@ def test_custom_api_and_models_unavailable(tmp_path,monkeypatch):
     async def offline(self): raise httpx.ConnectError('offline')
     monkeypatch.setattr(Ollama,'models',offline)
     with TestClient(create_app(tmp_path/'test.sqlite',ROOT)) as client:
+        from conftest import register_client
+        register_client(client)
         assert len(client.get('/prompt-templates').json())==6
         assert client.get('/models').json()['available'] is False
         response=client.post('/comparisons',json=request_data())

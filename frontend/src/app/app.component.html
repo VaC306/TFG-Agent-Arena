@@ -1,25 +1,30 @@
 <a class="skip-link" href="#main">Ir al contenido</a>
 <div class="shell">
-  <aside class="sidebar">
-    <div class="brand"><span class="brand-icon">a<span>∕</span>a</span><div>Agent Arena<small>LOCAL EXPERIMENT LAB</small></div></div>
-    <div class="nav-current"><span>◫</span> Comparaciones <span class="count">{{ experiments().length }}</span></div>
-    <div class="history-heading">RECIENTES <span>Últimas 50</span></div>
+  <header class="topbar">
+    <a class="brand" href="#main" aria-label="Agent Arena, inicio"><span class="brand-icon" aria-hidden="true">a<span>∕</span>a</span>Agent Arena</a>
+    <nav class="workspace-nav" aria-label="Secciones"><button [class.current]="view() === 'compose'" (click)="view.set('compose')">Comparar</button><button [class.current]="view() === 'results'" (click)="view.set('results')">Resultados</button></nav>
+    <details class="history-menu" #historyMenu><summary>Historial <span class="count">{{ experiments().length }}</span></summary>
+    <div class="history-heading">Tus experimentos <span>Últimos 50</span></div>
     <nav aria-label="Historial de comparaciones">
       @for (experiment of experiments(); track experiment.id) {
-        <button class="history-item" [class.selected]="selectedId() === experiment.id" [attr.aria-current]="selectedId() === experiment.id ? 'true' : null" (click)="select(experiment.id)">
+        <button class="history-item" [class.selected]="selectedId() === experiment.id" [attr.aria-current]="selectedId() === experiment.id ? 'true' : null" (click)="select(experiment.id); view.set('results'); historyMenu.open = false">
           <span class="history-title">{{ experiment.name }}</span>
           <span>{{ experiment.created_at * 1000 | date:'dd/MM · HH:mm' }} <span class="history-mode">{{ experiment.adapter === 'simulated' ? 'Simulado' : 'Ollama' }}</span></span>
           <span class="history-progress">{{ experiment.completed }}/{{ experiment.total }} completadas</span>
         </button>
       } @empty { <p class="sidebar-empty">Tus comparaciones aparecerán aquí.</p> }
     </nav>
-    <div class="sidebar-footer"><span class="local-dot"></span> Entorno local <small>Una máquina. Dos agentes.</small></div>
-  </aside>
+    </details>
+    <span class="local-label"><span class="local-dot"></span>Local</span>
+    <button class="profile-button" (click)="view.set('profile')" [attr.aria-label]="'Perfil de ' + auth.user()?.display_name">{{ auth.user()?.display_name?.slice(0, 1)?.toUpperCase() }}</button>
+  </header>
 
   <main id="main">
-    <header class="page-header"><div><p class="eyebrow">AGENT ARENA / EXPERIMENTOS</p><h1>Comparaciones</h1><p class="subheading">Explora modelos, prompts y datos. Compara resultados observables.</p></div><button class="secondary" (click)="refresh()" [disabled]="loading()">↻ Actualizar</button></header>
     @if (error()) { <div class="alert error" role="alert">{{ error() }}</div> }
-    @if (notice()) { <div class="alert" role="status">{{ notice() }}</div> }
+    @if (notice() && view() === 'results') { <div class="alert" role="status">{{ notice() }}</div> }
+    @if (view() === 'profile') { <arena-profile (closed)="view.set('compose')" /> }
+    <div class="view-enter" [hidden]="view() !== 'compose'">
+    <header class="page-header"><div><p class="eyebrow">Tu espacio de experimentación</p><h1>Distintos modelos.<br>Tu propio criterio.</h1><p class="subheading">Reúne tus datos, prueba tus prompts<br>y encuentra qué funciona para ti.</p></div><a class="hero-link" href="#composer-title">Crear una comparación <span aria-hidden="true">↓</span></a></header>
 
     <arena-composer (created)="customCreated($event)" />
     <details class="benchmark-toggle"><summary>Benchmark de pedidos · tareas con evaluación automática</summary>
@@ -38,7 +43,10 @@
     </section>
 
     </details>
+    </div>
+    <div class="view-enter results-view" [hidden]="view() !== 'results'">
 
+    <div class="results-divider" id="results"><span>Tu colección de resultados</span><button class="text-button" (click)="refresh()" [disabled]="loading()">↻ Actualizar</button></div>
     @if (loading()) { <div class="empty panel" role="status">Cargando comparación…</div> }
     @else if (detail(); as experiment) {
       <section class="results" aria-labelledby="results-title">
@@ -56,7 +64,7 @@
         <details class="saved-config panel"><summary>Ver prompts y entradas guardados</summary><div class="prompt-grid">
           @for (branch of ['A', 'B']; track branch) {
             <div><h3>Agente {{ branch }}</h3><pre>{{ branch === 'A' ? experiment.snapshot.config.agents.A.system_prompt : experiment.snapshot.config.agents.B.system_prompt }}</pre>
-              @if (savedTask(branch === 'A' ? 'A' : 'B'); as task) { <h3>Entrada</h3><pre>{{ task.input }}</pre>@for (file of task.attachments ?? []; track file.sha256) { <p class="hint">{{ file.name }} · {{ file.size }} bytes · SHA-256: {{ file.sha256 }}</p> } }
+              @for (task of savedTasks(branch === 'A' ? 'A' : 'B'); track task.id) { <details><summary>{{ task.id }}</summary><h3>Entrada</h3><pre>{{ task.input }}</pre>@if (task.expected_answer != null) { <h3>Respuesta esperada</h3><pre>{{ task.expected_answer }}</pre> } @for (file of task.attachments ?? []; track file.sha256) { <p class="hint">{{ file.name }} · {{ file.size }} bytes · SHA-256: {{ file.sha256 }}</p> }</details> }
             </div>
           }
         </div></details>
@@ -87,6 +95,7 @@
         <div class="events">@for (event of events(); track event.seq) { <details><summary><span class="event-kind">{{ event.kind }}</span><time>{{ event.at * 1000 | date:'HH:mm:ss.SSS' }}</time></summary><pre>{{ event.payload | json }}</pre></details> } @empty { @if (!traceLoading() && !traceError()) { <p class="hint">Todavía no hay eventos para esta ejecución.</p> } }</div>
       </section>
     }
+    </div>
     <footer class="page-footer"><span>Agent Arena Local</span><span>TFG · Comparación reproducible de agentes</span></footer>
   </main>
 </div>

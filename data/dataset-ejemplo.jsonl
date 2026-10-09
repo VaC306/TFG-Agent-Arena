@@ -1,0 +1,2 @@
+{"id":"capital","input":"¿Cuál es la capital de Francia? Responde solo el nombre.","expected_answer":"París"}
+{"id":"resumen","input":"Resume en una frase las ventajas de probar modelos localmente."}

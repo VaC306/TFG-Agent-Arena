@@ -1,10 +1,77 @@
 # Agent Arena Local
 
-Plataforma local para comparar dos prompts del mismo agente sobre pedidos ficticios.
+Plataforma local para comparar modelos y prompts con entradas propias, archivos y datasets.
 Primer hito: runner con herramientas, adaptadores simulado y Ollama, comparación
 secuencial, SQLite, API/worker separados y exportación de resultados y trazas.
 
-## Inicio rápido (Windows / PowerShell)
+La interfaz Angular permite comparaciones personalizadas con Ollama o un simulador,
+adjuntos de texto e imagen y datasets CSV/JSONL de hasta 100 casos.
+Consulta [formato de datasets y evaluación](docs/datasets.md) y descarga los ejemplos
+de `data/dataset-ejemplo.csv` y `data/dataset-ejemplo.jsonl`.
+
+## Lanzar la aplicación completa (Windows / PowerShell)
+
+Requisitos: **Python 3.11** y **Node.js 22.12 o posterior de la rama 22**.
+Los siguientes comandos usan la ruta de esta instalación. Si clonas el repositorio en otro
+directorio, cambia únicamente la ruta de `cd`.
+
+### 1. Instalación inicial (una sola vez)
+
+```powershell
+cd "C:\Users\rishi\Desktop\UNI 2026\TFG"
+py -3.11 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.lock
+.\.venv\Scripts\python.exe -m pip install --no-deps --no-build-isolation -e .
+cd frontend
+npm.cmd ci
+```
+
+### 2. Terminal 1 — API
+
+```powershell
+cd "C:\Users\rishi\Desktop\UNI 2026\TFG"
+.\.venv\Scripts\python.exe -m uvicorn arena.api:app --host 127.0.0.1 --port 8000
+```
+
+### 3. Terminal 2 — worker
+
+```powershell
+cd "C:\Users\rishi\Desktop\UNI 2026\TFG"
+.\.venv\Scripts\python.exe -m arena.cli worker
+```
+
+### 4. Terminal 3 — frontend Angular
+
+```powershell
+cd "C:\Users\rishi\Desktop\UNI 2026\TFG\frontend"
+npm.cmd start
+```
+
+### 5. Abrir la app e iniciar sesión
+
+Abre **[http://127.0.0.1:4200/](http://127.0.0.1:4200/)**. Crea una cuenta local
+o entra en una existente. Mantén las tres terminales abiertas. Para detener la app,
+pulsa **Ctrl+C en cada terminal**. No es necesario activar el entorno virtual: los
+comandos ya llaman al Python de `.venv`. El simulador no necesita Ollama.
+
+Cuenta de desarrollo solicitada para esta instalación: **usuario `test`, contraseña `test`**.
+En otra instalación se crea explícitamente desde una cuarta terminal; no se crea sola:
+
+```powershell
+cd "C:\Users\rishi\Desktop\UNI 2026\TFG"
+.\.venv\Scripts\python.exe -m arena.cli create-test-user
+```
+
+Esta excepción sirve solo para pruebas locales. El registro normal exige 10 caracteres
+de contraseña. Si `test` ya existe con otra contraseña, el comando no la reemplaza.
+La primera cuenta conserva los experimentos anteriores al sistema de perfiles.
+
+Si la web abre pero las ejecuciones quedan en cola, falta el worker. Si no conecta con
+el servidor, comprueba la terminal de la API. Si `npm` está bloqueado por PowerShell,
+usa `npm.cmd`, como en estos ejemplos. Para inferencia real, inicia Ollama e instala
+los modelos que quieras; el selector muestra los instalados y permite actualizar la lista.
+
+## Demo desde terminal (sin interfaz)
 
 Requisitos: Python 3.11 (verificado con 3.11.9). Ejecuta desde la raíz del repositorio.
 
@@ -46,9 +113,10 @@ Abre <http://127.0.0.1:8000/docs>. `POST /experiments` con
 `GET /experiments/{id}` devuelve configuración y ejecuciones;
 `GET /runs/{id}/events` permite inspeccionar trazas;
 `GET /experiments/{id}/metrics.csv` exporta métricas, y
-`POST /runs/{id}/cancel` solicita cancelación. API local sin autenticación:
-mantén el bind en loopback. Los presets se editan en `configs/`; la API del
-hito 1 no incluye todavía un editor de configuraciones.
+`POST /runs/{id}/cancel` solicita cancelación. La API requiere una sesión local:
+inicia sesión desde la interfaz. Los clientes HTTP usan cookie de sesión y cabecera
+`X-Arena-Request: 1` para escrituras. Mantén el bind en loopback. Los presets se editan en `configs/`; la API del
+hito 1 se complementa con `POST /comparisons` para configuraciones personalizadas.
 
 También se puede usar exclusivamente la CLI:
 
@@ -94,9 +162,11 @@ El servidor de desarrollo reenvía `/api` a `http://127.0.0.1:8000` mediante
 La compilación de producción necesita un servidor estático con la misma regla
 de proxy; todavía no se integra el frontend en Docker Compose.
 
-Los presets y prompts se pueden consultar desde la pantalla, pero se editan en
-`configs/`. La selección de tareas y un editor de prompts se dejan para la
-siguiente iteración. Si los trabajos permanecen en cola, comprueba el worker:
+Los presets del benchmark se editan en `configs/`. Las comparaciones personalizadas
+permiten seleccionar modelos instalados, editar prompts y cargar entradas o datasets
+desde la interfaz. El perfil recuerda modelos, prompts y parámetros, y cada cuenta
+tiene su historial. Consulta [cuentas y conexiones](docs/perfiles.md).
+Si los trabajos permanecen en cola, comprueba el worker:
 la interfaz no lo arranca automáticamente. El porcentaje de éxito considera
 solo ejecuciones terminales e incluye fallos y cancelaciones; durante una ejecución
 se muestra como resultado provisional. Los tiempos ausentes se muestran como «—».

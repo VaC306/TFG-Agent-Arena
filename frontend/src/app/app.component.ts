@@ -2,14 +2,18 @@ import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { DatePipe, DecimalPipe, JsonPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ComposerComponent } from './composer.component';
+import { ProfileComponent } from './profile.component';
+import { AuthService } from './auth.service';
 import { ArenaService, ArenaEvent, ExperimentDetail, ExperimentSummary, Preset, PresetId, Run, Status, terminal } from './arena.service';
 
 @Component({
-  selector: 'arena-root', standalone: true,
-  imports: [DatePipe, DecimalPipe, JsonPipe, FormsModule, ComposerComponent],
+  selector: 'arena-workspace', standalone: true,
+  imports: [DatePipe, DecimalPipe, JsonPipe, FormsModule, ComposerComponent, ProfileComponent],
   templateUrl: './app.component.html',
 })
 export class AppComponent {
+  auth = inject(AuthService);
+  view = signal<'compose' | 'results' | 'profile'>('compose');
   private api = inject(ArenaService);
   private destroyed = false;
   private selectionVersion = 0;
@@ -117,6 +121,7 @@ export class AppComponent {
     this.notice.set('');
     try {
       const { id } = await this.api.create(this.preset);
+      this.view.set('results');
       this.notice.set('Comparación creada. El worker procesará las ejecuciones en cola.');
       await this.select(id);
       await this.refresh();
@@ -125,14 +130,16 @@ export class AppComponent {
   }
 
   async customCreated(id: string) {
+    this.view.set('results');
     this.notice.set('Comparación personalizada guardada. El worker ejecutará A y B secuencialmente.');
     await this.select(id);
     await this.refresh();
   }
 
-  savedTask(branch: 'A' | 'B') {
+  savedTasks(branch: 'A' | 'B') {
     const snapshot = this.detail()?.snapshot;
-    return snapshot?.branch_tasks?.[branch] ?? snapshot?.tasks?.[0];
+    const task = snapshot?.branch_tasks?.[branch];
+    return task ? [task] : snapshot?.tasks ?? [];
   }
 
   answers(branch: 'A' | 'B') {

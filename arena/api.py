@@ -1,7 +1,8 @@
 import os
 from pathlib import Path
-from fastapi import FastAPI, HTTPException, Query, Request
-from fastapi.responses import Response
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
+from fastapi.responses import JSONResponse, Response
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from pydantic import ValidationError
 from typing import Literal
 from .contracts import Contract, Experiment
@@ -10,6 +11,8 @@ from .scheduler import submit
 from .export import csv_text
 from .comparisons import ComparisonRequest, PROMPTS, submit_comparison
 from .adapters import Ollama
+from .datasets import DatasetUpload, parse_dataset
+from .accounts import Accounts, COOKIE, SESSION_SECONDS, Credentials, Registration, Preferences, ProfileUpdate
 
 
 class Submission(Contract):
@@ -19,7 +22,100 @@ class Submission(Contract):
 def create_app(db_path=None, root=None):
     app = FastAPI(title="Agent Arena Local", version="0.1.0")
     store = Store(db_path or os.environ.get("ARENA_DB", "runtime/arena.sqlite"))
+    accounts = Accounts(store)
     root = Path(root or os.environ.get("ARENA_ROOT", "."))
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=['127.0.0.1', 'localhost', 'testserver'])
+
+    @app.middleware('http')
+    async def session_access(request: Request, call_next):
+        if request.method not in {'GET', 'HEAD', 'OPTIONS'}:
+            if request.headers.get('x-arena-request') != '1' or request.headers.get('sec-fetch-site') == 'cross-site':
+                return JSONResponse({'detail': 'Solicitud no permitida'}, status_code=403)
+        user = accounts.current(request.cookies.get(COOKIE))
+        request.state.user = user
+        public = {'/auth/session', '/auth/login', '/auth/register'}
+        if request.url.path not in public and not user:
+            return JSONResponse({'detail': 'Inicia sesión para continuar'}, status_code=401)
+        response = await call_next(request)
+        response.headers['Cache-Control'] = 'no-store'
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        return response
+
+    def user_store(request: Request):
+        return Store(store.path, owner_id=request.state.user['id'])
+
+    async def bounded_body(request, limit):
+        body = bytearray()
+        async for chunk in request.stream():
+            if len(body) + len(chunk) > limit:
+                raise HTTPException(413, 'La solicitud supera el tamaño permitido')
+            body.extend(chunk)
+        return bytes(body)
+
+    async def auth_body(request, model, limit=64 * 1024):
+        try:
+            return model.model_validate_json(await bounded_body(request, limit))
+        except ValidationError as exc:
+            raise HTTPException(422, exc.errors(include_input=False, include_context=False))
+
+    @app.get('/auth/session')
+    def auth_session(request: Request):
+        return {'user': request.state.user, 'has_users': accounts.has_users()}
+
+    async def authenticate(request, response, register=False):
+        accounts.limited(request.client.host if request.client else 'local')
+        data = await auth_body(request, Registration if register else Credentials, 16 * 1024)
+        user_id = accounts.register(data) if register else accounts.login(data)
+        accounts.logout(request.cookies.get(COOKIE))
+        token = accounts.new_session(user_id)
+        response.set_cookie(COOKIE, token, httponly=True, samesite='strict', max_age=SESSION_SECONDS,
+                            secure=request.url.scheme == 'https', path='/')
+        return {'user': accounts.current(token)}
+
+    @app.post('/auth/register', status_code=201)
+    async def register(request: Request, response: Response):
+        return await authenticate(request, response, register=True)
+
+    @app.post('/auth/login')
+    async def login(request: Request, response: Response):
+        return await authenticate(request, response)
+
+    @app.post('/auth/logout')
+    def logout(request: Request, response: Response):
+        accounts.logout(request.cookies.get(COOKIE))
+        response.delete_cookie(COOKIE, path='/')
+        return {'ok': True}
+
+    @app.put('/profile/preferences')
+    async def preferences(request: Request):
+        data = await auth_body(request, Preferences)
+        accounts.update(request.state.user['id'], 'preferences', data.model_dump_json())
+        return data.model_dump()
+
+    @app.patch('/profile')
+    async def profile(request: Request):
+        data = await auth_body(request, ProfileUpdate)
+        accounts.update(request.state.user['id'], 'display_name', data.display_name)
+        return {'display_name': data.display_name}
+
+    @app.post('/datasets/validate')
+    async def validate_dataset(request: Request):
+        body = await bounded_body(request, 8 * 1024 * 1024)
+        try:
+            upload = DatasetUpload.model_validate_json(body)
+            cases = parse_dataset(upload.filename, upload.content)
+            return {'cases': [case.model_dump() for case in cases],
+                    'count': len(cases), 'scored': sum(case.expected_answer is not None for case in cases)}
+        except ValidationError as exc:
+            raise HTTPException(422, exc.errors(include_input=False, include_context=False))
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)[:500])
+
+    @app.get('/datasets/template.csv')
+    def dataset_template():
+        return Response('id,input,expected_answer\ncapital,¿Cuál es la capital de Francia? Responde solo el nombre.,París\nresumen,Resume en una frase las ventajas de probar modelos localmente.,\n',
+                        media_type='text/csv; charset=utf-8',
+                        headers={'Content-Disposition': 'attachment; filename="dataset-ejemplo.csv"'})
 
     @app.get('/prompt-templates')
     def prompt_templates():
@@ -35,7 +131,7 @@ def create_app(db_path=None, root=None):
             return {'available': False, 'models': [], 'error': 'Ollama no está disponible. Puedes introducir el nombre del modelo manualmente; necesitarás instalarlo para ejecutarlo.'}
 
     @app.post('/comparisons', status_code=201)
-    async def create_comparison(request: Request):
+    async def create_comparison(request: Request, store: Store = Depends(user_store)):
         # Bound the body before JSON/base64 decoding, including chunked requests.
         body = bytearray()
         async for chunk in request.stream():
@@ -51,7 +147,7 @@ def create_app(db_path=None, root=None):
             raise HTTPException(422, str(exc)[:500])
 
     @app.get("/experiments")
-    def list_experiments(limit: int = Query(default=50, ge=1, le=200)):
+    def list_experiments(limit: int = Query(default=50, ge=1, le=200), store: Store = Depends(user_store)):
         return store.list_experiments(limit)
 
     @app.get("/presets")
@@ -61,29 +157,32 @@ def create_app(db_path=None, root=None):
         ).model_dump()} for name in ("simulated", "ollama")]
 
     @app.post("/experiments", status_code=201)
-    def create(body: Submission):
+    def create(body: Submission, store: Store = Depends(user_store)):
         return {"id": submit(store, root / "configs" / f"{body.config}.json", root / "data/tasks.jsonl")}
 
     @app.get("/experiments/{experiment_id}")
-    def get(experiment_id: str):
+    def get(experiment_id: str, store: Store = Depends(user_store)):
         try:
             return {"snapshot": store.snapshot(experiment_id), "runs": store.list_runs(experiment_id)}
         except KeyError:
             raise HTTPException(404, "Experimento inexistente")
 
     @app.get("/experiments/{experiment_id}/metrics.csv")
-    def export(experiment_id: str):
+    def export(experiment_id: str, store: Store = Depends(user_store)):
         try:
             return Response(csv_text(store, experiment_id), media_type="text/csv")
         except KeyError:
             raise HTTPException(404, "Experimento inexistente")
 
     @app.get("/runs/{run_id}/events")
-    def events(run_id: str):
-        return store.events(run_id)
+    def events(run_id: str, store: Store = Depends(user_store)):
+        try:
+            return store.events(run_id)
+        except KeyError:
+            raise HTTPException(404, 'Ejecución inexistente')
 
     @app.post("/runs/{run_id}/cancel")
-    def cancel(run_id: str):
+    def cancel(run_id: str, store: Store = Depends(user_store)):
         try:
             store.cancel(run_id)
             return {"requested": True}

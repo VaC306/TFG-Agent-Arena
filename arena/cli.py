@@ -27,11 +27,16 @@ def main():
     cancel.add_argument("run_id")
     commands.add_parser("status")
     commands.add_parser("hardware")
+    commands.add_parser('create-test-user', help='Crea explícitamente la cuenta local de desarrollo test/test')
     recover = commands.add_parser("recover")
     recover.add_argument("--workers-stopped", action="store_true", required=True)
     args = parser.parse_args()
     store = Store(args.db)
-    if args.command in {"submit", "demo"}:
+    if args.command == 'create-test-user':
+        from .accounts import Accounts
+        Accounts(store).create_test_user()
+        print('Cuenta local de desarrollo disponible: usuario test, contraseña test')
+    elif args.command in {"submit", "demo"}:
         experiment_id = submit(store, args.config, args.tasks)
         print(experiment_id)
         if args.command == "demo":

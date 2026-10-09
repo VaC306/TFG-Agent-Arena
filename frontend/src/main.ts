@@ -1,8 +1,9 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
-import { provideHttpClient } from '@angular/common/http';
-import { AppComponent } from './app/app.component';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { RootComponent } from './app/root.component';
+import { sessionInterceptor } from './app/auth.service';
 
-bootstrapApplication(AppComponent, {
-  providers: [provideHttpClient(), provideZonelessChangeDetection()],
+bootstrapApplication(RootComponent, {
+  providers: [provideHttpClient(withInterceptors([sessionInterceptor])), provideZonelessChangeDetection()],
 }).catch(console.error);

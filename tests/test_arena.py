@@ -168,6 +168,8 @@ def test_claim_cancel_recovery_and_failure_denominator(store):
 def test_api(tmp_path):
     from arena.api import create_app
     with TestClient(create_app(tmp_path/'api.sqlite',ROOT)) as client:
+        from conftest import register_client
+        register_client(client)
         response = client.post('/experiments',json={'config':'simulated'})
         assert response.status_code == 201
         eid = response.json()['id']
@@ -183,6 +185,8 @@ def test_frontend_catalog_and_history(tmp_path):
     from arena.api import create_app
     path = tmp_path/'ui.sqlite'
     with TestClient(create_app(path, ROOT)) as client:
+        from conftest import register_client
+        register_client(client)
         assert client.get('/experiments').json() == []
         presets = client.get('/presets').json()
         assert [p['id'] for p in presets] == ['simulated', 'ollama']

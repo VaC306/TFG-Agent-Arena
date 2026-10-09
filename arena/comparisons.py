@@ -3,6 +3,7 @@ from pydantic import Field, model_validator
 from .attachments import AttachmentUpload, prepare_attachment, MAX_TEXT_CHARS
 from .contracts import Contract, AgentConfig, Experiment, Task
 from .scheduler import schedule
+from .datasets import DatasetCase, validate_cases
 
 PROMPTS = [
     {'id': 'general', 'name': 'Asistente general', 'text': 'Responde a la solicitud usando el contenido proporcionado. Distingue hechos de suposiciones y señala la información que falta.'},
@@ -45,6 +46,7 @@ class ComparisonRequest(Contract):
     shared_input: InputBundle | None = None
     branch_inputs: dict[str, InputBundle] | None = None
     repetitions: int = Field(default=1, ge=1, le=10)
+    dataset: list[DatasetCase] | None = Field(default=None, min_length=1, max_length=100)
 
     @model_validator(mode='after')
     def validate_design(self):
@@ -53,6 +55,11 @@ class ComparisonRequest(Contract):
         if any(not agent.system_prompt.strip() for agent in self.agents.values()):
             raise ValueError('El prompt no puede estar vacío')
         self.config()  # Enforce model identity on the server, not just in the form.
+        if self.dataset is not None:
+            validate_cases(self.dataset)
+            if self.shared_input is not None or self.branch_inputs is not None:
+                raise ValueError('Elige dataset o entradas manuales, no ambos')
+            return self
         if self.comparison == 'different_models':
             if self.shared_input is None or self.branch_inputs is not None:
                 raise ValueError('Dos modelos requieren una única entrada y archivos compartidos')
@@ -69,6 +76,8 @@ class ComparisonRequest(Contract):
 
 def submit_comparison(store, request):
     config = request.config()
+    if request.dataset is not None:
+        return schedule(store, config, [case.task() for case in request.dataset], {'empty': {'orders': []}})
     if request.shared_input:
         tasks = [request.shared_input.task()]
         branch_tasks = None
