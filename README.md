@@ -253,6 +253,7 @@ configuración de red del host. La ejecución nativa es la ruta verificada.
 
 - [Memoria académica](docs/memoria.md): alcance, arquitectura, metodología y resultados.
 - [Decisiones](docs/decisiones.md): alternativas y justificación.
+- [Accesibilidad de la interfaz](docs/accesibilidad.md): comportamiento, verificaciones y revisión pendiente para WCAG 2.2 AA.
 - [Resultados iniciales](experiments/simulated-dev-2026-10-08/summary.json): simulación previa a los últimos ajustes de robustez; se conserva.
 - [Desarrollo, código final](experiments/simulated-dev-final-2026-10-08/summary.json): 16/16 ejecuciones simuladas correctas.
 - [Evaluación, código final](experiments/simulated-eval-2026-10-08/summary.json): 8/8 ejecuciones simuladas correctas.

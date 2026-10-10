@@ -1,29 +1,42 @@
 <section class="panel composer" aria-labelledby="composer-title">
   <div class="composer-heading"><div><p class="eyebrow">Empieza con una pregunta</p><h2 id="composer-title">Una nueva comparación</h2></div><span class="tag">A / B</span></div>
-  <form #form="ngForm" (ngSubmit)="submit()" (input)="queueSave()" (change)="queueSave()" (click)="queueSave()">
+  <arena-info helpId="comparison-help" title="Una comparación, dos variantes" label="Ayuda para configurar la prueba">
+    <h3>Un modelo</h3><p>Prueba dos prompts y entradas independientes con el mismo modelo. Si cambias también los datos, las diferencias no se pueden atribuir solo al prompt.</p>
+    <h3>Dos modelos</h3><p>Ambos reciben la misma entrada y archivos. Puedes elegir instrucciones distintas para cada uno.</p>
+    <h3>Repeticiones y evaluación</h3><p>Cada caso se ejecuta en A y B tantas veces como indiques. Una respuesta esperada permite evaluar coincidencia exacta; sin ella, se muestran tiempos y recursos, pero no calidad.</p>
+    <p>Las preferencias se guardan en tu perfil. Las entradas y los archivos se guardan al ejecutar la comparación.</p>
+  </arena-info>
+  <form #form="ngForm" (ngSubmit)="submit()" (input)="queueSave()" (change)="queueSave()">
     <fieldset [disabled]="busy()">
+      <legend class="sr-only">Configuración de la comparación</legend>
       <div class="mode-switch" role="group" aria-label="Tipo de comparación">
-        <button type="button" [class.active]="mode === 'same_model'" [attr.aria-pressed]="mode === 'same_model'" (click)="mode = 'same_model'">Un modelo <small>Dos configuraciones de prompt</small></button>
-        <button type="button" [class.active]="mode === 'different_models'" [attr.aria-pressed]="mode === 'different_models'" (click)="mode = 'different_models'">Dos modelos <small>Misma entrada y archivos</small></button>
+        <button type="button" [class.active]="mode === 'same_model'" [attr.aria-pressed]="mode === 'same_model'" (click)="mode = 'same_model'; queueSave()">Un modelo <small>Dos configuraciones de prompt</small></button>
+        <button type="button" [class.active]="mode === 'different_models'" [attr.aria-pressed]="mode === 'different_models'" (click)="mode = 'different_models'; queueSave()">Dos modelos <small>Misma entrada y archivos</small></button>
       </div>
       <div class="composer-settings">
-        <div><label for="comparison-name">Nombre</label><input id="comparison-name" name="name" [(ngModel)]="name" required maxlength="120"></div>
+        <div><label for="comparison-name">Nombre</label><input id="comparison-name" name="name" [(ngModel)]="name" [attr.aria-invalid]="invalidField() === 'comparison-name' ? 'true' : null" [attr.aria-describedby]="invalidField() === 'comparison-name' ? 'composer-error' : null" required maxlength="120"></div>
         <div><label for="custom-adapter">Ejecución</label><select id="custom-adapter" name="adapter" [(ngModel)]="adapter" (ngModelChange)="changeAdapter()"><option value="simulated">Simulado · prueba de plataforma</option><option value="ollama">Ollama · inferencia real local</option></select></div>
-        <div><label for="repetitions">Repeticiones</label><input id="repetitions" name="repetitions" type="number" min="1" max="10" [(ngModel)]="repetitions" required></div>
+        <div><label for="repetitions">Repeticiones (1–10)</label><input id="repetitions" name="repetitions" type="number" min="1" max="10" [(ngModel)]="repetitions" [attr.aria-invalid]="invalidField() === 'repetitions' ? 'true' : null" [attr.aria-describedby]="invalidField() === 'repetitions' ? 'composer-error' : null" required></div>
       </div>
       <div class="data-source"><label for="data-source">Datos de la prueba</label><select id="data-source" name="source" [(ngModel)]="source"><option value="manual">Entrada manual y adjuntos</option><option value="dataset">Importar dataset CSV / JSONL</option></select></div>
       <p class="hint mode-explanation">{{ source === 'dataset' ? 'Cada caso del dataset se ejecuta con ambos agentes. A y B reciben exactamente la misma entrada.' : mode === 'same_model' ? 'El modelo será el mismo para A y B. Cada rama tiene sus propios datos; esta prueba no aísla el efecto del prompt.' : 'A y B pueden usar modelos y prompts distintos, pero reciben exactamente los mismos archivos y entrada.' }}</p>
       @if (source === 'dataset') {
         <section class="dataset-import" aria-labelledby="dataset-title">
           <div class="section-header"><div><h3 id="dataset-title">Tus casos de prueba</h3><p class="hint">CSV o JSONL en UTF-8 · hasta 100 casos · 1 MiB</p></div><a class="secondary" href="/api/datasets/template.csv" download="dataset-ejemplo.csv">Descargar plantilla</a></div>
-          <p class="hint">Campos: <code>id</code> único, <code>input</code> y <code>expected_answer</code> opcional. Máximo 6.000 caracteres por entrada o referencia. CSV separado por comas; JSONL con un objeto por línea. Esta versión admite casos de texto.</p>
+          <arena-info helpId="dataset-help" title="Prepara tu dataset" label="Ver formato y ejemplo">
+            <p>Usa CSV separado por comas o JSONL con un objeto por línea, codificado en UTF-8. Se admiten hasta 100 casos de texto y 1 MiB por archivo.</p>
+            <ul><li><code>id</code>: identificador único de cada caso.</li><li><code>input</code>: entrada de texto, hasta 6.000 caracteres.</li><li><code>expected_answer</code>: referencia opcional, hasta 6.000 caracteres.</li></ul>
+            <pre>id,input,expected_answer
+saludo,Responde con la palabra hola,hola</pre>
+            <p>La referencia no se envía al modelo. Se compara con la respuesta ignorando espacios en los extremos. Descarga la plantilla para empezar.</p>
+          </arena-info>
           <label for="dataset-file">Seleccionar dataset</label><input id="dataset-file" type="file" accept=".csv,.jsonl" [disabled]="datasetBusy()" (change)="importDataset($event)">
           @if (datasetBusy()) { <p class="hint" role="status">Validando estructura y casos…</p> }
           @if (datasetError()) { <p class="alert error" role="alert">{{ datasetError() }}</p> }
           @if (dataset(); as preview) {
             <p class="dataset-summary" role="status"><strong>{{ datasetName() }}</strong> · {{ preview.count }} casos · {{ preview.scored }} con referencia · {{ preview.count * repetitions * 2 }} ejecuciones</p>
             <p class="hint">La evaluación usa coincidencia exacta, ignorando espacios en los extremos. Los casos sin referencia solo miden ejecución y recursos.</p>
-            <div class="table-scroll dataset-preview"><table><thead><tr><th>ID</th><th>Entrada</th><th>Respuesta esperada</th></tr></thead><tbody>@for (item of preview.cases; track item.id) { <tr><td>{{ item.id }}</td><td>{{ item.input }}</td><td>{{ item.expected_answer ?? 'Sin evaluar' }}</td></tr> }</tbody></table></div>
+            <div class="table-scroll dataset-preview" tabindex="0" role="region" aria-label="Vista previa del dataset, desplazable"><table><caption class="sr-only">Casos importados del dataset</caption><thead><tr><th scope="col">ID</th><th scope="col">Entrada</th><th scope="col">Respuesta esperada</th></tr></thead><tbody>@for (item of preview.cases; track item.id) { <tr><td>{{ item.id }}</td><td>{{ item.input }}</td><td>{{ item.expected_answer ?? 'Sin evaluar' }}</td></tr> }</tbody></table></div>
           }
         </section>
       }
@@ -37,8 +50,8 @@
           <label for="template-a">Tipo de prompt A</label>
           <select id="template-a" name="templateA" [(ngModel)]="promptA.template" (change)="setTemplate('A')">@for (template of templates(); track template.id) { <option [value]="template.id">{{ template.name }}</option> }</select>
           <details class="prompt-settings"><summary>Editar instrucciones A</summary><label for="prompt-a">Prompt de sistema A</label>
-          <textarea id="prompt-a" name="promptA" [(ngModel)]="promptA.text" (input)="promptA.template = 'custom'" rows="4" maxlength="6000" required></textarea></details>
-          @if (source === 'manual' && mode === 'same_model') { <arena-input-editor slot="a" title="Entrada A" [value]="inputA" (readingChange)="readingA = $event" /> }
+          <textarea id="prompt-a" name="promptA" [(ngModel)]="promptA.text" (input)="promptA.template = 'custom'" [attr.aria-invalid]="invalidField() === 'prompt-a' ? 'true' : null" [attr.aria-describedby]="invalidField() === 'prompt-a' ? 'composer-error' : null" rows="4" maxlength="6000" required></textarea></details>
+          @if (source === 'manual' && mode === 'same_model') { <arena-input-editor slot="a" title="Entrada A" [value]="inputA" [invalid]="invalidField() === 'a-input'" [invalidReference]="invalidField() === 'a-reference'" (readingChange)="readingA = $event" /> }
         </section>
         <section class="branch-editor" aria-label="Configuración B">
           <h3><span class="branch branch-b">B</span> Agente B</h3>
@@ -47,14 +60,14 @@
           <label for="template-b">Tipo de prompt B</label>
           <select id="template-b" name="templateB" [(ngModel)]="promptB.template" (change)="setTemplate('B')">@for (template of templates(); track template.id) { <option [value]="template.id">{{ template.name }}</option> }</select>
           <details class="prompt-settings"><summary>Editar instrucciones B</summary><label for="prompt-b">Prompt de sistema B</label>
-          <textarea id="prompt-b" name="promptB" [(ngModel)]="promptB.text" (input)="promptB.template = 'custom'" rows="4" maxlength="6000" required></textarea></details>
-          @if (source === 'manual' && mode === 'same_model') { <arena-input-editor slot="b" title="Entrada B" [value]="inputB" (readingChange)="readingB = $event" /> }
+          <textarea id="prompt-b" name="promptB" [(ngModel)]="promptB.text" (input)="promptB.template = 'custom'" [attr.aria-invalid]="invalidField() === 'prompt-b' ? 'true' : null" [attr.aria-describedby]="invalidField() === 'prompt-b' ? 'composer-error' : null" rows="4" maxlength="6000" required></textarea></details>
+          @if (source === 'manual' && mode === 'same_model') { <arena-input-editor slot="b" title="Entrada B" [value]="inputB" [invalid]="invalidField() === 'b-input'" [invalidReference]="invalidField() === 'b-reference'" (readingChange)="readingB = $event" /> }
         </section>
       </div>
-      @if (source === 'manual' && mode === 'different_models') { <div class="shared-input"><span class="tag">COMPARTIDO POR A Y B</span><arena-input-editor slot="shared" title="Entrada compartida" [value]="shared" (readingChange)="readingShared = $event" /></div> }
-      <div class="composer-footer"><p class="hint">Archivos, prompts y parámetros se guardan con la comparación.<br>Sin respuesta esperada, se miden recursos y tiempos; la calidad queda sin evaluar.</p><button type="submit" class="primary" [disabled]="form.invalid || busy() || modelsBusy() || !validModels() || datasetBusy() || (source === 'dataset' && !dataset()) || readingA || readingB || readingShared || !templates().length">{{ busy() ? 'Guardando…' : 'Ejecutar comparación' }} ↗</button></div>
+      @if (source === 'manual' && mode === 'different_models') { <div class="shared-input"><span class="tag">COMPARTIDO POR A Y B</span><arena-input-editor slot="shared" title="Entrada compartida" [value]="shared" [invalid]="invalidField() === 'shared-input'" [invalidReference]="invalidField() === 'shared-reference'" (readingChange)="readingShared = $event" /></div> }
+      <div class="composer-footer"><p class="hint">Sin referencia, la calidad queda sin evaluar.<br>Tu configuración se conserva con cada comparación.</p><button type="submit" class="primary" [disabled]="busy() || modelsBusy() || !validModels() || datasetBusy() || (source === 'dataset' && !dataset()) || readingA || readingB || readingShared || !templates().length">{{ busy() ? 'Guardando…' : 'Ejecutar comparación' }} <span aria-hidden="true">↗</span></button></div>
     </fieldset>
   </form>
   <p class="hint preferences-status" role="status">{{ preferencesNotice() || 'Modelos, prompts y parámetros se guardan en tu perfil. Los archivos y entradas se guardan al ejecutar.' }}</p>
-  @if (error()) { <div class="alert error" role="alert">{{ error() }} @if (!templates().length) { <button class="text-button" (click)="loadTemplates()">Reintentar plantillas</button> }</div> }
+  @if (error()) { <div id="composer-error" class="alert error" role="alert">{{ error() }} @if (!templates().length) { <button class="text-button" (click)="loadTemplates()">Reintentar plantillas</button> }</div> }
 </section>

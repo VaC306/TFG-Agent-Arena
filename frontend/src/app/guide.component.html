@@ -1,0 +1,119 @@
+<article class="guide" aria-labelledby="guide-title">
+  <header class="guide-intro">
+    <p class="eyebrow">Guía / Seis pasos, a tu ritmo</p>
+    <h1 id="guide-title" tabindex="-1">De una pregunta<br>a una comparación.</h1>
+    <p class="guide-lead">Agent Arena te ayuda a probar modelos con tus propios datos. Baja para descubrir cómo preparar una prueba y entender sus resultados.</p>
+    <a class="guide-next" href="#guide-step-1">Empezar la guía <span aria-hidden="true">↓</span></a>
+  </header>
+
+  <nav class="guide-index" aria-label="Pasos de la guía">
+    <a href="#guide-step-1">01 · Elige la prueba</a>
+    <a href="#guide-step-2">02 · Configura los agentes</a>
+    <a href="#guide-step-3">03 · Añade tus datos</a>
+    <a href="#guide-step-4">04 · Define la evaluación</a>
+    <a href="#guide-step-5">05 · Ejecuta</a>
+    <a href="#guide-step-6">06 · Explora los resultados</a>
+  </nav>
+
+  <section class="guide-step" aria-labelledby="guide-step-1">
+    <span class="guide-number" aria-hidden="true">01</span>
+    <div class="guide-copy">
+      <p class="eyebrow">El punto de partida</p>
+      <h2 id="guide-step-1" tabindex="-1">Elige qué quieres probar.</h2>
+      <p>En <strong>Comparar</strong>, da un nombre a tu prueba y elige entre un modelo o dos modelos.</p>
+      <p><strong>Un modelo:</strong> usa el mismo modelo con dos prompts y entradas independientes. <strong>Dos modelos:</strong> ambos reciben la misma entrada y archivos; puedes elegir un prompt para cada uno.</p>
+      <p class="guide-note">Si cambias el prompt y los datos a la vez, las diferencias no se pueden atribuir solo al prompt.</p>
+    </div>
+    <figure class="guide-example">
+      <figcaption>Una idea para empezar</figcaption>
+      <p class="example-title">¿Qué modelo resume mejor mis notas?</p>
+      <div class="example-pair"><span>Modelo A</span><span>Modelo B</span></div>
+      <p class="hint">Mismas notas. Mismas instrucciones. Dos respuestas.</p>
+    </figure>
+  </section>
+
+  <section class="guide-step" aria-labelledby="guide-step-2">
+    <span class="guide-number" aria-hidden="true">02</span>
+    <div class="guide-copy">
+      <p class="eyebrow">Quién responde y cómo</p>
+      <h2 id="guide-step-2" tabindex="-1">Configura los agentes.</h2>
+      <p>Elige <strong>Simulado</strong> para conocer la herramienta o <strong>Ollama</strong> para ejecutar modelos instalados en tu ordenador. Después, selecciona los modelos en los desplegables de A y B.</p>
+      <p>Un <strong>prompt</strong> es una instrucción sobre cómo responder. Elige una plantilla, como Resumen o Extracción JSON, y abre «Editar instrucciones» si quieres ajustarla.</p>
+      <p class="guide-note">El simulador comprueba el funcionamiento de la plataforma. Para medir respuestas reales necesitas Ollama activo y modelos instalados. Las imágenes requieren un modelo con visión.</p>
+    </div>
+    <figure class="guide-example">
+      <figcaption>Ejemplo de instrucciones</figcaption>
+      <p class="example-label">Prompt de sistema</p>
+      <blockquote>Resume el contenido en tres frases. Conserva las ideas principales y no añadas información.</blockquote>
+      <p class="hint">Empieza con instrucciones claras y concretas.</p>
+    </figure>
+  </section>
+
+  <section class="guide-step" aria-labelledby="guide-step-3">
+    <span class="guide-number" aria-hidden="true">03</span>
+    <div class="guide-copy">
+      <p class="eyebrow">Tu material de trabajo</p>
+      <h2 id="guide-step-3" tabindex="-1">Añade tus propios datos.</h2>
+      <p>Con <strong>Entrada manual y adjuntos</strong>, escribe qué quieres que haga el modelo. Puedes adjuntar TXT, JSON, CSV o imágenes PNG, JPG y WebP.</p>
+      <p>Para probar muchos casos, elige <strong>Importar dataset</strong>. Descarga la plantilla, rellena tus casos y sube un CSV o JSONL. Revisa la vista previa antes de ejecutar.</p>
+      <p class="guide-note">Adjuntos: hasta 4 archivos por entrada y 1 MiB por archivo. Dataset: hasta 100 casos de texto y 1 MiB. Cada caso del dataset se envía a ambos agentes.</p>
+    </div>
+    <figure class="guide-example">
+      <figcaption>Un dataset pequeño</figcaption>
+      <pre>id,input,expected_answer
+capital,"Capital de Francia. Solo el nombre.",París
+resumen,"Resume este texto: …",</pre>
+      <p class="hint"><code>id</code> identifica el caso. <code>input</code> contiene la entrada. <code>expected_answer</code> es opcional. Usa UTF-8 y un ID distinto por caso.</p>
+    </figure>
+  </section>
+
+  <section class="guide-step" aria-labelledby="guide-step-4">
+    <span class="guide-number" aria-hidden="true">04</span>
+    <div class="guide-copy">
+      <p class="eyebrow">Qué significa hacerlo bien</p>
+      <h2 id="guide-step-4" tabindex="-1">Define cómo evaluar.</h2>
+      <p>Si conoces la respuesta correcta, añade una <strong>respuesta esperada</strong>. La herramienta compara el texto exacto, ignorando espacios al principio y al final.</p>
+      <p>Si buscas un resumen o una respuesta abierta, puedes dejarla vacía y revisar las respuestas tú mismo. En ese caso, verás tiempos y recursos; la calidad aparecerá como <strong>sin evaluar</strong>.</p>
+      <p>Elige de <strong>1 a 10 repeticiones</strong>. Cada caso se ejecutará ese número de veces para cada agente.</p>
+    </div>
+    <figure class="guide-example">
+      <figcaption>Calcula el tamaño de tu prueba</figcaption>
+      <div class="example-calculation"><strong>3 casos</strong><span>× 2 agentes × 2 repeticiones</span><strong>12 ejecuciones</strong></div>
+      <p class="hint">La referencia sirve para evaluar; no se envía al modelo.</p>
+    </figure>
+  </section>
+
+  <section class="guide-step" aria-labelledby="guide-step-5">
+    <span class="guide-number" aria-hidden="true">05</span>
+    <div class="guide-copy">
+      <p class="eyebrow">Todo preparado</p>
+      <h2 id="guide-step-5" tabindex="-1">Ejecuta la comparación.</h2>
+      <p>Revisa los modelos, los prompts y las entradas. Pulsa <strong>Ejecutar comparación</strong>: se guarda la configuración y se abre Resultados.</p>
+      <p>Las ejecuciones pasan por <strong>En cola</strong>, <strong>En curso</strong> y un estado final. A y B se ejecutan de forma secuencial, y la página actualiza su progreso automáticamente.</p>
+      <p class="guide-note">Si todo permanece en cola, comprueba que el worker esté arrancado. Los comandos para lanzar API, frontend y worker están en el README del proyecto.</p>
+    </div>
+    <figure class="guide-example">
+      <figcaption>El recorrido de una ejecución</figcaption>
+      <ol class="example-timeline"><li>En cola <span>Esperando al worker</span></li><li>En curso <span>El agente está trabajando</span></li><li>Finalizada <span>Respuesta y métricas disponibles</span></li></ol>
+      <p class="hint">Si necesitas parar, puedes solicitar la cancelación desde la tabla de ejecuciones.</p>
+    </figure>
+  </section>
+
+  <section class="guide-step" aria-labelledby="guide-step-6">
+    <span class="guide-number" aria-hidden="true">06</span>
+    <div class="guide-copy">
+      <p class="eyebrow">De los datos a tu criterio</p>
+      <h2 id="guide-step-6" tabindex="-1">Explora lo que ha pasado.</h2>
+      <p>En <strong>Resultados</strong>, compara las respuestas de A y B, el tiempo medio y el éxito cuando haya evaluación. Abre <strong>Ver traza</strong> para consultar los eventos de una ejecución.</p>
+      <p>Usa <strong>Exportar CSV</strong> para analizar las métricas fuera de la herramienta. El <strong>Historial</strong> te permite volver a tus pruebas y consultar sus prompts y entradas guardados.</p>
+      <p class="guide-note">Tu perfil conserva modelos, prompts y parámetros. Las entradas y los archivos se guardan con la comparación cuando la ejecutas. Una respuesta completada no significa, por sí sola, que sea correcta.</p>
+    </div>
+    <figure class="guide-example">
+      <figcaption>Tres preguntas para comparar</figcaption>
+      <ol class="example-questions"><li>¿La respuesta resuelve mi pregunta?</li><li>¿Respeta mis instrucciones?</li><li>¿Qué tiempo y recursos necesita?</li></ol>
+      <p class="hint">El mejor resultado depende de lo que necesites para tu caso.</p>
+    </figure>
+  </section>
+
+  <footer class="guide-finish"><p class="eyebrow">Tu turno</p><h2>Empieza con una prueba pequeña.</h2><p>Una entrada, dos variantes y algo que quieras descubrir.</p><button type="button" class="primary" (click)="start.emit()">Crear una comparación <span aria-hidden="true">↗</span></button><a class="guide-next" href="#guide-title">Volver al principio <span aria-hidden="true">↑</span></a></footer>
+</article>

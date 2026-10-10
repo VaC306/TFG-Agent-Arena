@@ -34,6 +34,13 @@ class Registration(Credentials):
     password: str = Field(min_length=10, max_length=128)
     display_name: str = Field(min_length=1, max_length=80)
 
+    @field_validator('password')
+    @classmethod
+    def password_not_blank(cls, value):
+        if not value.strip():
+            raise ValueError('La contraseña no puede contener solo espacios')
+        return value
+
     @field_validator('display_name')
     @classmethod
     def name_not_blank(cls, value):
@@ -52,7 +59,7 @@ class Preferences(Contract):
     adapter: Literal['simulated', 'ollama'] = 'simulated'
     mode: Literal['same_model', 'different_models'] = 'same_model'
     source: Literal['manual', 'dataset'] = 'manual'
-    repetitions: int = Field(default=1, ge=1, le=10)
+    repetitions: int = Field(default=1, ge=1, le=10, strict=True)
     modelA: str = Field(default='simulated-a', max_length=120)
     modelB: str = Field(default='simulated-b', max_length=120)
     promptA: SavedPrompt = Field(default_factory=SavedPrompt)

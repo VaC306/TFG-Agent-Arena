@@ -3,10 +3,12 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ArenaService, ComparisonBody, DatasetPreview, InputData, PresetId, PromptTemplate } from './arena.service';
 import { InputEditorComponent } from './input-editor.component';
+import { InfoDialogComponent } from './info-dialog.component';
 import { AuthService, Preferences } from './auth.service';
+import { textError, filenameError, modelIdentity } from './validation';
 
 @Component({
-  selector: 'arena-composer', standalone: true, imports: [FormsModule, InputEditorComponent],
+  selector: 'arena-composer', standalone: true, imports: [FormsModule, InputEditorComponent, InfoDialogComponent],
   templateUrl: './composer.component.html',
 })
 export class ComposerComponent {
@@ -32,6 +34,7 @@ export class ComposerComponent {
   modelsBusy = signal(false);
   modelNotice = signal('');
   error = signal('');
+  invalidField = signal('');
   busy = signal(false);
   readingA = false;
   readingB = false;
@@ -51,6 +54,9 @@ export class ComposerComponent {
     this.datasetError.set('');
     this.datasetBusy.set(true);
     try {
+      if (filenameError(file.name)) throw new Error(filenameError(file.name));
+      if (!/\.(csv|jsonl)$/i.test(file.name)) throw new Error('Elige un dataset CSV o JSONL.');
+      if (!file.size) throw new Error('El dataset está vacío.');
       if (file.size > 1024 * 1024) throw new Error('El dataset supera 1 MiB.');
       const content = new TextDecoder('utf-8', {fatal:true}).decode(await file.arrayBuffer());
       const result = await this.api.validateDataset(file.name, content);
@@ -78,8 +84,9 @@ export class ComposerComponent {
   }
 
   queueSave() {
+    if (this.invalidField()) this.error.set('');
+    this.invalidField.set('');
     if (this.saveTimer) clearTimeout(this.saveTimer);
-    this.preferencesNotice.set('Guardando preferencias…');
     this.saveTimer = setTimeout(() => { this.saveTimer = undefined; void this.savePreferences(); }, 650);
   }
 
@@ -120,11 +127,11 @@ export class ComposerComponent {
       this.models.set([]);
       if (this.adapter === 'ollama') { this.modelA = ''; this.modelB = ''; }
       this.modelNotice.set('No se pudo consultar Ollama. Comprueba la conexión y actualiza la lista.');
-    } finally { this.modelsBusy.set(false); }
+    } finally { this.modelsBusy.set(false); this.queueSave(); }
   }
 
   availableModels() { return this.adapter === 'simulated' ? ['simulated-a', 'simulated-b'] : this.models(); }
-  modelsForB() { return this.availableModels().filter(model => model !== this.modelA); }
+  modelsForB() { return this.availableModels().filter(model => modelIdentity(model) !== modelIdentity(this.modelA)); }
   modelLabel(model: string) { return this.adapter === 'simulated' ? (model === 'simulated-a' ? 'Simulador A' : 'Simulador B') : model; }
   syncModelB() {
     if (!this.modelsForB().includes(this.modelB)) this.modelB = this.modelsForB()[0] ?? '';
@@ -150,7 +157,31 @@ export class ComposerComponent {
 
   async submit() {
     if (this.busy() || this.modelsBusy() || !this.validModels() || this.datasetBusy() || this.readingA || this.readingB || this.readingShared || (this.source === 'dataset' && !this.dataset())) return;
+    const fields: [string, string, number, boolean][] = [
+      ['comparison-name', this.name, 120, true], ['prompt-a', this.promptA.text, 6000, true], ['prompt-b', this.promptB.text, 6000, true],
+      ...(this.source === 'manual' ? (this.mode === 'same_model' ? [['a', this.inputA], ['b', this.inputB]] as const : [['shared', this.shared]] as const).flatMap(([slot, input]) => [
+        [slot + '-input', input.text, 6000, true] as [string,string,number,boolean],
+        [slot + '-reference', input.expected_answer, 6000, false] as [string,string,number,boolean],
+      ]) : []),
+    ];
+    const badText = fields.find(([, value, max, required]) => textError(value, 'Campo', max, required));
+    const labels: Record<string,string> = {'comparison-name':'Nombre', 'prompt-a':'Instrucciones A', 'prompt-b':'Instrucciones B',
+      'a-input':'Entrada A', 'b-input':'Entrada B', 'shared-input':'Entrada compartida',
+      'a-reference':'Respuesta esperada A', 'b-reference':'Respuesta esperada B', 'shared-reference':'Respuesta esperada'};
+    const invalid = badText ? [badText[0], textError(badText[1], labels[badText[0]], badText[2], badText[3])]
+      : !Number.isInteger(this.repetitions) || this.repetitions < 1 || this.repetitions > 10 ? ['repetitions', 'Elige entre 1 y 10 repeticiones.']
+      : null;
+    if (invalid) {
+      this.invalidField.set(invalid[0]);
+      this.error.set(invalid[1]);
+      const field = document.getElementById(invalid[0]);
+      const details = field?.closest('details');
+      if (details) details.open = true;
+      field?.focus();
+      return;
+    }
     this.busy.set(true);
+    this.invalidField.set('');
     this.error.set('');
     const body: ComparisonBody = {
       name:this.name, adapter:this.adapter, comparison:this.mode, repetitions:this.repetitions,
@@ -163,7 +194,7 @@ export class ComposerComponent {
     try { this.created.emit((await this.api.compare(body)).id); }
     catch (error) {
       const detail = error instanceof HttpErrorResponse ? error.error?.detail : null;
-      this.error.set(typeof detail === 'string' ? detail : Array.isArray(detail) ? detail.map(d => `${d.loc?.slice(0,4).join(' / ')}: ${d.msg}`).join('\n') :
+      this.error.set(typeof detail === 'string' ? detail : Array.isArray(detail) ? 'Hay datos no válidos. Revisa los campos, los formatos de archivo y los límites indicados.' :
         'No se pudo confirmar la creación. Revisa la conexión y actualiza el historial antes de repetir.');
     } finally { this.busy.set(false); }
   }

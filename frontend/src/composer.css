@@ -23,7 +23,7 @@
 .upload-zone label { margin: 0 0 12px; }
 .upload-zone label span { display: block; font-size: 10px; color: var(--muted); margin-top: 8px; }
 .upload-zone input { border: 0; background: transparent; padding: 5px 0; font-size: 11px; }
-.composer input::file-selector-button { border: 1px solid #cecec7; background: #f8f8f6; border-radius: 22px; padding: 9px 14px; color: #33332e; margin-right: 12px; cursor: pointer; }
+.composer input::file-selector-button { border: 1px solid #85857c; background: #f8f8f6; border-radius: 22px; padding: 11px 14px; color: #33332e; margin-right: 12px; cursor: pointer; min-height: 44px; }
 .upload-zone .hint { font-size: 11px; margin-top: 12px; }
 .file-list { display: grid; gap: 10px; margin-top: 12px; }
 .file-preview { border-bottom: 1px solid var(--line); padding: 12px 0; font-size: 12px; overflow-wrap: anywhere; }
@@ -52,7 +52,7 @@
 .dataset-summary { font-size: 13px; line-height: 1.7; margin: 20px 0 8px; overflow-wrap: anywhere; }
 .dataset-preview { max-height: 340px; margin-top: 22px; border: 1px solid #d8d8d0; border-radius: 8px; }
 .dataset-preview td { white-space: pre-wrap; overflow-wrap: anywhere; min-width: 130px; max-width: 420px; vertical-align: top; background: #f8f8f5; }
-.dataset-preview th { position: sticky; top: 0; background: #e7e7df; }
+.dataset-preview th { position: sticky; top: 0; background: #e7e7df; color: #5f5f59; }
 @media(max-width: 760px) {
   .composer-columns, .answer-grid { grid-template-columns: 1fr; gap: 26px; }
   .composer-settings { grid-template-columns: 1fr .5fr; gap: 16px; }
@@ -65,5 +65,17 @@
   .composer-footer, .models-help { flex-direction: column; align-items: stretch; }
   .dataset-import { padding: 20px 16px; margin-left: -4px; margin-right: -4px; }
   .composer input, .composer textarea, .composer select { font-size: 16px; }
-  .composer input[type=file] { font-size: 11px; padding: 12px 8px; }
+  .composer input[type=file] { font-size: 13px; padding: 12px 8px; }
+}
+
+/* Quiet surfaces, but controls and focus must remain distinguishable. */
+.composer input, .composer textarea, .composer select { border-color: #85857c; }
+.composer > arena-info { display: block; margin: -18px 0 26px; }
+.composer .info-dialog { color: #222220; }
+.composer .info-dialog .secondary { width: auto; }
+.composer-footer .hint, .preferences-status, .mode-switch small, .upload-zone .hint { font-size: 12px; }
+@media(max-width: 480px) {
+  .composer-settings { grid-template-columns: minmax(0, 1fr); }
+  .mode-switch { gap: 16px; }
+  .mode-switch button { flex: 1; }
 }

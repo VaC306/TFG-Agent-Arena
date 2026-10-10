@@ -4,6 +4,8 @@ from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, Response
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from pydantic import ValidationError
+from pydantic import Field
+from fastapi.exceptions import RequestValidationError
 from typing import Literal
 from .contracts import Contract, Experiment
 from .store import Store
@@ -13,10 +15,16 @@ from .comparisons import ComparisonRequest, PROMPTS, submit_comparison
 from .adapters import Ollama
 from .datasets import DatasetUpload, parse_dataset
 from .accounts import Accounts, COOKIE, SESSION_SECONDS, Credentials, Registration, Preferences, ProfileUpdate
+from .json_input import load_json
 
 
 class Submission(Contract):
     config: Literal["simulated", "ollama"] = "simulated"
+
+
+class ClearHistory(Contract):
+    confirmation: Literal['clear-history']
+    revision: str = Field(pattern=r'^[a-f0-9]{64}$')
 
 
 def create_app(db_path=None, root=None):
@@ -25,6 +33,11 @@ def create_app(db_path=None, root=None):
     accounts = Accounts(store)
     root = Path(root or os.environ.get("ARENA_ROOT", "."))
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=['127.0.0.1', 'localhost', 'testserver'])
+
+    @app.exception_handler(RequestValidationError)
+    async def invalid_request(request, exc):
+        return JSONResponse({'detail': [{key: item[key] for key in ('loc', 'msg', 'type')}
+                                       for item in exc.errors()]}, status_code=422)
 
     @app.middleware('http')
     async def session_access(request: Request, call_next):
@@ -54,9 +67,11 @@ def create_app(db_path=None, root=None):
 
     async def auth_body(request, model, limit=64 * 1024):
         try:
-            return model.model_validate_json(await bounded_body(request, limit))
+            return model.model_validate(load_json(await bounded_body(request, limit)))
         except ValidationError as exc:
             raise HTTPException(422, exc.errors(include_input=False, include_context=False))
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)[:500])
 
     @app.get('/auth/session')
     def auth_session(request: Request):
@@ -98,11 +113,23 @@ def create_app(db_path=None, root=None):
         accounts.update(request.state.user['id'], 'display_name', data.display_name)
         return {'display_name': data.display_name}
 
+    @app.get('/profile/history')
+    def history_state(store: Store = Depends(user_store)):
+        return store.history_state()
+
+    @app.delete('/profile/history')
+    async def clear_history(request: Request, store: Store = Depends(user_store)):
+        data = await auth_body(request, ClearHistory, 1024)
+        try:
+            return {'deleted': store.clear_history(data.revision)}
+        except ValueError as exc:
+            raise HTTPException(409, str(exc))
+
     @app.post('/datasets/validate')
     async def validate_dataset(request: Request):
         body = await bounded_body(request, 8 * 1024 * 1024)
         try:
-            upload = DatasetUpload.model_validate_json(body)
+            upload = DatasetUpload.model_validate(load_json(body))
             cases = parse_dataset(upload.filename, upload.content)
             return {'cases': [case.model_dump() for case in cases],
                     'count': len(cases), 'scored': sum(case.expected_answer is not None for case in cases)}
@@ -128,18 +155,12 @@ def create_app(db_path=None, root=None):
         try:
             return {'available': True, 'models': await adapter.models(), 'error': None}
         except Exception:
-            return {'available': False, 'models': [], 'error': 'Ollama no está disponible. Puedes introducir el nombre del modelo manualmente; necesitarás instalarlo para ejecutarlo.'}
+            return {'available': False, 'models': [], 'error': 'Ollama no está disponible. Inícialo y actualiza la lista de modelos instalados.'}
 
     @app.post('/comparisons', status_code=201)
     async def create_comparison(request: Request, store: Store = Depends(user_store)):
-        # Bound the body before JSON/base64 decoding, including chunked requests.
-        body = bytearray()
-        async for chunk in request.stream():
-            if len(body) + len(chunk) > 12 * 1024 * 1024:
-                raise HTTPException(413, 'La solicitud supera 12 MiB')
-            body.extend(chunk)
+        comparison = await auth_body(request, ComparisonRequest, 12 * 1024 * 1024)
         try:
-            comparison = ComparisonRequest.model_validate_json(bytes(body))
             return {'id': submit_comparison(store, comparison)}
         except ValidationError as exc:
             raise HTTPException(422, exc.errors(include_input=False, include_context=False))
@@ -157,7 +178,8 @@ def create_app(db_path=None, root=None):
         ).model_dump()} for name in ("simulated", "ollama")]
 
     @app.post("/experiments", status_code=201)
-    def create(body: Submission, store: Store = Depends(user_store)):
+    async def create(request: Request, store: Store = Depends(user_store)):
+        body = await auth_body(request, Submission, 1024)
         return {"id": submit(store, root / "configs" / f"{body.config}.json", root / "data/tasks.jsonl")}
 
     @app.get("/experiments/{experiment_id}")

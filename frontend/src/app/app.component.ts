@@ -3,22 +3,36 @@ import { DatePipe, DecimalPipe, JsonPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ComposerComponent } from './composer.component';
 import { ProfileComponent } from './profile.component';
+import { InfoDialogComponent } from './info-dialog.component';
+import { GuideComponent } from './guide.component';
+import { BrandMarkComponent } from './brand-mark.component';
 import { AuthService } from './auth.service';
 import { ArenaService, ArenaEvent, ExperimentDetail, ExperimentSummary, Preset, PresetId, Run, Status, terminal } from './arena.service';
 
 @Component({
   selector: 'arena-workspace', standalone: true,
-  imports: [DatePipe, DecimalPipe, JsonPipe, FormsModule, ComposerComponent, ProfileComponent],
+  imports: [DatePipe, DecimalPipe, JsonPipe, FormsModule, ComposerComponent, ProfileComponent, InfoDialogComponent, GuideComponent, BrandMarkComponent],
   templateUrl: './app.component.html',
 })
 export class AppComponent {
   auth = inject(AuthService);
-  view = signal<'compose' | 'results' | 'profile'>('compose');
+  view = signal<'compose' | 'results' | 'profile' | 'guide' | 'contact'>('compose');
   private api = inject(ArenaService);
   private destroyed = false;
   private selectionVersion = 0;
+  private initializationVersion = 0;
   private traceVersion = 0;
   private refreshing = false;
+  private traceTrigger: HTMLElement | null = null;
+  navigate(view: 'compose' | 'results' | 'profile' | 'guide' | 'contact') {
+    this.view.set(view);
+    document.title = `${view === 'compose' ? 'Comparar' : view === 'results' ? 'Resultados' : view === 'guide' ? 'Guía' : view === 'contact' ? 'Contacto' : 'Perfil'} · Agent Arena`;
+    requestAnimationFrame(() => {
+      const heading = document.getElementById(view === 'compose' ? 'page-title' : view === 'results' ? 'collection-title' : view === 'guide' ? 'guide-title' : view === 'contact' ? 'contact-title' : 'profile-title');
+      heading?.setAttribute('tabindex', '-1');
+      heading?.focus();
+    });
+  }
   experiments = signal<ExperimentSummary[]>([]);
   presets = signal<Preset[]>([]);
   selectedId = signal('');
@@ -55,6 +69,7 @@ export class AppComponent {
   }));
 
   constructor() {
+    document.title = 'Comparar · Agent Arena';
     const interval = setInterval(() => {
       if (this.pending() && !this.loading()) void this.refresh();
     }, 2500);
@@ -63,16 +78,17 @@ export class AppComponent {
   }
 
   async initialize() {
+    const version = ++this.initializationVersion;
     this.error.set('');
     this.loading.set(true);
     try {
       const [presets, experiments] = await Promise.all([this.api.presets(), this.api.experiments()]);
-      if (this.destroyed) return;
+      if (this.destroyed || version !== this.initializationVersion) return;
       this.presets.set(presets);
       this.experiments.set(experiments);
       if (experiments.length) await this.select(experiments[0].id);
-    } catch { this.error.set('No se puede conectar con la API. Comprueba que esté en marcha y pulsa Actualizar.'); }
-    finally { this.loading.set(false); }
+    } catch { if (version === this.initializationVersion) this.error.set('No se puede conectar con la API. Comprueba que esté en marcha y pulsa Actualizar.'); }
+    finally { if (version === this.initializationVersion) this.loading.set(false); }
   }
 
   async select(id: string) {
@@ -99,8 +115,8 @@ export class AppComponent {
     try {
       const [experiments, detail] = await Promise.all([this.api.experiments(), id ? this.api.detail(id) : Promise.resolve(null)]);
       if (this.destroyed) return;
-      this.experiments.set(experiments);
       if (version === this.selectionVersion) {
+        this.experiments.set(experiments);
         this.detail.set(detail);
         this.error.set('');
         const selected = this.selectedRun();
@@ -109,8 +125,8 @@ export class AppComponent {
           if (run) { this.selectedRun.set(run); await this.loadEvents(run); }
         }
       }
-      if (!id && experiments.length) await this.select(experiments[0].id);
-    } catch { this.error.set('No se han podido actualizar los datos. Los resultados visibles pueden estar desactualizados.'); }
+      if (version === this.selectionVersion && !id && experiments.length) await this.select(experiments[0].id);
+    } catch { if (version === this.selectionVersion) this.error.set('No se han podido actualizar los datos. Los resultados visibles pueden estar desactualizados.'); }
     finally { this.refreshing = false; }
   }
 
@@ -121,7 +137,7 @@ export class AppComponent {
     this.notice.set('');
     try {
       const { id } = await this.api.create(this.preset);
-      this.view.set('results');
+      this.navigate('results');
       this.notice.set('Comparación creada. El worker procesará las ejecuciones en cola.');
       await this.select(id);
       await this.refresh();
@@ -130,10 +146,17 @@ export class AppComponent {
   }
 
   async customCreated(id: string) {
-    this.view.set('results');
+    this.navigate('results');
     this.notice.set('Comparación personalizada guardada. El worker ejecutará A y B secuencialmente.');
     await this.select(id);
     await this.refresh();
+  }
+
+  async historyCleared() {
+    ++this.selectionVersion;
+    this.closeTrace(); this.detail.set(null); this.selectedId.set(''); this.experiments.set([]);
+    this.branchFilter.set('all'); this.notice.set('Historial eliminado.');
+    await this.initialize();
   }
 
   savedTasks(branch: 'A' | 'B') {
@@ -147,6 +170,7 @@ export class AppComponent {
   }
 
   async showTrace(run: Run) {
+    this.traceTrigger = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     this.selectedRun.set(run);
     this.events.set([]);
     await this.loadEvents(run);
@@ -166,7 +190,10 @@ export class AppComponent {
     finally { if (version === this.traceVersion) this.traceLoading.set(false); }
   }
 
-  closeTrace() { ++this.traceVersion; this.selectedRun.set(null); this.events.set([]); this.traceLoading.set(false); }
+  closeTrace(restore = false) {
+    ++this.traceVersion; this.selectedRun.set(null); this.events.set([]); this.traceLoading.set(false);
+    if (restore && this.traceTrigger?.isConnected) this.traceTrigger.focus();
+  }
 
   async cancel(run: Run) {
     this.cancelling.set(run.id);

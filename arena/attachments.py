@@ -9,6 +9,7 @@ from pathlib import PurePosixPath
 from PIL import Image, UnidentifiedImageError
 from pydantic import Field
 from .contracts import Attachment, Contract
+from .json_input import load_json
 
 MAX_FILE_BYTES = 1024 * 1024
 MAX_TEXT_CHARS = 20000
@@ -23,7 +24,7 @@ class AttachmentUpload(Contract):
 
 def prepare_attachment(upload: AttachmentUpload) -> Attachment:
     name = upload.name
-    if '/' in name or '\\' in name or any(ord(c) < 32 for c in name):
+    if '/' in name or '\\' in name or any(ord(c) < 32 or ord(c) == 127 for c in name):
         raise ValueError('El nombre del archivo no puede contener rutas ni caracteres de control')
     extension = PurePosixPath(name).suffix.lower()
     if extension not in MEDIA:
@@ -44,7 +45,7 @@ def prepare_attachment(upload: AttachmentUpload) -> Attachment:
                 if getattr(image, 'is_animated', False):
                     raise ValueError('No se admiten imágenes animadas')
                 image.verify()
-        except (UnidentifiedImageError, OSError, Image.DecompressionBombError) as exc:
+        except (UnidentifiedImageError, OSError, SyntaxError, Image.DecompressionBombError) as exc:
             raise ValueError('Imagen no válida') from exc
     else:
         try:
@@ -55,7 +56,7 @@ def prepare_attachment(upload: AttachmentUpload) -> Attachment:
             raise ValueError('Texto inválido o superior a 20.000 caracteres')
         if extension == '.json':
             try:
-                json.loads(text, parse_constant=lambda _: (_ for _ in ()).throw(ValueError('Número JSON no válido')))
+                load_json(text)
             except (ValueError, RecursionError) as exc:
                 raise ValueError('El adjunto no contiene JSON válido') from exc
         if extension == '.csv':

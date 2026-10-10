@@ -61,5 +61,5 @@ export const sessionInterceptor: HttpInterceptorFn = (request, next) => {
 
 export function accountError(error: unknown) {
   const detail = error instanceof HttpErrorResponse ? error.error?.detail : null;
-  return typeof detail === 'string' ? detail : Array.isArray(detail) ? 'Revisa los campos. Usuario de 3–40 caracteres y contraseña de 10–128 caracteres.' : 'No se pudo guardar. Comprueba la conexión e inténtalo de nuevo.';
+  return typeof detail === 'string' ? detail : Array.isArray(detail) ? 'Revisa los campos y sus límites. Hay datos no válidos.' : 'No se pudo confirmar la operación. Comprueba la conexión y actualiza los datos antes de reintentar.';
 }

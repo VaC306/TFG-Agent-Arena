@@ -1,4 +1,5 @@
 import json
+import hashlib
 import sqlite3
 import time
 from contextlib import contextmanager
@@ -77,6 +78,39 @@ class Store:
             """, (self.owner_id, self.owner_id, limit)).fetchall()
             return [dict(row) for row in rows]
 
+    def _history_state(self, db):
+        if self.owner_id is None:
+            raise ValueError('Se requiere una cuenta para gestionar el historial')
+        ids = [row[0] for row in db.execute(
+            'SELECT experiment_id FROM experiment_owners WHERE owner_id=? ORDER BY experiment_id', (self.owner_id,))]
+        pending = db.execute('''SELECT COUNT(*) FROM runs r JOIN experiment_owners o
+                               ON o.experiment_id=r.experiment_id
+                               WHERE o.owner_id=? AND r.status IN ('queued','running')''', (self.owner_id,)).fetchone()[0]
+        revision = hashlib.sha256(json.dumps(ids).encode()).hexdigest()
+        return {'count': len(ids), 'pending': pending, 'revision': revision}
+
+    def history_state(self):
+        with self.connect() as db:
+            db.execute('BEGIN')
+            return self._history_state(db)
+
+    def clear_history(self, revision):
+        with self.connect() as db:
+            # Serialize with worker claims and submissions: never remove an active run.
+            db.execute('BEGIN IMMEDIATE')
+            state = self._history_state(db)
+            if state['revision'] != revision:
+                raise ValueError('El historial ha cambiado. Revisa de nuevo la confirmación.')
+            if state['pending']:
+                raise ValueError('Finaliza o cancela las ejecuciones pendientes antes de vaciar el historial.')
+            owned = 'SELECT experiment_id FROM experiment_owners WHERE owner_id=?'
+            db.execute(f'DELETE FROM events WHERE run_id IN (SELECT id FROM runs WHERE experiment_id IN ({owned}))', (self.owner_id,))
+            db.execute(f'DELETE FROM runs WHERE experiment_id IN ({owned})', (self.owner_id,))
+            ids = db.execute(owned, (self.owner_id,)).fetchall()
+            db.execute('DELETE FROM experiment_owners WHERE owner_id=?', (self.owner_id,))
+            db.executemany('DELETE FROM experiments WHERE id=?', [(row[0],) for row in ids])
+            return state['count']
+
     def check_experiment(self, experiment_id):
         if self.owner_id is not None:
             with self.connect() as db:
@@ -135,7 +169,8 @@ class Store:
                 db.execute("UPDATE runs SET status='cancelled',data=?,cancel_requested=1 WHERE id=?", (json.dumps(run), run_id))
             elif row["status"] == "running":
                 db.execute("UPDATE runs SET cancel_requested=1 WHERE id=?", (run_id,))
-        self.event(run_id, "cancel_requested", {})
+            db.execute('INSERT INTO events(run_id,kind,at,payload) VALUES (?,?,?,?)',
+                       (run_id, 'cancel_requested', time.time(), '{}'))
 
     def finish(self, run, result, status):
         with self.connect() as db:

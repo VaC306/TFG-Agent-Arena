@@ -1,5 +1,5 @@
 from typing import Literal
-from pydantic import Field, model_validator
+from pydantic import Field, model_validator, field_validator
 from .attachments import AttachmentUpload, prepare_attachment, MAX_TEXT_CHARS
 from .contracts import Contract, AgentConfig, Experiment, Task
 from .scheduler import schedule
@@ -19,6 +19,18 @@ class InputBundle(Contract):
     text: str = Field(min_length=1, max_length=6000)
     files: list[AttachmentUpload] = Field(default_factory=list, max_length=4)
     expected_answer: str | None = Field(default=None, min_length=1, max_length=6000)
+
+    @field_validator('text')
+    @classmethod
+    def nonblank_input(cls, value):
+        if not value.strip():
+            raise ValueError('Escribe una entrada para el agente')
+        return value
+
+    @field_validator('expected_answer', mode='before')
+    @classmethod
+    def empty_reference(cls, value):
+        return None if isinstance(value, str) and not value.strip() else value
 
     def task(self):
         attachments = [prepare_attachment(file) for file in self.files]
@@ -45,8 +57,15 @@ class ComparisonRequest(Contract):
     agents: dict[str, CustomAgent]
     shared_input: InputBundle | None = None
     branch_inputs: dict[str, InputBundle] | None = None
-    repetitions: int = Field(default=1, ge=1, le=10)
+    repetitions: int = Field(default=1, ge=1, le=10, strict=True)
     dataset: list[DatasetCase] | None = Field(default=None, min_length=1, max_length=100)
+
+    @field_validator('name')
+    @classmethod
+    def nonblank_name(cls, value):
+        if not value.strip():
+            raise ValueError('Escribe un nombre para la comparación')
+        return value.strip()
 
     @model_validator(mode='after')
     def validate_design(self):

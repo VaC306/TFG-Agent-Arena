@@ -1,9 +1,21 @@
 from typing import Literal
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator, field_validator
 
 
 class Contract(BaseModel):
     model_config = ConfigDict(extra="forbid")
+
+    @field_validator('*')
+    @classmethod
+    def safe_text(cls, value):
+        if isinstance(value, str):
+            if '\x00' in value:
+                raise ValueError('El texto no puede contener caracteres nulos')
+            try:
+                value.encode('utf-8')
+            except UnicodeEncodeError as exc:
+                raise ValueError('El texto debe contener Unicode válido') from exc
+        return value
 
 
 class Limits(Contract):

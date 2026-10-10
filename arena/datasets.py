@@ -1,9 +1,9 @@
 """Portable user datasets. Parsing never accesses paths supplied by a dataset."""
 import csv
 import io
-import json
 from pydantic import Field, ValidationError, model_validator
 from .contracts import Contract, Task
+from .json_input import load_json
 
 
 class DatasetCase(Contract):
@@ -36,7 +36,10 @@ def parse_dataset(filename: str, content: str):
     rows = []
     if filename.lower().endswith('.csv'):
         reader = csv.DictReader(io.StringIO(content, newline=''), strict=True)
-        headers = reader.fieldnames or []
+        try:
+            headers = reader.fieldnames or []
+        except csv.Error as exc:
+            raise ValueError('Cabecera CSV inválida') from exc
         if (not {'id', 'input'} <= set(headers) or len(set(headers)) != len(headers)
                 or set(headers) - {'id', 'input', 'expected_answer'}):
             raise ValueError('Cabecera CSV: id,input,expected_answer (la última columna es opcional)')
@@ -52,7 +55,7 @@ def parse_dataset(filename: str, content: str):
             if not line.strip():
                 continue
             try:
-                row = json.loads(line)
+                row = load_json(line)
             except ValueError as exc:
                 raise ValueError(f'Línea {number}: JSON inválido') from exc
             rows.append((number, row))
@@ -75,5 +78,11 @@ def parse_dataset(filename: str, content: str):
 
 
 class DatasetUpload(Contract):
-    filename: str = Field(max_length=200)
-    content: str = Field(max_length=1024 * 1024)
+    filename: str = Field(min_length=1, max_length=180)
+    content: str = Field(min_length=1, max_length=1024 * 1024)
+
+    @model_validator(mode='after')
+    def safe_filename(self):
+        if '/' in self.filename or '\\' in self.filename or any(ord(c) < 32 or ord(c) == 127 for c in self.filename):
+            raise ValueError('El nombre del dataset no puede contener rutas ni caracteres de control')
+        return self

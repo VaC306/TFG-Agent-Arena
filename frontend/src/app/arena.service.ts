@@ -39,6 +39,7 @@ export interface ComparisonBody {
 export interface DatasetCase { id: string; input: string; expected_answer: string | null }
 export interface DatasetPreview { cases: DatasetCase[]; count: number; scored: number }
 export interface ArenaEvent { seq: number; kind: string; at: number; payload: unknown }
+export interface HistoryState { count: number; pending: number; revision: string }
 export const terminal = (run: Run) => !['queued', 'running'].includes(run.status);
 
 @Injectable({ providedIn: 'root' })
@@ -46,6 +47,11 @@ export class ArenaService {
   private http = inject(HttpClient);
   private get<T>(path: string) { return firstValueFrom(this.http.get<T>('/api' + path).pipe(timeout(15000))); }
   experiments() { return this.get<ExperimentSummary[]>('/experiments'); }
+  historyState() { return this.get<HistoryState>('/profile/history'); }
+  clearHistory(revision: string) {
+    return firstValueFrom(this.http.delete<{deleted:number}>('/api/profile/history',
+      {body:{confirmation:'clear-history', revision}}).pipe(timeout(30000)));
+  }
   presets() { return this.get<Preset[]>('/presets'); }
   prompts() { return this.get<PromptTemplate[]>('/prompt-templates'); }
   models() { return this.get<{available: boolean; models: {name: string}[]; error: string | null}>('/models'); }

@@ -1,18 +1,20 @@
 import { Component, Input, Output, EventEmitter, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { InputData, Upload } from './arena.service';
+import { textError, filenameError, csvError } from './validation';
 
 @Component({
   selector: 'arena-input-editor', standalone: true, imports: [FormsModule],
   template: `
     <label [for]="slot + '-input'">{{ title }}</label>
     <textarea [id]="slot + '-input'" [(ngModel)]="value.text" [ngModelOptions]="{standalone: true}"
+      [attr.aria-invalid]="invalid ? 'true' : null" [attr.aria-describedby]="invalid ? 'composer-error' : null"
       rows="4" maxlength="6000" placeholder="¿Qué quieres que haga el modelo con esta entrada y sus archivos?" required></textarea>
     <div class="upload-zone">
       <label [for]="slot + '-files'">Adjuntar archivos <span>TXT · JSON · CSV · PNG · JPG · WebP</span></label>
       <input [id]="slot + '-files'" type="file" multiple accept=".txt,.json,.csv,.png,.jpg,.jpeg,.webp"
-        [disabled]="reading()" (change)="addFiles($event)">
-      <p class="hint">Hasta 4 archivos, 1 MiB cada uno. Texto UTF-8; máximo conjunto: 20.000 caracteres.</p>
+        [attr.aria-describedby]="slot + '-file-help'" [disabled]="reading()" (change)="addFiles($event)">
+      <p class="hint" [id]="slot + '-file-help'">Hasta 4 archivos, 1 MiB cada uno. Texto UTF-8; máximo conjunto: 20.000 caracteres.</p>
     </div>
     @if (reading()) { <p role="status" class="hint">Preparando vista previa…</p> }
     @if (error()) { <p class="alert error" role="alert">{{ error() }}</p> }
@@ -27,7 +29,7 @@ import { InputData, Upload } from './arena.service';
       }
     </div>
     <details class="reference-input"><summary>Respuesta esperada (opcional)</summary>
-      <textarea [attr.aria-label]="'Respuesta esperada ' + title" [(ngModel)]="value.expected_answer" [ngModelOptions]="{standalone: true}"
+      <textarea [id]="slot + '-reference'" [attr.aria-invalid]="invalidReference ? 'true' : null" [attr.aria-describedby]="invalidReference ? 'composer-error' : null" [attr.aria-label]="'Respuesta esperada ' + title" [(ngModel)]="value.expected_answer" [ngModelOptions]="{standalone: true}"
         rows="2" maxlength="6000" placeholder="Sin referencia, la calidad aparecerá como no evaluada."></textarea>
       <p class="hint">Evalúa coincidencia exacta del texto, ignorando espacios al principio y al final. No es un juez de calidad semántica.</p>
     </details>
@@ -37,6 +39,8 @@ export class InputEditorComponent {
   @Input({required:true}) value!: InputData;
   @Input({required:true}) slot!: string;
   @Input() title = 'Entrada';
+  @Input() invalid = false;
+  @Input() invalidReference = false;
   @Output() readingChange = new EventEmitter<boolean>();
   reading = signal(false);
   error = signal('');
@@ -51,6 +55,7 @@ export class InputEditorComponent {
       if (files.length + this.value.files.length > 4) throw new Error('Puedes adjuntar un máximo de 4 archivos por entrada.');
       const prepared: Upload[] = [];
       for (const file of files) {
+        if (filenameError(file.name)) throw new Error(filenameError(file.name));
         const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
         if (!['txt','json','csv','png','jpg','jpeg','webp'].includes(extension)) throw new Error('Formato no admitido: ' + file.name);
         if (!file.size || file.size > 1024 * 1024) throw new Error(file.name + ': el tamaño debe estar entre 1 byte y 1 MiB.');
@@ -65,20 +70,33 @@ export class InputEditorComponent {
         const data_base64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
         let preview: string;
         if (image) {
+          const bytes = new Uint8Array(await file.arrayBuffer());
+          const signature = extension === 'png' ? bytes.slice(0,8).join(',') === '137,80,78,71,13,10,26,10'
+            : extension === 'webp' ? String.fromCharCode(...bytes.slice(0,4)) === 'RIFF' && String.fromCharCode(...bytes.slice(8,12)) === 'WEBP'
+            : bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255;
+          if (!signature) throw new Error(file.name + ': el contenido no coincide con el formato de imagen.');
           const mime = extension === 'jpg' || extension === 'jpeg' ? 'jpeg' : extension;
           preview = 'data:image/' + mime + ';base64,' + data_base64;
+          await new Promise<void>((resolve, reject) => {
+            const decoded = new Image();
+            decoded.onload = () => decoded.naturalWidth * decoded.naturalHeight > 10000000
+              ? reject(new Error(file.name + ': máximo 10 megapíxeles.')) : resolve();
+            decoded.onerror = () => reject(new Error(file.name + ': imagen dañada o no válida.'));
+            decoded.src = preview;
+          });
         } else {
           preview = new TextDecoder('utf-8', {fatal:true}).decode(await file.arrayBuffer());
-          if (preview.length > 20000) throw new Error(file.name + ': supera los 20.000 caracteres.');
-          if (extension === 'json') JSON.parse(preview);
+          if (textError(preview, file.name, 20000, false)) throw new Error(textError(preview, file.name, 20000, false));
+          if (extension === 'json') { try { JSON.parse(preview); } catch { throw new Error(file.name + ': JSON inválido.'); } }
+          if (extension === 'csv' && csvError(preview)) throw new Error(file.name + ': ' + csvError(preview));
         }
         prepared.push({name:file.name, data_base64, preview, image, size:file.size});
       }
-      if ([...this.value.files, ...prepared].filter(f => !f.image).reduce((n,f) => n + f.preview.length,0) > 20000) {
+      if ([...this.value.files, ...prepared].filter(f => !f.image).reduce((n,f) => n + [...f.preview].length,0) > 20000) {
         throw new Error('El texto de todos los adjuntos supera 20.000 caracteres.');
       }
       this.value.files = [...this.value.files, ...prepared];
-    } catch (error) { this.error.set(error instanceof Error ? error.message : 'No se pudieron preparar los adjuntos.'); }
+    } catch (error) { this.error.set(error instanceof TypeError ? 'No se pudo leer el archivo. Los textos deben usar UTF-8.' : error instanceof Error ? error.message : 'No se pudieron preparar los adjuntos.'); }
     finally { input.value = ''; this.reading.set(false); this.readingChange.emit(false); }
   }
 
