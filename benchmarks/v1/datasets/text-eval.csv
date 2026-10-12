@@ -1,0 +1,7 @@
+id,input,expected_answer
+eval-sum,"Calcula 28 + 37. Responde únicamente el número.",65
+eval-time,"El taller empieza a las 08:45 y termina a las 09:20. ¿A qué hora termina? Responde solo HH:MM.",09:20
+eval-code,"Ficha: proyecto Atlas; código ZX-81; estado pendiente. Devuelve únicamente el código.",ZX-81
+eval-count,"En una caja hay 4 grupos de 6 fichas. ¿Cuántas fichas hay? Responde únicamente el número.",24
+eval-date,"Registro: fecha de creación 2026-05-14; fecha de revisión 2026-05-18. Devuelve únicamente la fecha de revisión en formato YYYY-MM-DD.",2026-05-18
+eval-name,"Personajes ficticios: Eva revisa y Leo redacta. ¿Quién redacta? Responde únicamente el nombre.",Leo

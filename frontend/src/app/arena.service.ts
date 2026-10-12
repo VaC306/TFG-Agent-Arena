@@ -4,7 +4,16 @@ import { firstValueFrom, timeout } from 'rxjs';
 
 export type PresetId = 'simulated' | 'ollama';
 export type Status = 'queued' | 'running' | 'completed' | 'succeeded' | 'failed' | 'timeout' | 'limit' | 'cancelled' | 'interrupted';
-export interface Agent { model: string; system_prompt: string }
+export interface Agent { model: string; system_prompt: string; temperature?:number; seed?:number; num_ctx?:number; limits?:{max_output_tokens:number; timeout_s:number} }
+export type EvaluationMode = 'exact_match' | 'json_match' | 'none';
+export interface InferenceSettings { temperature:number; seed:number; num_ctx:number; max_output_tokens:number; timeout_s:number }
+export const defaultSettings = (): InferenceSettings => ({temperature:0, seed:42, num_ctx:16384, max_output_tokens:4096, timeout_s:120});
+export interface ProtocolReport {
+  version:string; evaluator_version:string; comparison_scope:string; inputs_shared:boolean; prompts_equal:boolean;
+  evaluations:string[]; warnings:string[];
+  models:Record<string,{digest:string|null; server_version:string|null; quantization:string|null; verified:boolean}>;
+  branches:Record<string,{evaluated:number; correct:number; execution_errors:number; mean_answer_s:number|null}>;
+}
 export interface Config {
   name: string; adapter: PresetId; split: string; repetitions: number;
   agents: { A: Agent; B: Agent };
@@ -26,7 +35,7 @@ export interface Run {
   status: Status; result: Result | null;
 }
 export interface SavedTask { id: string; input: string; expected_answer?: string | null; attachments?: {name: string; size: number; sha256: string}[] }
-export interface ExperimentDetail { snapshot: { config: Config; tasks?: SavedTask[]; branch_tasks?: Record<string, SavedTask> | null; conditions?: {inputs_shared?: boolean} }; runs: Run[] }
+export interface ExperimentDetail { snapshot: { config: Config; tasks?: SavedTask[]; branch_tasks?: Record<string, SavedTask> | null; conditions?: {inputs_shared?: boolean}; data_sha256?:string; git_commit?:string }; runs: Run[]; protocol?:ProtocolReport }
 export interface PromptTemplate { id: string; name: string; text: string }
 export interface Upload { name: string; data_base64: string; preview: string; image: boolean; size: number }
 export interface InputData { text: string; files: Upload[]; expected_answer: string }
@@ -35,6 +44,8 @@ export interface ComparisonBody {
   agents: Record<string, {model: string; system_prompt: string; prompt_template: string}>;
   shared_input?: unknown; branch_inputs?: Record<string, unknown>;
   dataset?: DatasetCase[];
+  evaluation?:EvaluationMode; settings?:InferenceSettings;
+  split?:'dev'|'eval';
 }
 export interface DatasetCase { id: string; input: string; expected_answer: string | null }
 export interface DatasetPreview { cases: DatasetCase[]; count: number; scored: number }

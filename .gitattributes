@@ -1,0 +1,2 @@
+# Preserve the exact bytes covered by benchmark SHA-256 manifests on every OS.
+/benchmarks/** -text whitespace=cr-at-eol

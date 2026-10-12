@@ -10,6 +10,7 @@ from typing import Literal
 from fastapi import HTTPException
 from pydantic import Field, field_validator
 from .contracts import Contract
+from .comparisons import InferenceSettings
 
 COOKIE = 'arena_session'
 SESSION_SECONDS = 7 * 24 * 60 * 60
@@ -60,6 +61,9 @@ class Preferences(Contract):
     mode: Literal['same_model', 'different_models'] = 'same_model'
     source: Literal['manual', 'dataset'] = 'manual'
     repetitions: int = Field(default=1, ge=1, le=10, strict=True)
+    evaluation: Literal['exact_match', 'json_match', 'none'] = 'exact_match'
+    settings: InferenceSettings = Field(default_factory=InferenceSettings)
+    split: Literal['dev', 'eval'] = 'dev'
     modelA: str = Field(default='simulated-a', max_length=120)
     modelB: str = Field(default='simulated-b', max_length=120)
     promptA: SavedPrompt = Field(default_factory=SavedPrompt)

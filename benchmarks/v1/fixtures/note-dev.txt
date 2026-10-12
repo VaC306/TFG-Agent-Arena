@@ -1,0 +1,1 @@
+Los precios del catálogo están en euros y son por unidad. Multiplica cada precio por su cantidad y suma los resultados.

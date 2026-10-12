@@ -16,6 +16,8 @@ from .adapters import Ollama
 from .datasets import DatasetUpload, parse_dataset
 from .accounts import Accounts, COOKIE, SESSION_SECONDS, Credentials, Registration, Preferences, ProfileUpdate
 from .json_input import load_json
+from .protocol import protocol_report
+import json
 
 
 class Submission(Contract):
@@ -144,6 +146,13 @@ def create_app(db_path=None, root=None):
                         media_type='text/csv; charset=utf-8',
                         headers={'Content-Disposition': 'attachment; filename="dataset-ejemplo.csv"'})
 
+    @app.get('/datasets/examples/{kind}')
+    def dataset_example(kind: Literal['exact_match', 'json_match']):
+        name = 'respuestas-concretas.csv' if kind == 'exact_match' else 'extraccion.jsonl'
+        return Response((root / 'data/examples' / name).read_text(encoding='utf-8'),
+                        media_type='text/csv; charset=utf-8' if kind == 'exact_match' else 'application/x-ndjson',
+                        headers={'Content-Disposition':f'attachment; filename="{name}"'})
+
     @app.get('/prompt-templates')
     def prompt_templates():
         return PROMPTS
@@ -185,9 +194,22 @@ def create_app(db_path=None, root=None):
     @app.get("/experiments/{experiment_id}")
     def get(experiment_id: str, store: Store = Depends(user_store)):
         try:
-            return {"snapshot": store.snapshot(experiment_id), "runs": store.list_runs(experiment_id)}
+            snapshot, runs = store.snapshot(experiment_id), store.list_runs(experiment_id)
+            return {"snapshot": snapshot, "runs": runs, "protocol":protocol_report(snapshot, runs)}
         except KeyError:
             raise HTTPException(404, "Experimento inexistente")
+
+    @app.get('/experiments/{experiment_id}/reproducibility.json')
+    def reproducibility(experiment_id: str, store: Store = Depends(user_store)):
+        try:
+            snapshot, runs = store.snapshot(experiment_id), store.list_runs(experiment_id)
+            data = {'experiment_id':experiment_id, 'snapshot':snapshot, 'runs':runs,
+                    'report':protocol_report(snapshot, runs),
+                    'note':'Partial while runs are pending. Contains inputs and attachments. Full traces remain in the application.'}
+            return Response(json.dumps(data, ensure_ascii=False, indent=2), media_type='application/json',
+                            headers={'Content-Disposition':'attachment; filename="arena-reproducibility.json"'})
+        except KeyError:
+            raise HTTPException(404, 'Experimento inexistente')
 
     @app.get("/experiments/{experiment_id}/metrics.csv")
     def export(experiment_id: str, store: Store = Depends(user_store)):

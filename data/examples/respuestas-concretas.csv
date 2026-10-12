@@ -1,0 +1,4 @@
+id,input,expected_answer
+capital,"Capital de Francia. Responde únicamente el nombre de la ciudad.",París
+cuenta,"Calcula 17 + 25. Responde únicamente el número.",42
+lectura,"Texto: La reunión comienza a las 10:30 y termina a las 11:15. ¿A qué hora termina? Responde solo HH:MM.",11:15

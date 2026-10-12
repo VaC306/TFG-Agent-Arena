@@ -8,6 +8,7 @@ import uuid
 from pathlib import Path
 from .contracts import Experiment, Task, Run
 from .resources import provenance
+from .evaluator import EVALUATOR_VERSION
 
 
 def submit(store, config_path, tasks_path):
@@ -23,23 +24,33 @@ def submit(store, config_path, tasks_path):
     return schedule(store, config, tasks, environments)
 
 
-def schedule(store, config, tasks, environments, branch_tasks=None):
+def schedule(store, config, tasks, environments, branch_tasks=None, benchmark=None):
     if config.adapter == "ollama" and os.environ.get("ARENA_OLLAMA_URL"):
         config.ollama_url = os.environ["ARENA_OLLAMA_URL"]
     code_files = list(Path(__file__).parent.glob("*.py"))
     try:
-        git = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True)
+        repo = Path(__file__).resolve().parent.parent
+        git = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"], capture_output=True, text=True)
         commit = git.stdout.strip() or None
+        state = subprocess.run(['git', '-C', str(repo), 'status', '--porcelain'], capture_output=True, text=True)
+        dirty = bool(state.stdout.strip()) if state.returncode == 0 else None
     except FileNotFoundError:
         commit = None
+        dirty = None
     snapshot = {"config": config.model_dump(), "tasks": [t.model_dump() for t in tasks],
                 "branch_tasks": branch_tasks,
-                "environments": environments, "host": provenance(), "git_commit": commit,
+                "environments": environments, "host": provenance(), "git_commit": commit, "git_worktree_dirty":dirty,
                 "source_sha256": {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in code_files},
                 "source": {p.name: p.read_text(encoding="utf-8") for p in code_files},
                 "conditions": {"mode": "sequential", "inputs_shared": branch_tasks is None,
-                               "warmup": "none", "keep_alive": "0" if config.comparison == "different_models" else "5m",
+                               "warmup": "none", "keep_alive": "0",
                                "resource_scope": "host_and_worker", "seed_determinism": "not guaranteed"}}
+    snapshot['protocol'] = {'version':'arena-protocol-v1', 'evaluator_version':EVALUATOR_VERSION,
+                            'identity_capture':'before each run; first observed identity pinned per model',
+                            'order':'seeded random A/B within each case and repetition',
+                            'reference_sent_to_model':False}
+    if benchmark is not None:
+        snapshot['benchmark'] = benchmark
     snapshot["data_sha256"] = hashlib.sha256(json.dumps({"tasks": snapshot["tasks"], "branch_tasks": branch_tasks, "environments": environments}, sort_keys=True).encode()).hexdigest()
     experiment_id = str(uuid.uuid4())
     rng, runs = random.Random(config.order_seed), []

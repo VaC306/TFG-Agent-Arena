@@ -7,6 +7,8 @@ from .evaluator import evaluate
 from .tools import Tools
 from .resources import sample
 from .attachments import user_message
+from .protocol import inference_identity
+from .evaluator import EVALUATOR_VERSION
 
 
 class LimitReached(Exception):
@@ -25,7 +27,8 @@ async def execute(run, task, environment, config, adapter, store):
     metrics = {"success": False, "format_ok": False, "queue_s": max(0, run["started_at"] - run["queued_at"]),
                "input_tokens": 0, "output_tokens": 0, "server_eval_s": 0., "calls": 0,
                "tool_calls": 0, "tool_errors": 0, "tool_s": 0., "usage_complete": True}
-    if task.criteria is None and task.expected_answer is None:
+    metrics.update(evaluator_version=EVALUATOR_VERSION, quality_evaluated=False)
+    if task.criteria is None and (task.expected_answer is None or task.evaluation == 'none'):
         metrics.update(success=None, format_ok=None, evaluation='not_evaluated')
     store.event(run["id"], "input", {"messages": messages, "environment": environment})
     store.event(run["id"], "resources", sample())
@@ -45,7 +48,9 @@ async def execute(run, task, environment, config, adapter, store):
 
     async def loop():
         metadata = await checked(adapter.metadata(config.model))
-        store.event(run["id"], "inference_metadata", metadata)
+        identity = inference_identity(config.model, metadata)
+        store.record_inference_metadata(run, metadata, identity)
+        metrics['inference_identity'] = identity
         if any(a.media_type.startswith('image/') for a in task.attachments):
             if 'simulated' not in metadata.get('adapter', '') and 'vision' not in metadata.get('show', {}).get('capabilities', []):
                 raise ValueError('El modelo no declara capacidad de visión; no se enviaron las imágenes')
@@ -56,7 +61,10 @@ async def execute(run, task, environment, config, adapter, store):
             if remaining <= 0:
                 raise LimitReached("output_tokens")
             metrics["calls"] += 1
-            store.event(run["id"], "inference_request", {"messages": copy.deepcopy(messages), "max_output_tokens": remaining})
+            request = {"messages": copy.deepcopy(messages), "max_output_tokens": remaining}
+            if callable(getattr(adapter, 'payload', None)):
+                request['payload'] = copy.deepcopy(adapter.payload(messages, config, remaining))
+            store.event(run["id"], "inference_request", request)
             call_start = time.perf_counter()
             try:
                 response = await checked(adapter.chat(copy.deepcopy(messages), config, remaining))
@@ -81,8 +89,12 @@ async def execute(run, task, environment, config, adapter, store):
             messages.append(message)
             calls = message.get("tool_calls") or []
             if not calls:
-                metrics["answer"] = message.get("content", "")
+                content = message.get("content")
+                if not isinstance(content, str) or not content.strip():
+                    raise ValueError('El servidor no devolvió una respuesta de texto válida')
+                metrics["answer"] = content
                 metrics.update(evaluate(metrics["answer"], task, names))
+                metrics['quality_evaluated'] = metrics['success'] is not None
                 if metrics['success'] is None:
                     return 'completed'
                 return "succeeded" if metrics["success"] else "failed"

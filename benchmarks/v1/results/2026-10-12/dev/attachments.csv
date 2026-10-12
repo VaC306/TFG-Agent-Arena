@@ -1,0 +1,9 @@
+id,experiment_id,task_id,branch,repetition,position,status,adapter,success,format_ok,evaluation,queue_s,agent_s,input_tokens,output_tokens,usage_complete,calls,tool_calls,tool_errors,tool_s,server_eval_s,server_tps,agent_output_tps,error,evaluator_version,quality_evaluated,model_digest,server_version,answer
+208e68dd-24c1-42ae-a941-e674a6642e8f,a47709dd-62e8-4614-8e73-33310080b70e,dev-file-total,B,0,0,failed,ollama,False,True,json_match,0.009524106979370117,3.299372300003597,270,8,True,1,0,0,0.0,0.144446,55.38401894133448,2.4247036322609845,,arena-evaluation-v2,True,845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e,0.40.3,"{""total"": 50}"
+05c9151a-d600-489d-8b3f-9677c98cb5c5,a47709dd-62e8-4614-8e73-33310080b70e,dev-file-total,A,0,1,failed,ollama,False,True,json_match,3.333435297012329,2.9226329999946756,270,12,True,1,0,0,0.0,0.126384,94.948727687049,4.105886712434254,,arena-evaluation-v2,True,357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b,0.40.3,"{
+  ""total"": 110
+}"
+b15b0f33-d133-478b-9bc4-b1ca54449d38,a47709dd-62e8-4614-8e73-33310080b70e,dev-file-lookup,B,0,2,failed,ollama,False,True,json_match,6.297910928726196,3.98109029999614,137,10,True,1,0,0,0.0,0.180703,55.33942435930781,2.511874699252538,,arena-evaluation-v2,True,845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e,0.40.3,"{
+  ""B"": 5
+}"
+4203d624-16f9-4781-9579-de2f25b3267f,a47709dd-62e8-4614-8e73-33310080b70e,dev-file-lookup,A,0,3,succeeded,ollama,True,True,json_match,10.30447268486023,2.931598200004373,137,7,True,1,0,0,0.0,0.067467,103.7544280907703,2.3877760601673033,,arena-evaluation-v2,True,357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b,0.40.3,"{""precio"": 5}"

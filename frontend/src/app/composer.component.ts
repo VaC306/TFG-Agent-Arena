@@ -1,7 +1,7 @@
 import { Component, DestroyRef, EventEmitter, inject, Output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ArenaService, ComparisonBody, DatasetPreview, InputData, PresetId, PromptTemplate } from './arena.service';
+import { ArenaService, ComparisonBody, DatasetPreview, InputData, PresetId, PromptTemplate, EvaluationMode, defaultSettings } from './arena.service';
 import { InputEditorComponent } from './input-editor.component';
 import { InfoDialogComponent } from './info-dialog.component';
 import { AuthService, Preferences } from './auth.service';
@@ -22,6 +22,9 @@ export class ComposerComponent {
   adapter: PresetId = 'simulated';
   name = 'Comparación personalizada';
   repetitions = 1;
+  evaluation: EvaluationMode = 'exact_match';
+  settings = defaultSettings();
+  split: 'dev' | 'eval' = 'dev';
   modelA = 'simulated-a';
   modelB = 'simulated-b';
   promptA = {template:'general',text:''};
@@ -73,6 +76,8 @@ export class ComposerComponent {
     if (saved) {
       this.name = saved.name; this.adapter = saved.adapter; this.mode = saved.mode;
       this.source = saved.source; this.repetitions = saved.repetitions;
+      this.evaluation = saved.evaluation ?? 'exact_match'; this.settings = {...defaultSettings(), ...saved.settings};
+      this.split = saved.split ?? 'dev';
       this.modelA = saved.modelA; this.modelB = saved.modelB;
       this.promptA = {...saved.promptA}; this.promptB = {...saved.promptB};
     }
@@ -97,7 +102,7 @@ export class ComposerComponent {
     }
     const prefs: Preferences = {name:this.name, adapter:this.adapter, mode:this.mode, source:this.source,
       repetitions:this.repetitions, modelA:this.modelA, modelB:this.modelB,
-      promptA:{...this.promptA}, promptB:{...this.promptB}};
+      promptA:{...this.promptA}, promptB:{...this.promptB}, evaluation:this.evaluation, settings:{...this.settings}, split:this.split};
     try { await this.auth.savePreferences(prefs); this.preferencesNotice.set('Preferencias guardadas en tu perfil.'); }
     catch { this.preferencesNotice.set('No se guardaron las preferencias. Vuelve a modificar un campo para reintentar.'); }
   }
@@ -180,11 +185,32 @@ export class ComposerComponent {
       field?.focus();
       return;
     }
+    const parameters: [string, number, number, number, boolean][] = [
+      ['temperature',this.settings.temperature,0,2,false], ['seed',this.settings.seed,0,2147483647,true],
+      ['context',this.settings.num_ctx,512,131072,true], ['output-limit',this.settings.max_output_tokens,1,16384,true],
+      ['timeout',this.settings.timeout_s,1,3600,true],
+    ];
+    const badParameter = parameters.find(([,n,min,max,integer]) => !Number.isFinite(n) || n < min || n > max || integer && !Number.isInteger(n));
+    if (badParameter) {
+      this.invalidField.set(badParameter[0]); this.error.set('Revisa este parámetro y los límites indicados.');
+      const field = document.getElementById(badParameter[0]); const details = field?.closest('details'); if (details) details.open = true; field?.focus(); return;
+    }
+    if (this.evaluation === 'json_match') {
+      const references = this.source === 'dataset' ? this.dataset()!.cases.map(c => c.expected_answer) :
+        (this.mode === 'same_model' ? [this.inputA, this.inputB] : [this.shared]).map(i => i.expected_answer);
+      try { references.filter(r => r?.trim()).forEach(r => JSON.parse(r!)); }
+      catch { this.error.set('Para evaluar JSON, las respuestas esperadas deben contener JSON válido.'); return; }
+    }
+    if (this.settings.max_output_tokens >= this.settings.num_ctx) {
+      this.invalidField.set('output-limit'); this.error.set('El máximo de salida debe ser menor que el contexto para dejar espacio a la entrada.');
+      const field = document.getElementById('output-limit'); const details = field?.closest('details'); if (details) details.open = true; field?.focus(); return;
+    }
     this.busy.set(true);
     this.invalidField.set('');
     this.error.set('');
     const body: ComparisonBody = {
       name:this.name, adapter:this.adapter, comparison:this.mode, repetitions:this.repetitions,
+      evaluation:this.evaluation, settings:{...this.settings}, split:this.split,
       agents:{
         A:{model:this.modelA.trim(), system_prompt:this.promptA.text, prompt_template:this.promptA.template},
         B:{model:(this.mode === 'same_model' ? this.modelA : this.modelB).trim(), system_prompt:this.promptB.text, prompt_template:this.promptB.template},

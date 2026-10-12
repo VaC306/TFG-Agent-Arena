@@ -28,11 +28,30 @@ def main():
     commands.add_parser("status")
     commands.add_parser("hardware")
     commands.add_parser('create-test-user', help='Crea explícitamente la cuenta local de desarrollo test/test')
+    diagnostic = commands.add_parser('diagnose-tools', help='Comprueba herramientas aisladas y juntas con modelos reales')
+    diagnostic.add_argument('--models', nargs='+', default=['qwen2.5:3b','qwen2.5:7b'])
+    diagnostic.add_argument('--output', required=True)
+    diagnostic.add_argument('--cases', default='benchmarks/v1/diagnostics/tool-calls.json')
+    diagnostic.add_argument('--environment', default='benchmarks/v1/fixtures/orders.json')
+    benchmark = commands.add_parser('benchmark', help='Ejecuta y audita datasets versionados en una base aislada')
+    benchmark.add_argument('--root', default='benchmarks/v1')
+    benchmark.add_argument('--output', required=True)
+    benchmark.add_argument('--model-a', default='qwen2.5:3b')
+    benchmark.add_argument('--model-b', default='qwen2.5:7b')
+    benchmark.add_argument('--split', choices=['dev','eval'], default='dev')
+    benchmark.add_argument('--suites', nargs='+', choices=['text','json','attachments','orders'], default=['text','json','attachments','orders'])
+    benchmark.add_argument('--repetitions', type=int, default=1)
     recover = commands.add_parser("recover")
     recover.add_argument("--workers-stopped", action="store_true", required=True)
     args = parser.parse_args()
-    store = Store(args.db)
-    if args.command == 'create-test-user':
+    store = Store(args.db) if args.command not in ('benchmark','diagnose-tools') else None
+    if args.command == 'benchmark':
+        from .benchmarks import run_benchmark
+        asyncio.run(run_benchmark(args.root,args.output,args.model_a,args.model_b,args.split,args.suites,args.repetitions))
+    elif args.command == 'diagnose-tools':
+        from .diagnostics import diagnose_tools
+        asyncio.run(diagnose_tools(args.models,args.output,args.cases,args.environment))
+    elif args.command == 'create-test-user':
         from .accounts import Accounts
         Accounts(store).create_test_user()
         print('Cuenta local de desarrollo disponible: usuario test, contraseña test')

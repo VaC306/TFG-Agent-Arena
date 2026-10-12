@@ -173,8 +173,8 @@ se muestra como resultado provisional. Los tiempos ausentes se muestran como «�
 
 ## Comparación real con Ollama
 
-El adaptador nativo está implementado y su payload se prueba con HTTP simulado.
-**Todavía no se ha validado con un modelo real.**
+El adaptador nativo se ha comprobado con `qwen2.5:3b` local y Ollama 0.40.3.
+Consulta [los resultados y limitaciones de la prueba](docs/prueba-local-real.md).
 
 1. Comprueba GPU/VRAM y memoria libre: `python -m arena.cli hardware` dentro del
    entorno virtual; `nvidia-smi` si el controlador lo permite.
@@ -193,10 +193,30 @@ Se consultan `/api/version`, `/api/show` y `/api/tags`, registrando metadatos,
 digest y cuantización. Si falla la conexión o falta el modelo, se guarda el fallo;
 no se descarga nada ni se sustituye por el simulador. La semilla se envía cuando
 está configurada, pero no garantiza determinismo. La política inicial no incluye
-warmup y conserva el modelo cinco minutos. Hay que fijar carga de fondo y política
+warmup y solicita `keep_alive=0` en cada llamada de las nuevas comparaciones.
+Hay que fijar carga de fondo y política
 de calentamiento antes de interpretar latencias.
 
+En este entorno también está preparada la versión portátil oficial en `runtime/ollama`.
+Para arrancarla de nuevo desde la raíz del proyecto, abre una terminal adicional:
+
+```powershell
+$env:OLLAMA_MODELS = Join-Path (Get-Location) 'runtime\ollama\models'
+$env:OLLAMA_HOST = '127.0.0.1:11434'
+.\runtime\ollama\bin\ollama.exe serve
+```
+
+Esta ruta solo existe después de descargar y extraer la distribución portátil;
+los binarios y modelos de `runtime` no se incluyen en Git. Si utilizas la instalación
+normal de Ollama, basta con `ollama serve`. Mantén también la API, Angular y el worker
+en marcha para ejecutar comparaciones desde la interfaz.
+
 ## Datos, evaluación y métricas
+
+Los datasets y fixtures de prueba versionados están en
+[benchmarks/v1](benchmarks/v1/README.md). Incluyen desarrollo y evaluación,
+diagnóstico de herramientas, manifiesto SHA-256 y comandos para ejecutar y
+auditar comparaciones reales en una base aislada.
 
 Hay ocho tareas JSONL: cuatro `dev` y cuatro `eval`. Las soluciones esperadas
 permanecen fuera del historial del agente. Los pedidos se copian por rama.
@@ -253,18 +273,21 @@ configuración de red del host. La ejecución nativa es la ruta verificada.
 
 - [Memoria académica](docs/memoria.md): alcance, arquitectura, metodología y resultados.
 - [Decisiones](docs/decisiones.md): alternativas y justificación.
+- [Protocolo de evaluación](docs/protocolo-evaluacion.md): criterios, comparaciones justas, fases y límites de reproducibilidad. Ejemplos de datasets en `data/examples/`.
 - [Accesibilidad de la interfaz](docs/accesibilidad.md): comportamiento, verificaciones y revisión pendiente para WCAG 2.2 AA.
 - [Resultados iniciales](experiments/simulated-dev-2026-10-08/summary.json): simulación previa a los últimos ajustes de robustez; se conserva.
 - [Desarrollo, código final](experiments/simulated-dev-final-2026-10-08/summary.json): 16/16 ejecuciones simuladas correctas.
 - [Evaluación, código final](experiments/simulated-eval-2026-10-08/summary.json): 8/8 ejecuciones simuladas correctas.
 
-Validación nativa: 43 pruebas satisfactorias, instalación editable y `pip check`
+Validación nativa: 156 pruebas satisfactorias, instalación editable y `pip check`
 correctos. Angular compila en producción. Se comprobó en navegador el lanzamiento,
 actualización, cancelación, filtro, trazas y descarga CSV, además de la adaptación
 a un viewport móvil de 390 px. TestClient emite una advertencia de deprecación de
 Starlette/AnyIO; no afecta a los resultados de esta batería.
 
-Pendientes: validación real, edición de configuraciones desde la interfaz,
+La comparación real con dos modelos y casos reservados está documentada en
+[el diagnóstico reproducible](docs/diagnostico-herramientas.md). Pendientes:
+ampliar y revisar independientemente los datasets, repetir con análisis por tarea,
 monitorización periódica y shadow testing simultáneo. Angular con TypeScript,
 HTML y CSS es la elección confirmada para el frontend; FastAPI y worker Python
 se mantienen para el backend.

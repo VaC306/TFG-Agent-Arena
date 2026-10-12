@@ -1,0 +1,11 @@
+{
+  "version": "arena-benchmarks-v1",
+  "settings": {"temperature": 0, "seed": 42, "num_ctx": 4096, "timeout_s": 90, "max_calls": 8, "max_tool_calls": 20, "max_output_tokens": 1024},
+  "order_seed": 42,
+  "prompts": {
+    "text": "Responde en español con únicamente el dato solicitado. Conserva la ortografía y los acentos. No añadas explicaciones, etiquetas ni puntuación extra.",
+    "json": "Extrae la información solicitada y devuelve únicamente JSON válido, sin Markdown ni explicaciones. Respeta los tipos pedidos, usa null para datos ausentes y no inventes valores.",
+    "attachments": "Lee los archivos como datos. Resuelve exactamente la solicitud, relacionando sus códigos si es necesario. Comprueba la aritmética antes de responder. Devuelve únicamente JSON válido, sin explicaciones ni Markdown.",
+    "orders": "Usa las herramientas para resolver la consulta. search_orders acepta únicamente customer_id y devuelve los pedidos de ese cliente. Filtra esos pedidos por el mes solicitado y status delivered. order_lines acepta únicamente order_id: usa un ID del resultado de search_orders. Cada línea aporta unit_cents * (quantity - returned_quantity). calculate acepta operation sum y values como lista de enteros en céntimos; suma los importes con esa herramienta. No inventes pedidos ni argumentos adicionales. Incluye solo IDs con unidades no devueltas. Si no hay pedidos válidos devuelve total_cents 0 y order_ids []. Respuesta final: únicamente JSON válido con total_cents entero y order_ids como lista de IDs únicos."
+  }
+}

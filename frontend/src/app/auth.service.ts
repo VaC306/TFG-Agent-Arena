@@ -1,11 +1,14 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { firstValueFrom, tap, timeout } from 'rxjs';
+import { EvaluationMode, InferenceSettings } from './arena.service';
 
 export interface Preferences {
   name: string; adapter: 'simulated' | 'ollama'; mode: 'same_model' | 'different_models';
   source: 'manual' | 'dataset'; repetitions: number; modelA: string; modelB: string;
   promptA: {template: string; text: string}; promptB: {template: string; text: string};
+  evaluation?:EvaluationMode; settings?:InferenceSettings;
+  split?:'dev'|'eval';
 }
 export interface User { id: string; username: string; display_name: string; preferences: Preferences }
 

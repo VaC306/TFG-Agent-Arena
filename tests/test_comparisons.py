@@ -81,6 +81,21 @@ def test_text_attachment(name,data):
     assert base64.b64decode(attachment.data_base64) == data and len(attachment.sha256)==64
 
 
+def test_model_receives_readable_multiline_files_without_reference():
+    from arena.attachments import user_message
+    from arena.contracts import Task
+    csv_content = 'sku,cantidad\nA,2\nB,3\n'
+    json_content = '{"A":10,"B":5}'
+    attachments = [prepare_attachment(AttachmentUpload.model_validate(upload(name,data.encode())))
+                   for name,data in [('cantidades.csv',csv_content),('catalogo.json',json_content)]]
+    task = Task(id='files',split='dev',input='Calculate the total',environment='empty',
+                expected_answer='REFERENCE-NOT-FOR-MODEL',attachments=attachments)
+    message = user_message(task)
+    assert csv_content in message['content'] and json_content in message['content']
+    assert 'cantidades.csv' in message['content'] and 'catalogo.json' in message['content']
+    assert 'REFERENCE-NOT-FOR-MODEL' not in message['content']
+
+
 @pytest.mark.parametrize('name,data', [
     ('bad.json',b'{bad'), ('nan.json',b'{"x":NaN}'), ('bad.txt',b'\xff'),
     ('bad.txt',b'\x00'), ('../file.txt',b'x'), ('file.exe',b'MZ'), ('fake.png',b'not an image'),

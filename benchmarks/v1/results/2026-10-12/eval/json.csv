@@ -1,0 +1,26 @@
+id,experiment_id,task_id,branch,repetition,position,status,adapter,success,format_ok,evaluation,queue_s,agent_s,input_tokens,output_tokens,usage_complete,calls,tool_calls,tool_errors,tool_s,server_eval_s,server_tps,agent_output_tps,error,evaluator_version,quality_evaluated,model_digest,server_version,answer
+660e0f55-b31e-4971-91af-e8ab43d885c5,efebdf52-65ed-4726-8611-576654ddaca6,eval-product,B,0,0,succeeded,ollama,True,True,json_match,0.009000301361083984,3.7953278999993927,89,21,True,1,0,0,0.0,0.393007,53.4341627502818,5.533118758988746,,arena-evaluation-v2,True,845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e,0.40.3,"{
+  ""nombre"": ""Regla"",
+  ""precio"": 2.25
+}"
+3683546d-3fcf-40c2-bed5-f074da18a706,efebdf52-65ed-4726-8611-576654ddaca6,eval-product,A,0,1,succeeded,ollama,True,True,json_match,3.831576347351074,2.7350430999940727,89,21,True,1,0,0,0.0,0.196189,107.03964034680844,7.6781239754669715,,arena-evaluation-v2,True,357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b,0.40.3,"{
+  ""nombre"": ""Regla"",
+  ""precio"": 2.25
+}"
+b3d9e512-6739-4dbf-88c5-8d91fc32532d,efebdf52-65ed-4726-8611-576654ddaca6,eval-inactive,B,0,2,succeeded,ollama,True,True,json_match,6.5844526290893555,2.8914483999978984,71,6,True,1,0,0,0.0,0.10501,57.13741548423959,2.0750845839076226,,arena-evaluation-v2,True,845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e,0.40.3,"{""activo"": false}"
+37a083b8-e3e3-4fcd-881a-154a8e57b3c1,efebdf52-65ed-4726-8611-576654ddaca6,eval-inactive,A,0,3,succeeded,ollama,True,True,json_match,9.494868040084839,2.599427300003299,71,6,True,1,0,0,0.0,0.057366,104.59156991946449,2.3082007332893615,,arena-evaluation-v2,True,357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b,0.40.3,"{""activo"": false}"
+35b74af1-c852-4702-ab2b-e31c328f917d,efebdf52-65ed-4726-8611-576654ddaca6,eval-missing,A,0,4,succeeded,ollama,True,True,json_match,12.11430811882019,3.1110470999992685,82,12,True,1,0,0,0.0,0.113655,105.58268443975187,3.85722221949093,,arena-evaluation-v2,True,357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b,0.40.3,"{""nombre"": ""Leo"", ""telefono"": null}"
+864a5b7c-40fa-414e-9f57-b5e2b0ecf5c3,efebdf52-65ed-4726-8611-576654ddaca6,eval-missing,B,0,5,succeeded,ollama,True,True,json_match,15.246075868606567,3.81626580000011,82,16,True,1,0,0,0.0,0.295781,54.09407636055054,4.192580087057756,,arena-evaluation-v2,True,845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e,0.40.3,"{
+  ""nombre"": ""Leo"",
+  ""telefono"": null
+}"
+724bd03b-39a7-49db-8ebd-a1ab798b63a7,efebdf52-65ed-4726-8611-576654ddaca6,eval-list,B,0,6,failed,ollama,False,True,json_match,19.081602811813354,3.479028100002324,84,13,True,1,0,0,0.0,0.240566,54.039224163015554,3.736675768727282,,arena-evaluation-v2,True,845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e,0.40.3,"[""B2"", ""A1"", ""C3""]"
+5127262c-32f6-4a45-8ae4-5268c6d1455e,efebdf52-65ed-4726-8611-576654ddaca6,eval-list,A,0,7,succeeded,ollama,True,True,json_match,22.579159259796143,2.615345199999865,84,17,True,1,0,0,0.0,0.157956,107.62490820228417,6.500097960300184,,arena-evaluation-v2,True,357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b,0.40.3,"{""codigos"": [""B2"", ""A1"", ""C3""]}"
+920f5976-247f-4813-baba-5a7fd3e75478,efebdf52-65ed-4726-8611-576654ddaca6,eval-zero,B,0,8,succeeded,ollama,True,True,json_match,25.214239597320557,3.6342468000002555,70,7,True,1,0,0,0.0,0.125038,55.98298117372318,1.926121252964853,,arena-evaluation-v2,True,845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e,0.40.3,"{""cantidad"": 0}"
+8fc5a78b-ede7-489d-aea3-57950423c66b,efebdf52-65ed-4726-8611-576654ddaca6,eval-zero,A,0,9,succeeded,ollama,True,True,json_match,28.867275714874268,3.105218700002297,70,7,True,1,0,0,0.0,0.073257,95.55400849065617,2.254269562396627,,arena-evaluation-v2,True,357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b,0.40.3,"{""cantidad"": 0}"
+fab577d0-1c5f-4fb1-b0ce-c8b3e8bc2806,efebdf52-65ed-4726-8611-576654ddaca6,eval-nested,B,0,10,failed,ollama,False,True,json_match,31.992339849472046,3.9677195999975083,80,25,True,1,0,0,0.0,0.467658,53.457868784453595,6.300848477300589,,arena-evaluation-v2,True,845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e,0.40.3,"{
+  ""producto"": ""carpeta"",
+  ""nombre"": null,
+  ""stock"": 8
+}"
+84198a02-3f73-4651-b1e4-8e9581627558,efebdf52-65ed-4726-8611-576654ddaca6,eval-nested,A,0,11,succeeded,ollama,True,True,json_match,35.978445529937744,2.7000421000047936,80,18,True,1,0,0,0.0,0.168879,106.58518821167819,6.6665627176583815,,arena-evaluation-v2,True,357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b,0.40.3,"{""producto"": {""nombre"": ""carpeta"", ""stock"": 8}}"

@@ -1,0 +1,20 @@
+id,experiment_id,task_id,branch,repetition,position,status,adapter,success,format_ok,evaluation,queue_s,agent_s,input_tokens,output_tokens,usage_complete,calls,tool_calls,tool_errors,tool_s,server_eval_s,server_tps,agent_output_tps,error,evaluator_version,quality_evaluated,model_digest,server_version,answer
+5cbec9e6-8326-4447-bf4a-e408f54fe9db,334b49cc-6db0-44b2-ba4b-4088e8f6e267,producto,B,0,0,succeeded,ollama,True,True,json_match,0.006522178649902344,3.8348896999959834,91,21,True,1,0,0,0.0,0.39074,53.744177714080976,5.47603755070765,,arena-evaluation-v2,True,845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e,0.40.3,"{
+  ""nombre"": ""Cuaderno"",
+  ""precio"": 3.5
+}"
+1cda2b1c-d28c-4668-b063-c948c9481eff,334b49cc-6db0-44b2-ba4b-4088e8f6e267,producto,A,0,1,succeeded,ollama,True,True,json_match,3.861666440963745,2.7461231000052067,91,21,True,1,0,0,0.0,0.196323,106.96658058403753,7.6471444415438565,,arena-evaluation-v2,True,357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b,0.40.3,"{
+  ""nombre"": ""Cuaderno"",
+  ""precio"": 3.5
+}"
+abf3144a-2543-40d1-93a2-29207c6ae0fc,334b49cc-6db0-44b2-ba4b-4088e8f6e267,activo,B,0,2,succeeded,ollama,True,True,json_match,6.626115560531616,3.1805679999961285,78,9,True,1,0,0,0.0,0.162865,55.26049181837718,2.8296832515484516,,arena-evaluation-v2,True,845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e,0.40.3,"{
+  ""activo"": true
+}"
+e80bde47-14f7-4b5b-9464-717f7e70239e,334b49cc-6db0-44b2-ba4b-4088e8f6e267,activo,A,0,3,succeeded,ollama,True,True,json_match,9.82461929321289,3.1810058999981266,78,9,True,1,0,0,0.0,0.083743,107.47166927384976,2.8292937149237294,,arena-evaluation-v2,True,357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b,0.40.3,"{
+  ""activo"": true
+}"
+54aa8b5f-671a-4d0d-adbf-470ff391ae4b,334b49cc-6db0-44b2-ba4b-4088e8f6e267,ausente,A,0,4,succeeded,ollama,True,True,json_match,13.024338960647583,3.091345699998783,81,12,True,1,0,0,0.0,0.13149,91.26169290440338,3.8818046134422057,,arena-evaluation-v2,True,357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b,0.40.3,"{""nombre"": ""Ana"", ""telefono"": null}"
+e504530e-b632-41e7-9ecf-26b04cde9a14,334b49cc-6db0-44b2-ba4b-4088e8f6e267,ausente,B,0,5,succeeded,ollama,True,True,json_match,16.14213752746582,3.843180299998494,81,16,True,1,0,0,0.0,0.294041,54.41418033539541,4.1632186759508185,,arena-evaluation-v2,True,845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e,0.40.3,"{
+  ""nombre"": ""Ana"",
+  ""telefono"": null
+}"

@@ -1,0 +1,14 @@
+{
+  "currency": "EUR",
+  "orders": [
+    {"id":"O1","customer_id":"C1","date":"2026-01-03","status":"delivered","lines":[{"product_id":"P1","name":"Cuaderno","unit_cents":500,"quantity":3,"returned_quantity":1},{"product_id":"P2","name":"Lápiz","unit_cents":250,"quantity":2,"returned_quantity":0}]},
+    {"id":"O2","customer_id":"C1","date":"2026-01-25","status":"delivered","lines":[{"product_id":"P3","name":"Mochila","unit_cents":2000,"quantity":1,"returned_quantity":0}]},
+    {"id":"O3","customer_id":"C1","date":"2026-01-15","status":"cancelled","lines":[{"product_id":"P3","name":"Mochila","unit_cents":2000,"quantity":1,"returned_quantity":0}]},
+    {"id":"O4","customer_id":"C1","date":"2026-02-01","status":"delivered","lines":[{"product_id":"P2","name":"Lápiz","unit_cents":250,"quantity":1,"returned_quantity":0}]},
+    {"id":"O5","customer_id":"C2","date":"2026-01-31","status":"delivered","lines":[{"product_id":"P4","name":"Carpeta","unit_cents":999,"quantity":2,"returned_quantity":0}]},
+    {"id":"O6","customer_id":"C2","date":"2026-02-28","status":"delivered","lines":[{"product_id":"P4","name":"Carpeta","unit_cents":999,"quantity":1,"returned_quantity":1}]},
+    {"id":"O7","customer_id":"C3","date":"2026-02-01","status":"pending","lines":[{"product_id":"P1","name":"Cuaderno","unit_cents":500,"quantity":1,"returned_quantity":0}]},
+    {"id":"O8","customer_id":"C3","date":"2026-03-31","status":"delivered","lines":[{"product_id":"P5","name":"Regla","unit_cents":333,"quantity":3,"returned_quantity":1}]},
+    {"id":"O9","customer_id":"C3","date":"2026-04-01","status":"delivered","lines":[{"product_id":"P5","name":"Regla","unit_cents":333,"quantity":2,"returned_quantity":0}]}
+  ]
+}

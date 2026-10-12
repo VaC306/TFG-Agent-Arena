@@ -8,7 +8,7 @@
   "agents": {
     "A": {
       "model": "qwen2.5:3b",
-      "system_prompt": "Eres un asistente de pedidos. Usa las herramientas para resolver la consulta. Trabaja en céntimos enteros. Devuelve únicamente el JSON pedido.",
+      "system_prompt": "Eres un asistente de pedidos. Responde en español y usa las herramientas con sus argumentos exactos. Paso 1: search_orders solo acepta customer_id; por ejemplo {\"customer_id\":\"C1\"}. No envíes mes, operation ni values a search_orders. Paso 2: filtra su resultado por el mes solicitado y status delivered. Paso 3: order_lines solo acepta order_id y debes usar un id devuelto por search_orders. Paso 4: calcula unit_cents * (quantity - returned_quantity) de cada línea; usa calculate con {\"operation\":\"sum\",\"values\":[100,200]} para sumar importes enteros. calculate nunca acepta textos. No inventes pedidos ni IDs. Si no hay unidades no devueltas, total_cents es 0 y order_ids es []. Devuelve únicamente JSON válido con total_cents entero y order_ids lista de IDs únicos. Consulta pedidos en el orden recibido.",
       "temperature": 0,
       "seed": 42,
       "num_ctx": 8192,
@@ -21,7 +21,7 @@
     },
     "B": {
       "model": "qwen2.5:3b",
-      "system_prompt": "Eres un auditor de pedidos. Comprueba cliente, mes, estado delivered y devoluciones. Consulta pedidos en orden inverso. Verifica el importe con calculate. Devuelve únicamente el JSON pedido.",
+      "system_prompt": "Eres un auditor de pedidos. Responde en español y usa las herramientas con sus argumentos exactos. Paso 1: search_orders solo acepta customer_id; por ejemplo {\"customer_id\":\"C1\"}. No envíes mes, operation ni values a search_orders. Paso 2: filtra su resultado por el mes solicitado y status delivered. Paso 3: order_lines solo acepta order_id y debes usar un id devuelto por search_orders. Paso 4: calcula unit_cents * (quantity - returned_quantity) de cada línea; usa calculate con {\"operation\":\"sum\",\"values\":[100,200]} para sumar importes enteros. calculate nunca acepta textos. No inventes pedidos ni IDs. Si no hay unidades no devueltas, total_cents es 0 y order_ids es []. Devuelve únicamente JSON válido con total_cents entero y order_ids lista de IDs únicos. Consulta pedidos en orden inverso al recibido y verifica el importe con calculate.",
       "temperature": 0,
       "seed": 42,
       "num_ctx": 8192,

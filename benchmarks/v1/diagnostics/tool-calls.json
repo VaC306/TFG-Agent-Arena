@@ -1,0 +1,5 @@
+[
+  {"id":"search-c1","input":"Llama a search_orders con customer_id igual a C1. No añadas otros argumentos.","tool":"search_orders","arguments":{"customer_id":"C1"}},
+  {"id":"lines-o1","input":"Llama a order_lines con order_id igual a O1. No añadas otros argumentos.","tool":"order_lines","arguments":{"order_id":"O1"}},
+  {"id":"sum-integers","input":"Llama a calculate para sumar los enteros 100 y 200. operation debe ser sum y values debe ser [100,200].","tool":"calculate","arguments":{"operation":"sum","values":[100,200]}}
+]

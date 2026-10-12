@@ -161,7 +161,7 @@ def test_claim_cancel_recovery_and_failure_denominator(store):
     assert store.list_runs()[0]['status'] == 'interrupted'
     for run in store.list_runs()[1:]:
         store.cancel(run['id'])
-    assert paired_summary(store, eid)['success_rate'] == {'A':0,'B':0}
+    assert paired_summary(store, eid)['success_rate'] == {'A':None,'B':None}
     assert store.claim() is None
 
 

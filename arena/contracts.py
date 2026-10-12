@@ -58,7 +58,15 @@ class Task(Contract):
     environment: str
     criteria: Criteria | None = None
     expected_answer: str | None = None
+    evaluation: Literal['exact_match', 'json_match', 'none'] = 'exact_match'
     attachments: list[Attachment] = Field(default_factory=list)
+
+    @model_validator(mode='after')
+    def valid_reference(self):
+        if self.evaluation == 'json_match' and self.expected_answer is not None:
+            from .json_input import load_json
+            load_json(self.expected_answer)
+        return self
 
 
 class Experiment(Contract):

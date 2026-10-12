@@ -70,6 +70,11 @@
 
 /* Quiet surfaces, but controls and focus must remain distinguishable. */
 .composer input, .composer textarea, .composer select { border-color: #85857c; }
+.evaluation-settings { max-width: 620px; margin: 24px 0; }
+.evaluation-settings .hint { margin-top: 12px; }
+.protocol-settings { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 12px 0; margin: 24px 0; }
+.protocol-settings summary { min-height: 44px; align-content: center; font-size: 13px; }
+.protocol-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 20px; margin: 24px 0; }
 .composer > arena-info { display: block; margin: -18px 0 26px; }
 .composer .info-dialog { color: #222220; }
 .composer .info-dialog .secondary { width: auto; }

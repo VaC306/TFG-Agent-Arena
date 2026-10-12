@@ -4,11 +4,13 @@ import json
 from pathlib import Path
 import pandas as pd
 from scipy.stats import binomtest
+from .protocol import quality_value
 
 
 FIELDS = ["id", "experiment_id", "task_id", "branch", "repetition", "position", "status", "adapter",
           "success", "format_ok", "evaluation", "queue_s", "agent_s", "input_tokens", "output_tokens", "usage_complete",
-          "calls", "tool_calls", "tool_errors", "tool_s", "server_eval_s", "server_tps", "agent_output_tps", "error"]
+          "calls", "tool_calls", "tool_errors", "tool_s", "server_eval_s", "server_tps", "agent_output_tps", "error",
+          "evaluator_version", "quality_evaluated", "model_digest", "server_version", "answer"]
 
 
 def csv_text(store, experiment_id):
@@ -17,7 +19,11 @@ def csv_text(store, experiment_id):
     writer = csv.DictWriter(output, fieldnames=FIELDS, extrasaction="ignore")
     writer.writeheader()
     for run in store.list_runs(experiment_id):
-        writer.writerow(run | {"adapter": adapter} | (run["result"] or {}))
+        result = run['result'] or {}
+        identity = result.get('inference_identity') or {}
+        row = run | {"adapter": adapter} | result | {'success':quality_value(run), 'quality_evaluated':quality_value(run) is not None,
+              'model_digest':identity.get('digest'), 'server_version':identity.get('server_version')}
+        writer.writerow({k: "'" + v if isinstance(v, str) and v.lstrip().startswith(('=', '+', '-', '@')) else v for k, v in row.items()})
     return output.getvalue()
 
 
@@ -25,7 +31,7 @@ def paired_summary(store, experiment_id):
     runs = store.list_runs(experiment_id)
     if any(r["status"] in {"queued", "running"} for r in runs):
         raise ValueError("Finaliza o cancela las ejecuciones antes de analizar")
-    frame = pd.DataFrame([{**r, "success": (r["result"] or {}).get("success")} for r in runs])
+    frame = pd.DataFrame([{**r, "success": quality_value(r)} for r in runs])
     pairs = frame.pivot(index=["task_id", "repetition"], columns="branch", values="success")
     snapshot = store.snapshot(experiment_id)
     inputs_shared = snapshot.get('conditions', {}).get('inputs_shared', True)
@@ -34,12 +40,13 @@ def paired_summary(store, experiment_id):
     wins_b = int(((paired.B == 1) & (paired.A == 0)).sum())
     # Repetitions are clustered by task; avoid treating them as independent observations.
     repeats = snapshot["config"]["repetitions"]
-    p_value = binomtest(wins_a, wins_a + wins_b).pvalue if wins_a + wins_b and repeats == 1 else None
+    complete_pairs = inputs_shared and len(paired) == len(pairs)
+    p_value = binomtest(wins_a, wins_a + wins_b).pvalue if wins_a + wins_b and repeats == 1 and complete_pairs else None
     rates = {branch: (float(group.success.dropna().mean()) if group.success.notna().any() else None)
              for branch, group in frame.groupby('branch')}
-    return {"pairs": len(paired), "inputs_shared": inputs_shared, "success_rate": rates,
+    return {"pairs": len(paired), "inputs_shared": inputs_shared, "complete_pairs":complete_pairs, "success_rate": rates,
             "A_only_success": wins_a, "B_only_success": wins_b, "mcnemar_exact_p": p_value,
-            "note": "Descriptive results. Quality is unavailable without reference; no paired inference for different inputs. Repetitions are not independent."}
+            "note": "Descriptive results. Rates are conditional on evaluated responses; inspect execution errors and coverage. No paired inference for different inputs, missing scores or repeated cases."}
 
 
 def export_bundle(store, experiment_id, directory):

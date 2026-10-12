@@ -53,6 +53,19 @@ class Store:
                 raise KeyError(experiment_id)
             return json.loads(row[0])
 
+    def record_inference_metadata(self, run, metadata, identity):
+        self.check_run(run['id'])
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            previous = db.execute('''SELECT e.payload FROM events e JOIN runs r ON r.id=e.run_id
+                WHERE r.experiment_id=? AND e.kind='inference_metadata'
+                AND json_extract(e.payload, '$.arena_identity.identifier')=? ORDER BY e.seq LIMIT 1''',
+                (run['experiment_id'], identity['identifier'])).fetchone()
+            if previous and json.loads(previous[0])['arena_identity']['fingerprint'] != identity['fingerprint']:
+                raise ValueError('La identidad del modelo o su servidor ha cambiado durante el experimento. Crea una nueva comparación.')
+            db.execute('INSERT INTO events(run_id,kind,at,payload) VALUES (?,?,?,?)',
+                       (run['id'], 'inference_metadata', time.time(), json.dumps(metadata | {'arena_identity':identity})))
+
     def list_runs(self, experiment_id=None):
         if self.owner_id is not None:
             if experiment_id is None:

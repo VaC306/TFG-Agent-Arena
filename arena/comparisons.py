@@ -50,6 +50,20 @@ class CustomAgent(Contract):
     prompt_template: Literal['general', 'analyst', 'summary', 'extract', 'vision', 'custom'] = 'custom'
 
 
+class InferenceSettings(Contract):
+    temperature: float = Field(default=0, ge=0, le=2, allow_inf_nan=False, strict=True)
+    seed: int = Field(default=42, ge=0, le=2_147_483_647, strict=True)
+    num_ctx: int = Field(default=16384, ge=512, le=131072, strict=True)
+    max_output_tokens: int = Field(default=4096, ge=1, le=16384, strict=True)
+    timeout_s: int = Field(default=120, ge=1, le=3600, strict=True)
+
+    @model_validator(mode='after')
+    def context_budget(self):
+        if self.max_output_tokens >= self.num_ctx:
+            raise ValueError('El máximo de salida debe ser menor que el contexto para dejar espacio a la entrada')
+        return self
+
+
 class ComparisonRequest(Contract):
     name: str = Field(min_length=1, max_length=120)
     adapter: Literal['simulated', 'ollama']
@@ -59,6 +73,9 @@ class ComparisonRequest(Contract):
     branch_inputs: dict[str, InputBundle] | None = None
     repetitions: int = Field(default=1, ge=1, le=10, strict=True)
     dataset: list[DatasetCase] | None = Field(default=None, min_length=1, max_length=100)
+    evaluation: Literal['exact_match', 'json_match', 'none'] = 'exact_match'
+    settings: InferenceSettings = Field(default_factory=InferenceSettings)
+    split: Literal['dev', 'eval'] = 'dev'
 
     @field_validator('name')
     @classmethod
@@ -73,6 +90,17 @@ class ComparisonRequest(Contract):
             raise ValueError('Se necesitan exactamente las ramas A y B')
         if any(not agent.system_prompt.strip() for agent in self.agents.values()):
             raise ValueError('El prompt no puede estar vacío')
+        references = ([case.expected_answer for case in self.dataset] if self.dataset is not None else
+                      [self.shared_input.expected_answer] if self.shared_input else
+                      [bundle.expected_answer for bundle in (self.branch_inputs or {}).values()])
+        if self.evaluation == 'json_match':
+            from .json_input import load_json
+            for reference in references:
+                if reference is not None:
+                    try:
+                        load_json(reference)
+                    except ValueError as exc:
+                        raise ValueError('La evaluación JSON requiere respuestas esperadas con JSON válido') from exc
         self.config()  # Enforce model identity on the server, not just in the form.
         if self.dataset is not None:
             validate_cases(self.dataset)
@@ -88,19 +116,22 @@ class ComparisonRequest(Contract):
 
     def config(self):
         return Experiment(name=self.name, adapter=self.adapter, comparison=self.comparison,
-                          repetitions=self.repetitions, agents={branch: AgentConfig(
-                              **agent.model_dump(), tools_enabled=False, num_ctx=16384,
+                          repetitions=self.repetitions, split=self.split, agents={branch: AgentConfig(
+                              **agent.model_dump(), tools_enabled=False, temperature=self.settings.temperature,
+                              seed=self.settings.seed, num_ctx=self.settings.num_ctx,
+                              limits={'max_output_tokens':self.settings.max_output_tokens, 'timeout_s':self.settings.timeout_s},
                           ) for branch, agent in self.agents.items()})
 
 
 def submit_comparison(store, request):
     config = request.config()
     if request.dataset is not None:
-        return schedule(store, config, [case.task() for case in request.dataset], {'empty': {'orders': []}})
+        tasks = [case.task().model_copy(update={'evaluation':request.evaluation, 'split':request.split}) for case in request.dataset]
+        return schedule(store, config, tasks, {'empty': {'orders': []}})
     if request.shared_input:
-        tasks = [request.shared_input.task()]
+        tasks = [request.shared_input.task().model_copy(update={'evaluation':request.evaluation, 'split':request.split})]
         branch_tasks = None
     else:
-        branch_tasks = {branch: bundle.task().model_dump() for branch, bundle in request.branch_inputs.items()}
+        branch_tasks = {branch: bundle.task().model_copy(update={'evaluation':request.evaluation, 'split':request.split}).model_dump() for branch, bundle in request.branch_inputs.items()}
         tasks = [Task.model_validate(branch_tasks['A'])]
     return schedule(store, config, tasks, {'empty': {'orders': []}}, branch_tasks)

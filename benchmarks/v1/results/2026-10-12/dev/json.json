@@ -1,0 +1,465 @@
+{
+  "experiment_id": "334b49cc-6db0-44b2-ba4b-4088e8f6e267",
+  "benchmark": {
+    "version": "arena-benchmarks-v1",
+    "suite": "json",
+    "split": "dev",
+    "manifest_sha256": "fc626af1909e4f40b37e4471ea27ffff3e378de6190d407820f471216a342142"
+  },
+  "data_sha256": "c54808396b4079847431941edf41ee987ed44f2fd3bf7b3d24f3bd16e55cdca5",
+  "source_sha256": {
+    "accounts.py": "142cbf2c7571877a37197f1e111a3c4fb047c2fd92f9074ec1f289919fb529d3",
+    "adapters.py": "2bd17ebeff6c88e448cd9a6c34121d5fba97f4eefa30bff68d94cada183c4f4e",
+    "api.py": "802f5d7532fdbb2bcbda03078b3920d7927ca71d2a74b94e8d4522a65f3dbd69",
+    "attachments.py": "db1ade58c249baa6c1415752705dd8816e3127db588ef7240ce93fd475d79e2b",
+    "benchmarks.py": "7cc48029a90792580993d7a3fca8feab3b812daece0f27cbbcf5374ad6744d01",
+    "cli.py": "ab360a4a920120eaca5c063124b5b13c87c182a9f8a0016ac45cca7087e2fbb4",
+    "comparisons.py": "37463e6855548d7ec066f411cc09a53f511d9a269fabaae6359aa24a27f7aa9f",
+    "contracts.py": "d6622773221f28745c85c0cb72159676dbda1b8f33f22e90d05f4c5a4d21ce90",
+    "datasets.py": "f979a9e355cef883b022238404d7f27fa666a6b485ec44fdf42a2ea271e249aa",
+    "diagnostics.py": "262ec20efb0fbd643d5f12c1f7a1ecc8fbd985eabc61f9e1b344648b725265dd",
+    "evaluator.py": "a1d1c0a91d5cf3727910965337d956c018d65cde9c6dacb03bb216dc63af1b13",
+    "export.py": "552eb3623a0880f10458c529ec5f9d8c7086ddc09cb6cb2450c9b0aab39fa186",
+    "json_input.py": "d955862c26c26b026f7ad8ce08e8efae850269bfccd6ca8c55beac8429756624",
+    "protocol.py": "40aed51019f0130ff6cf2a6d9028b57617d5088b31f3689ca6a547d482d167f2",
+    "resources.py": "5fa55346518460f6ddc169cf26eb071b0531e082f628baccd127b6b07f3da488",
+    "runner.py": "876753094771dae89eeee0f557ff4631f881987357be262bdffa0f5121b0e4a1",
+    "scheduler.py": "fcf6644f32ef8616ddc6cbbc9671b68fc17683d4a17dbeb80c6f345c76160976",
+    "store.py": "48e30bdc8e67bd9b56b4036502897a0792b0bb3f255f218832140c97e03c4b12",
+    "tools.py": "12a3c582510b2bb070c8a0b1ee4f706db80f4810da7a6be4968619a4a7b6f172",
+    "worker.py": "e593043ba6f5f1500056ef009723f87bacc4683c43484ca24b84b939ddb24a8a",
+    "__init__.py": "91447944015cec709e8aa7655f7e9d64e1e4508e7023a57fe3746911c0fc6fed"
+  },
+  "config": {
+    "name": "arena-benchmarks-v1 json dev",
+    "adapter": "ollama",
+    "mode": "sequential",
+    "agents": {
+      "A": {
+        "model": "qwen2.5:3b",
+        "system_prompt": "Extrae la información solicitada y devuelve únicamente JSON válido, sin Markdown ni explicaciones. Respeta los tipos pedidos, usa null para datos ausentes y no inventes valores.",
+        "temperature": 0.0,
+        "seed": 42,
+        "num_ctx": 4096,
+        "limits": {
+          "timeout_s": 90.0,
+          "max_calls": 8,
+          "max_tool_calls": 20,
+          "max_output_tokens": 1024
+        },
+        "prompt_template": "custom",
+        "tools_enabled": false
+      },
+      "B": {
+        "model": "qwen2.5:7b",
+        "system_prompt": "Extrae la información solicitada y devuelve únicamente JSON válido, sin Markdown ni explicaciones. Respeta los tipos pedidos, usa null para datos ausentes y no inventes valores.",
+        "temperature": 0.0,
+        "seed": 42,
+        "num_ctx": 4096,
+        "limits": {
+          "timeout_s": 90.0,
+          "max_calls": 8,
+          "max_tool_calls": 20,
+          "max_output_tokens": 1024
+        },
+        "prompt_template": "custom",
+        "tools_enabled": false
+      }
+    },
+    "split": "dev",
+    "repetitions": 1,
+    "order_seed": 42,
+    "ollama_url": "http://127.0.0.1:11434",
+    "comparison": "different_models"
+  },
+  "conditions": {
+    "mode": "sequential",
+    "inputs_shared": true,
+    "warmup": "none",
+    "keep_alive": "0",
+    "resource_scope": "host_and_worker",
+    "seed_determinism": "not guaranteed"
+  },
+  "report": {
+    "version": "arena-protocol-v1",
+    "evaluator_version": "arena-evaluation-v2",
+    "comparison_scope": "models",
+    "inputs_shared": true,
+    "prompts_equal": true,
+    "parameters_equal": true,
+    "evaluations": [
+      "json_match"
+    ],
+    "models": {
+      "B": {
+        "identifier": "qwen2.5:7b",
+        "adapter": "ollama",
+        "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+        "server_version": "0.40.3",
+        "quantization": "Q4_K_M",
+        "verified": true,
+        "fingerprint": "9790b53a88dbd85dc7c7bdd749be79608c3d2c5ab49ca35d4ba108b50d4ebe7e"
+      },
+      "A": {
+        "identifier": "qwen2.5:3b",
+        "adapter": "ollama",
+        "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+        "server_version": "0.40.3",
+        "quantization": "Q4_K_M",
+        "verified": true,
+        "fingerprint": "a2d1b0a541b6f4bf1f9ec6a1eaf7e00b9e75646b4f5b7cd4c881d8daae3f6420"
+      }
+    },
+    "branches": {
+      "A": {
+        "total": 3,
+        "answers": 3,
+        "evaluated": 3,
+        "correct": 3,
+        "execution_errors": 0,
+        "mean_answer_s": 3.006158233334039
+      },
+      "B": {
+        "total": 3,
+        "answers": 3,
+        "evaluated": 3,
+        "correct": 3,
+        "execution_errors": 0,
+        "mean_answer_s": 3.6195459999968684
+      }
+    },
+    "warnings": [
+      "Había cambios sin commit al guardar. Para identificar el código, usa también las fuentes y hashes del informe.",
+      "Sin calentamiento previo. El tiempo del agente incluye consulta de metadatos y puede incluir carga del modelo.",
+      "Política de memoria del modelo (keep_alive): 0. No se garantiza un inicio en frío si otro programa lo tiene cargado.",
+      "Semilla fija no garantiza respuestas idénticas. La carga de otros programas no está aislada."
+    ]
+  },
+  "audit": {
+    "passed": true,
+    "errors": [],
+    "runs": 6,
+    "report": {
+      "version": "arena-protocol-v1",
+      "evaluator_version": "arena-evaluation-v2",
+      "comparison_scope": "models",
+      "inputs_shared": true,
+      "prompts_equal": true,
+      "parameters_equal": true,
+      "evaluations": [
+        "json_match"
+      ],
+      "models": {
+        "B": {
+          "identifier": "qwen2.5:7b",
+          "adapter": "ollama",
+          "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+          "server_version": "0.40.3",
+          "quantization": "Q4_K_M",
+          "verified": true,
+          "fingerprint": "9790b53a88dbd85dc7c7bdd749be79608c3d2c5ab49ca35d4ba108b50d4ebe7e"
+        },
+        "A": {
+          "identifier": "qwen2.5:3b",
+          "adapter": "ollama",
+          "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+          "server_version": "0.40.3",
+          "quantization": "Q4_K_M",
+          "verified": true,
+          "fingerprint": "a2d1b0a541b6f4bf1f9ec6a1eaf7e00b9e75646b4f5b7cd4c881d8daae3f6420"
+        }
+      },
+      "branches": {
+        "A": {
+          "total": 3,
+          "answers": 3,
+          "evaluated": 3,
+          "correct": 3,
+          "execution_errors": 0,
+          "mean_answer_s": 3.006158233334039
+        },
+        "B": {
+          "total": 3,
+          "answers": 3,
+          "evaluated": 3,
+          "correct": 3,
+          "execution_errors": 0,
+          "mean_answer_s": 3.6195459999968684
+        }
+      },
+      "warnings": [
+        "Había cambios sin commit al guardar. Para identificar el código, usa también las fuentes y hashes del informe.",
+        "Sin calentamiento previo. El tiempo del agente incluye consulta de metadatos y puede incluir carga del modelo.",
+        "Política de memoria del modelo (keep_alive): 0. No se garantiza un inicio en frío si otro programa lo tiene cargado.",
+        "Semilla fija no garantiza respuestas idénticas. La carga de otros programas no está aislada."
+      ]
+    }
+  },
+  "summary": {
+    "pairs": 3,
+    "inputs_shared": true,
+    "complete_pairs": true,
+    "success_rate": {
+      "A": 1.0,
+      "B": 1.0
+    },
+    "A_only_success": 0,
+    "B_only_success": 0,
+    "mcnemar_exact_p": null,
+    "note": "Descriptive results. Rates are conditional on evaluated responses; inspect execution errors and coverage. No paired inference for different inputs, missing scores or repeated cases."
+  },
+  "runs": [
+    {
+      "id": "5cbec9e6-8326-4447-bf4a-e408f54fe9db",
+      "experiment_id": "334b49cc-6db0-44b2-ba4b-4088e8f6e267",
+      "task_id": "producto",
+      "branch": "B",
+      "repetition": 0,
+      "position": 0,
+      "status": "succeeded",
+      "queued_at": 1791814227.496112,
+      "started_at": 1791814227.5026343,
+      "finished_at": 1791814231.3537736,
+      "result": {
+        "success": true,
+        "format_ok": true,
+        "queue_s": 0.006522178649902344,
+        "input_tokens": 91,
+        "output_tokens": 21,
+        "server_eval_s": 0.39074,
+        "calls": 1,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "tool_s": 0.0,
+        "usage_complete": true,
+        "evaluator_version": "arena-evaluation-v2",
+        "quality_evaluated": true,
+        "inference_identity": {
+          "identifier": "qwen2.5:7b",
+          "adapter": "ollama",
+          "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+          "server_version": "0.40.3",
+          "quantization": "Q4_K_M",
+          "verified": true,
+          "fingerprint": "9790b53a88dbd85dc7c7bdd749be79608c3d2c5ab49ca35d4ba108b50d4ebe7e"
+        },
+        "answer": "{\n  \"nombre\": \"Cuaderno\",\n  \"precio\": 3.5\n}",
+        "evaluation": "json_match",
+        "reason": "JSON equivalente a la referencia",
+        "agent_s": 3.8348896999959834,
+        "server_tps": 53.744177714080976,
+        "agent_output_tps": 5.47603755070765
+      }
+    },
+    {
+      "id": "1cda2b1c-d28c-4668-b063-c948c9481eff",
+      "experiment_id": "334b49cc-6db0-44b2-ba4b-4088e8f6e267",
+      "task_id": "producto",
+      "branch": "A",
+      "repetition": 0,
+      "position": 1,
+      "status": "succeeded",
+      "queued_at": 1791814227.496112,
+      "started_at": 1791814231.3577785,
+      "finished_at": 1791814234.1182368,
+      "result": {
+        "success": true,
+        "format_ok": true,
+        "queue_s": 3.861666440963745,
+        "input_tokens": 91,
+        "output_tokens": 21,
+        "server_eval_s": 0.196323,
+        "calls": 1,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "tool_s": 0.0,
+        "usage_complete": true,
+        "evaluator_version": "arena-evaluation-v2",
+        "quality_evaluated": true,
+        "inference_identity": {
+          "identifier": "qwen2.5:3b",
+          "adapter": "ollama",
+          "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+          "server_version": "0.40.3",
+          "quantization": "Q4_K_M",
+          "verified": true,
+          "fingerprint": "a2d1b0a541b6f4bf1f9ec6a1eaf7e00b9e75646b4f5b7cd4c881d8daae3f6420"
+        },
+        "answer": "{\n  \"nombre\": \"Cuaderno\",\n  \"precio\": 3.5\n}",
+        "evaluation": "json_match",
+        "reason": "JSON equivalente a la referencia",
+        "agent_s": 2.7461231000052067,
+        "server_tps": 106.96658058403753,
+        "agent_output_tps": 7.6471444415438565
+      }
+    },
+    {
+      "id": "abf3144a-2543-40d1-93a2-29207c6ae0fc",
+      "experiment_id": "334b49cc-6db0-44b2-ba4b-4088e8f6e267",
+      "task_id": "activo",
+      "branch": "B",
+      "repetition": 0,
+      "position": 2,
+      "status": "succeeded",
+      "queued_at": 1791814227.496112,
+      "started_at": 1791814234.1222277,
+      "finished_at": 1791814237.3156452,
+      "result": {
+        "success": true,
+        "format_ok": true,
+        "queue_s": 6.626115560531616,
+        "input_tokens": 78,
+        "output_tokens": 9,
+        "server_eval_s": 0.162865,
+        "calls": 1,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "tool_s": 0.0,
+        "usage_complete": true,
+        "evaluator_version": "arena-evaluation-v2",
+        "quality_evaluated": true,
+        "inference_identity": {
+          "identifier": "qwen2.5:7b",
+          "adapter": "ollama",
+          "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+          "server_version": "0.40.3",
+          "quantization": "Q4_K_M",
+          "verified": true,
+          "fingerprint": "9790b53a88dbd85dc7c7bdd749be79608c3d2c5ab49ca35d4ba108b50d4ebe7e"
+        },
+        "answer": "{\n  \"activo\": true\n}",
+        "evaluation": "json_match",
+        "reason": "JSON equivalente a la referencia",
+        "agent_s": 3.1805679999961285,
+        "server_tps": 55.26049181837718,
+        "agent_output_tps": 2.8296832515484516
+      }
+    },
+    {
+      "id": "e80bde47-14f7-4b5b-9464-717f7e70239e",
+      "experiment_id": "334b49cc-6db0-44b2-ba4b-4088e8f6e267",
+      "task_id": "activo",
+      "branch": "A",
+      "repetition": 0,
+      "position": 3,
+      "status": "succeeded",
+      "queued_at": 1791814227.496112,
+      "started_at": 1791814237.3207314,
+      "finished_at": 1791814240.5163558,
+      "result": {
+        "success": true,
+        "format_ok": true,
+        "queue_s": 9.82461929321289,
+        "input_tokens": 78,
+        "output_tokens": 9,
+        "server_eval_s": 0.083743,
+        "calls": 1,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "tool_s": 0.0,
+        "usage_complete": true,
+        "evaluator_version": "arena-evaluation-v2",
+        "quality_evaluated": true,
+        "inference_identity": {
+          "identifier": "qwen2.5:3b",
+          "adapter": "ollama",
+          "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+          "server_version": "0.40.3",
+          "quantization": "Q4_K_M",
+          "verified": true,
+          "fingerprint": "a2d1b0a541b6f4bf1f9ec6a1eaf7e00b9e75646b4f5b7cd4c881d8daae3f6420"
+        },
+        "answer": "{\n  \"activo\": true\n}",
+        "evaluation": "json_match",
+        "reason": "JSON equivalente a la referencia",
+        "agent_s": 3.1810058999981266,
+        "server_tps": 107.47166927384976,
+        "agent_output_tps": 2.8292937149237294
+      }
+    },
+    {
+      "id": "54aa8b5f-671a-4d0d-adbf-470ff391ae4b",
+      "experiment_id": "334b49cc-6db0-44b2-ba4b-4088e8f6e267",
+      "task_id": "ausente",
+      "branch": "A",
+      "repetition": 0,
+      "position": 4,
+      "status": "succeeded",
+      "queued_at": 1791814227.496112,
+      "started_at": 1791814240.520451,
+      "finished_at": 1791814243.6322508,
+      "result": {
+        "success": true,
+        "format_ok": true,
+        "queue_s": 13.024338960647583,
+        "input_tokens": 81,
+        "output_tokens": 12,
+        "server_eval_s": 0.13149,
+        "calls": 1,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "tool_s": 0.0,
+        "usage_complete": true,
+        "evaluator_version": "arena-evaluation-v2",
+        "quality_evaluated": true,
+        "inference_identity": {
+          "identifier": "qwen2.5:3b",
+          "adapter": "ollama",
+          "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+          "server_version": "0.40.3",
+          "quantization": "Q4_K_M",
+          "verified": true,
+          "fingerprint": "a2d1b0a541b6f4bf1f9ec6a1eaf7e00b9e75646b4f5b7cd4c881d8daae3f6420"
+        },
+        "answer": "{\"nombre\": \"Ana\", \"telefono\": null}",
+        "evaluation": "json_match",
+        "reason": "JSON equivalente a la referencia",
+        "agent_s": 3.091345699998783,
+        "server_tps": 91.26169290440338,
+        "agent_output_tps": 3.8818046134422057
+      }
+    },
+    {
+      "id": "e504530e-b632-41e7-9ecf-26b04cde9a14",
+      "experiment_id": "334b49cc-6db0-44b2-ba4b-4088e8f6e267",
+      "task_id": "ausente",
+      "branch": "B",
+      "repetition": 0,
+      "position": 5,
+      "status": "succeeded",
+      "queued_at": 1791814227.496112,
+      "started_at": 1791814243.6382496,
+      "finished_at": 1791814247.4985774,
+      "result": {
+        "success": true,
+        "format_ok": true,
+        "queue_s": 16.14213752746582,
+        "input_tokens": 81,
+        "output_tokens": 16,
+        "server_eval_s": 0.294041,
+        "calls": 1,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "tool_s": 0.0,
+        "usage_complete": true,
+        "evaluator_version": "arena-evaluation-v2",
+        "quality_evaluated": true,
+        "inference_identity": {
+          "identifier": "qwen2.5:7b",
+          "adapter": "ollama",
+          "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+          "server_version": "0.40.3",
+          "quantization": "Q4_K_M",
+          "verified": true,
+          "fingerprint": "9790b53a88dbd85dc7c7bdd749be79608c3d2c5ab49ca35d4ba108b50d4ebe7e"
+        },
+        "answer": "{\n  \"nombre\": \"Ana\",\n  \"telefono\": null\n}",
+        "evaluation": "json_match",
+        "reason": "JSON equivalente a la referencia",
+        "agent_s": 3.843180299998494,
+        "server_tps": 54.41418033539541,
+        "agent_output_tps": 4.1632186759508185
+      }
+    }
+  ]
+}

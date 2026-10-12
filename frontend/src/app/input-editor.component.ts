@@ -31,7 +31,7 @@ import { textError, filenameError, csvError } from './validation';
     <details class="reference-input"><summary>Respuesta esperada (opcional)</summary>
       <textarea [id]="slot + '-reference'" [attr.aria-invalid]="invalidReference ? 'true' : null" [attr.aria-describedby]="invalidReference ? 'composer-error' : null" [attr.aria-label]="'Respuesta esperada ' + title" [(ngModel)]="value.expected_answer" [ngModelOptions]="{standalone: true}"
         rows="2" maxlength="6000" placeholder="Sin referencia, la calidad aparecerá como no evaluada."></textarea>
-      <p class="hint">Evalúa coincidencia exacta del texto, ignorando espacios al principio y al final. No es un juez de calidad semántica.</p>
+      <p class="hint">Se usa con la evaluación que elijas arriba. Esta referencia no se envía al modelo. Para JSON equivalente, escribe JSON válido.</p>
     </details>
   `,
 })

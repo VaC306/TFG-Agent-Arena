@@ -72,9 +72,10 @@ resumen,"Resume este texto: …",</pre>
     <div class="guide-copy">
       <p class="eyebrow">Qué significa hacerlo bien</p>
       <h2 id="guide-step-4" tabindex="-1">Define cómo evaluar.</h2>
-      <p>Si conoces la respuesta correcta, añade una <strong>respuesta esperada</strong>. La herramienta compara el texto exacto, ignorando espacios al principio y al final.</p>
-      <p>Si buscas un resumen o una respuesta abierta, puedes dejarla vacía y revisar las respuestas tú mismo. En ese caso, verás tiempos y recursos; la calidad aparecerá como <strong>sin evaluar</strong>.</p>
+      <p>Si conoces la respuesta correcta, añade una <strong>respuesta esperada</strong>. Elige <strong>Texto exacto</strong> para respuestas concretas o <strong>JSON equivalente</strong> para comparar datos estructurados, ignorando formato y orden de claves.</p>
+      <p>Si buscas un resumen o una respuesta abierta, elige <strong>Sin evaluación automática</strong> y revisa las respuestas tú mismo. Verás tiempos y recursos; la calidad aparecerá como <strong>sin evaluar</strong>. Una coincidencia automática no mide calidad semántica.</p>
       <p>Elige de <strong>1 a 10 repeticiones</strong>. Cada caso se ejecutará ese número de veces para cada agente.</p>
+      <p class="guide-note">En «Condiciones de ejecución» puedes fijar temperatura, semilla, contexto y límites iguales para ambos agentes. Usa también el mismo prompt y los mismos datos para comparar solo modelos.</p>
     </div>
     <figure class="guide-example">
       <figcaption>Calcula el tamaño de tu prueba</figcaption>
@@ -105,7 +106,7 @@ resumen,"Resume este texto: …",</pre>
       <p class="eyebrow">De los datos a tu criterio</p>
       <h2 id="guide-step-6" tabindex="-1">Explora lo que ha pasado.</h2>
       <p>En <strong>Resultados</strong>, compara las respuestas de A y B, el tiempo medio y el éxito cuando haya evaluación. Abre <strong>Ver traza</strong> para consultar los eventos de una ejecución.</p>
-      <p>Usa <strong>Exportar CSV</strong> para analizar las métricas fuera de la herramienta. El <strong>Historial</strong> te permite volver a tus pruebas y consultar sus prompts y entradas guardados.</p>
+      <p>Usa <strong>Exportar CSV</strong> para analizar las métricas. Abre <strong>Evaluación y condiciones de esta prueba</strong> para consultar sus límites y descargar el informe reproducible con configuración, datos e identidad de modelos. El <strong>Historial</strong> te permite volver a tus pruebas.</p>
       <p class="guide-note">Tu perfil conserva modelos, prompts y parámetros. Las entradas y los archivos se guardan con la comparación cuando la ejecutas. Una respuesta completada no significa, por sí sola, que sea correcta.</p>
     </div>
     <figure class="guide-example">

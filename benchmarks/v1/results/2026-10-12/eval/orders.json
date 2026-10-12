@@ -1,0 +1,543 @@
+{
+  "experiment_id": "cf74b8be-968b-4540-8906-ee1969d0b28a",
+  "benchmark": {
+    "version": "arena-benchmarks-v1",
+    "suite": "orders",
+    "split": "eval",
+    "manifest_sha256": "fc626af1909e4f40b37e4471ea27ffff3e378de6190d407820f471216a342142"
+  },
+  "data_sha256": "9c6ed1a880a73b3b02f2b609b738ff8dfaac3bbb81d0c35fcc3b52d9e641f467",
+  "source_sha256": {
+    "accounts.py": "142cbf2c7571877a37197f1e111a3c4fb047c2fd92f9074ec1f289919fb529d3",
+    "adapters.py": "2bd17ebeff6c88e448cd9a6c34121d5fba97f4eefa30bff68d94cada183c4f4e",
+    "api.py": "802f5d7532fdbb2bcbda03078b3920d7927ca71d2a74b94e8d4522a65f3dbd69",
+    "attachments.py": "db1ade58c249baa6c1415752705dd8816e3127db588ef7240ce93fd475d79e2b",
+    "benchmarks.py": "c549f7dc25acc9c91a833bd7eb232f1aec70ca2554cd253f20c7c3457f9d36ca",
+    "cli.py": "7a341cdb5f13a256037c187fb7eca0c650df142ad00077823eea18c3720413bf",
+    "comparisons.py": "37463e6855548d7ec066f411cc09a53f511d9a269fabaae6359aa24a27f7aa9f",
+    "contracts.py": "d6622773221f28745c85c0cb72159676dbda1b8f33f22e90d05f4c5a4d21ce90",
+    "datasets.py": "f979a9e355cef883b022238404d7f27fa666a6b485ec44fdf42a2ea271e249aa",
+    "diagnostics.py": "47868b2f88fb02b00c2d814f784a3a23f2804bf632705b71290eba3359aee1aa",
+    "evaluator.py": "a1d1c0a91d5cf3727910965337d956c018d65cde9c6dacb03bb216dc63af1b13",
+    "export.py": "894abd38de780e223355313cfae0f0b1826673656af41b49e7781cd0be5792ce",
+    "json_input.py": "d955862c26c26b026f7ad8ce08e8efae850269bfccd6ca8c55beac8429756624",
+    "protocol.py": "40aed51019f0130ff6cf2a6d9028b57617d5088b31f3689ca6a547d482d167f2",
+    "resources.py": "5fa55346518460f6ddc169cf26eb071b0531e082f628baccd127b6b07f3da488",
+    "runner.py": "876753094771dae89eeee0f557ff4631f881987357be262bdffa0f5121b0e4a1",
+    "scheduler.py": "fcf6644f32ef8616ddc6cbbc9671b68fc17683d4a17dbeb80c6f345c76160976",
+    "store.py": "48e30bdc8e67bd9b56b4036502897a0792b0bb3f255f218832140c97e03c4b12",
+    "tools.py": "12a3c582510b2bb070c8a0b1ee4f706db80f4810da7a6be4968619a4a7b6f172",
+    "worker.py": "e593043ba6f5f1500056ef009723f87bacc4683c43484ca24b84b939ddb24a8a",
+    "__init__.py": "91447944015cec709e8aa7655f7e9d64e1e4508e7023a57fe3746911c0fc6fed"
+  },
+  "config": {
+    "name": "arena-benchmarks-v1 orders eval",
+    "adapter": "ollama",
+    "mode": "sequential",
+    "agents": {
+      "A": {
+        "model": "qwen2.5:3b",
+        "system_prompt": "Usa las herramientas para resolver la consulta. search_orders acepta únicamente customer_id y devuelve los pedidos de ese cliente. Filtra esos pedidos por el mes solicitado y status delivered. order_lines acepta únicamente order_id: usa un ID del resultado de search_orders. Cada línea aporta unit_cents * (quantity - returned_quantity). calculate acepta operation sum y values como lista de enteros en céntimos; suma los importes con esa herramienta. No inventes pedidos ni argumentos adicionales. Incluye solo IDs con unidades no devueltas. Si no hay pedidos válidos devuelve total_cents 0 y order_ids []. Respuesta final: únicamente JSON válido con total_cents entero y order_ids como lista de IDs únicos.",
+        "temperature": 0.0,
+        "seed": 42,
+        "num_ctx": 4096,
+        "limits": {
+          "timeout_s": 90.0,
+          "max_calls": 8,
+          "max_tool_calls": 20,
+          "max_output_tokens": 1024
+        },
+        "prompt_template": "custom",
+        "tools_enabled": true
+      },
+      "B": {
+        "model": "qwen2.5:7b",
+        "system_prompt": "Usa las herramientas para resolver la consulta. search_orders acepta únicamente customer_id y devuelve los pedidos de ese cliente. Filtra esos pedidos por el mes solicitado y status delivered. order_lines acepta únicamente order_id: usa un ID del resultado de search_orders. Cada línea aporta unit_cents * (quantity - returned_quantity). calculate acepta operation sum y values como lista de enteros en céntimos; suma los importes con esa herramienta. No inventes pedidos ni argumentos adicionales. Incluye solo IDs con unidades no devueltas. Si no hay pedidos válidos devuelve total_cents 0 y order_ids []. Respuesta final: únicamente JSON válido con total_cents entero y order_ids como lista de IDs únicos.",
+        "temperature": 0.0,
+        "seed": 42,
+        "num_ctx": 4096,
+        "limits": {
+          "timeout_s": 90.0,
+          "max_calls": 8,
+          "max_tool_calls": 20,
+          "max_output_tokens": 1024
+        },
+        "prompt_template": "custom",
+        "tools_enabled": true
+      }
+    },
+    "split": "eval",
+    "repetitions": 1,
+    "order_seed": 42,
+    "ollama_url": "http://127.0.0.1:11434",
+    "comparison": "different_models"
+  },
+  "conditions": {
+    "mode": "sequential",
+    "inputs_shared": true,
+    "warmup": "none",
+    "keep_alive": "0",
+    "resource_scope": "host_and_worker",
+    "seed_determinism": "not guaranteed"
+  },
+  "report": {
+    "version": "arena-protocol-v1",
+    "evaluator_version": "arena-evaluation-v2",
+    "comparison_scope": "models",
+    "inputs_shared": true,
+    "prompts_equal": true,
+    "parameters_equal": true,
+    "evaluations": [
+      "order_benchmark"
+    ],
+    "models": {
+      "B": {
+        "identifier": "qwen2.5:7b",
+        "adapter": "ollama",
+        "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+        "server_version": "0.40.3",
+        "quantization": "Q4_K_M",
+        "verified": true,
+        "fingerprint": "9790b53a88dbd85dc7c7bdd749be79608c3d2c5ab49ca35d4ba108b50d4ebe7e"
+      },
+      "A": {
+        "identifier": "qwen2.5:3b",
+        "adapter": "ollama",
+        "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+        "server_version": "0.40.3",
+        "quantization": "Q4_K_M",
+        "verified": true,
+        "fingerprint": "a2d1b0a541b6f4bf1f9ec6a1eaf7e00b9e75646b4f5b7cd4c881d8daae3f6420"
+      }
+    },
+    "branches": {
+      "A": {
+        "total": 4,
+        "answers": 4,
+        "evaluated": 4,
+        "correct": 0,
+        "execution_errors": 0,
+        "mean_answer_s": 5.857570324997141
+      },
+      "B": {
+        "total": 4,
+        "answers": 1,
+        "evaluated": 1,
+        "correct": 0,
+        "execution_errors": 3,
+        "mean_answer_s": 27.731816100000287
+      }
+    },
+    "warnings": [
+      "Había cambios sin commit al guardar. Para identificar el código, usa también las fuentes y hashes del informe.",
+      "Sin calentamiento previo. El tiempo del agente incluye consulta de metadatos y puede incluir carga del modelo.",
+      "Política de memoria del modelo (keep_alive): 0. No se garantiza un inicio en frío si otro programa lo tiene cargado.",
+      "Semilla fija no garantiza respuestas idénticas. La carga de otros programas no está aislada."
+    ]
+  },
+  "audit": {
+    "passed": true,
+    "errors": [],
+    "runs": 8,
+    "report": {
+      "version": "arena-protocol-v1",
+      "evaluator_version": "arena-evaluation-v2",
+      "comparison_scope": "models",
+      "inputs_shared": true,
+      "prompts_equal": true,
+      "parameters_equal": true,
+      "evaluations": [
+        "order_benchmark"
+      ],
+      "models": {
+        "B": {
+          "identifier": "qwen2.5:7b",
+          "adapter": "ollama",
+          "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+          "server_version": "0.40.3",
+          "quantization": "Q4_K_M",
+          "verified": true,
+          "fingerprint": "9790b53a88dbd85dc7c7bdd749be79608c3d2c5ab49ca35d4ba108b50d4ebe7e"
+        },
+        "A": {
+          "identifier": "qwen2.5:3b",
+          "adapter": "ollama",
+          "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+          "server_version": "0.40.3",
+          "quantization": "Q4_K_M",
+          "verified": true,
+          "fingerprint": "a2d1b0a541b6f4bf1f9ec6a1eaf7e00b9e75646b4f5b7cd4c881d8daae3f6420"
+        }
+      },
+      "branches": {
+        "A": {
+          "total": 4,
+          "answers": 4,
+          "evaluated": 4,
+          "correct": 0,
+          "execution_errors": 0,
+          "mean_answer_s": 5.857570324997141
+        },
+        "B": {
+          "total": 4,
+          "answers": 1,
+          "evaluated": 1,
+          "correct": 0,
+          "execution_errors": 3,
+          "mean_answer_s": 27.731816100000287
+        }
+      },
+      "warnings": [
+        "Había cambios sin commit al guardar. Para identificar el código, usa también las fuentes y hashes del informe.",
+        "Sin calentamiento previo. El tiempo del agente incluye consulta de metadatos y puede incluir carga del modelo.",
+        "Política de memoria del modelo (keep_alive): 0. No se garantiza un inicio en frío si otro programa lo tiene cargado.",
+        "Semilla fija no garantiza respuestas idénticas. La carga de otros programas no está aislada."
+      ]
+    }
+  },
+  "summary": {
+    "pairs": 1,
+    "inputs_shared": true,
+    "complete_pairs": false,
+    "success_rate": {
+      "A": 0.0,
+      "B": 0.0
+    },
+    "A_only_success": 0,
+    "B_only_success": 0,
+    "mcnemar_exact_p": null,
+    "note": "Descriptive results. Rates are conditional on evaluated responses; inspect execution errors and coverage. No paired inference for different inputs, missing scores or repeated cases."
+  },
+  "runs": [
+    {
+      "id": "65b5bb3e-af42-4165-9aaf-74b0bd78ca4e",
+      "experiment_id": "cf74b8be-968b-4540-8906-ee1969d0b28a",
+      "task_id": "eval-full-return",
+      "branch": "B",
+      "repetition": 0,
+      "position": 0,
+      "status": "failed",
+      "queued_at": 1791814587.2257593,
+      "started_at": 1791814587.2366562,
+      "finished_at": 1791814614.9901316,
+      "result": {
+        "success": false,
+        "format_ok": false,
+        "queue_s": 0.010896921157836914,
+        "input_tokens": 5729,
+        "output_tokens": 359,
+        "server_eval_s": 6.881191000000001,
+        "calls": 7,
+        "tool_calls": 6,
+        "tool_errors": 1,
+        "tool_s": 0.006437499992898665,
+        "usage_complete": true,
+        "evaluator_version": "arena-evaluation-v2",
+        "quality_evaluated": true,
+        "inference_identity": {
+          "identifier": "qwen2.5:7b",
+          "adapter": "ollama",
+          "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+          "server_version": "0.40.3",
+          "quantization": "Q4_K_M",
+          "verified": true,
+          "fingerprint": "9790b53a88dbd85dc7c7bdd749be79608c3d2c5ab49ca35d4ba108b50d4ebe7e"
+        },
+        "answer": "The total cost for the valid order is 1998 cents. Therefore, the final result is:\n\n```json\n{\n  \"total_cents\": 1998,\n  \"order_ids\": [\"O5\"]\n}\n```\n\nThis JSON object represents the total cost in cents and the order IDs that contributed to this cost.",
+        "evaluation": "order_benchmark",
+        "reason": "Respuesta JSON inválida",
+        "agent_s": 27.731816100000287,
+        "server_tps": 52.17120117723806,
+        "agent_output_tps": 12.945419755614068
+      }
+    },
+    {
+      "id": "dcf61541-3a73-4ae1-9d56-6ae5bcd1349a",
+      "experiment_id": "cf74b8be-968b-4540-8906-ee1969d0b28a",
+      "task_id": "eval-full-return",
+      "branch": "A",
+      "repetition": 0,
+      "position": 1,
+      "status": "failed",
+      "queued_at": 1791814587.2257593,
+      "started_at": 1791814614.997132,
+      "finished_at": 1791814621.292769,
+      "result": {
+        "success": false,
+        "format_ok": false,
+        "queue_s": 27.77137279510498,
+        "input_tokens": 1197,
+        "output_tokens": 97,
+        "server_eval_s": 0.903405,
+        "calls": 2,
+        "tool_calls": 1,
+        "tool_errors": 1,
+        "tool_s": 0.0008425999985774979,
+        "usage_complete": true,
+        "evaluator_version": "arena-evaluation-v2",
+        "quality_evaluated": true,
+        "inference_identity": {
+          "identifier": "qwen2.5:3b",
+          "adapter": "ollama",
+          "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+          "server_version": "0.40.3",
+          "quantization": "Q4_K_M",
+          "verified": true,
+          "fingerprint": "a2d1b0a541b6f4bf1f9ec6a1eaf7e00b9e75646b4f5b7cd4c881d8daae3f6420"
+        },
+        "answer": "Los datos proporcionados para la búsqueda no son válidos. La fecha debe ser en el formato AAAA-MM y el estado debe ser 'pending', 'delivered', 'cancelled', o 'completed'. Por favor, verifique y vuelva a intentarlo.",
+        "evaluation": "order_benchmark",
+        "reason": "Respuesta JSON inválida",
+        "agent_s": 6.280125600002066,
+        "server_tps": 107.3715553932068,
+        "agent_output_tps": 15.445550961587152
+      }
+    },
+    {
+      "id": "729de0f8-1895-4f20-9af8-ba34b443e267",
+      "experiment_id": "cf74b8be-968b-4540-8906-ee1969d0b28a",
+      "task_id": "eval-pending",
+      "branch": "B",
+      "repetition": 0,
+      "position": 2,
+      "status": "failed",
+      "queued_at": 1791814587.2257593,
+      "started_at": 1791814621.2967846,
+      "finished_at": 1791814637.9324152,
+      "result": {
+        "success": false,
+        "format_ok": false,
+        "queue_s": 34.071025371551514,
+        "input_tokens": 3682,
+        "output_tokens": 143,
+        "server_eval_s": 2.70554,
+        "calls": 5,
+        "tool_calls": 4,
+        "tool_errors": 1,
+        "tool_s": 0.004829099998460151,
+        "usage_complete": true,
+        "evaluator_version": "arena-evaluation-v2",
+        "quality_evaluated": false,
+        "inference_identity": {
+          "identifier": "qwen2.5:7b",
+          "adapter": "ollama",
+          "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+          "server_version": "0.40.3",
+          "quantization": "Q4_K_M",
+          "verified": true,
+          "fingerprint": "9790b53a88dbd85dc7c7bdd749be79608c3d2c5ab49ca35d4ba108b50d4ebe7e"
+        },
+        "error": "ValueError: El servidor no devolvió una respuesta de texto válida",
+        "agent_s": 16.622589400001743,
+        "server_tps": 52.854513331904165,
+        "agent_output_tps": 8.602751145377207
+      }
+    },
+    {
+      "id": "cc83dfa8-b527-4479-b97e-04483f88ac20",
+      "experiment_id": "cf74b8be-968b-4540-8906-ee1969d0b28a",
+      "task_id": "eval-pending",
+      "branch": "A",
+      "repetition": 0,
+      "position": 3,
+      "status": "failed",
+      "queued_at": 1791814587.2257593,
+      "started_at": 1791814637.9374177,
+      "finished_at": 1791814643.9448118,
+      "result": {
+        "success": false,
+        "format_ok": false,
+        "queue_s": 50.7116584777832,
+        "input_tokens": 1269,
+        "output_tokens": 120,
+        "server_eval_s": 1.12706,
+        "calls": 2,
+        "tool_calls": 1,
+        "tool_errors": 1,
+        "tool_s": 0.0013095000031171367,
+        "usage_complete": true,
+        "evaluator_version": "arena-evaluation-v2",
+        "quality_evaluated": true,
+        "inference_identity": {
+          "identifier": "qwen2.5:3b",
+          "adapter": "ollama",
+          "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+          "server_version": "0.40.3",
+          "quantization": "Q4_K_M",
+          "verified": true,
+          "fingerprint": "a2d1b0a541b6f4bf1f9ec6a1eaf7e00b9e75646b4f5b7cd4c881d8daae3f6420"
+        },
+        "answer": "El formato de las fechas y el estado no es correcto. Asegúrate de proporcionar los valores en el formato correcto (por ejemplo, fechas en el formato YYYY-MM-DD y el estado como un valor de cadena). Vuelve a intentarlo con los valores correctos.",
+        "evaluation": "order_benchmark",
+        "reason": "Respuesta JSON inválida",
+        "agent_s": 5.9933956999957445,
+        "server_tps": 106.4717051443579,
+        "agent_output_tps": 20.022038591592608
+      }
+    },
+    {
+      "id": "9ecc05e8-4800-48ea-8cb2-f64956abab6c",
+      "experiment_id": "cf74b8be-968b-4540-8906-ee1969d0b28a",
+      "task_id": "eval-partial-return",
+      "branch": "A",
+      "repetition": 0,
+      "position": 4,
+      "status": "failed",
+      "queued_at": 1791814587.2257593,
+      "started_at": 1791814643.9501612,
+      "finished_at": 1791814649.512089,
+      "result": {
+        "success": false,
+        "format_ok": false,
+        "queue_s": 56.72440195083618,
+        "input_tokens": 1197,
+        "output_tokens": 89,
+        "server_eval_s": 0.8290379999999999,
+        "calls": 2,
+        "tool_calls": 1,
+        "tool_errors": 1,
+        "tool_s": 0.001105800001823809,
+        "usage_complete": true,
+        "evaluator_version": "arena-evaluation-v2",
+        "quality_evaluated": true,
+        "inference_identity": {
+          "identifier": "qwen2.5:3b",
+          "adapter": "ollama",
+          "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+          "server_version": "0.40.3",
+          "quantization": "Q4_K_M",
+          "verified": true,
+          "fingerprint": "a2d1b0a541b6f4bf1f9ec6a1eaf7e00b9e75646b4f5b7cd4c881d8daae3f6420"
+        },
+        "answer": "Hubo un error en la consulta de búsqueda. Parece que hay entradas no permitidas para los campos order_status y order_date. Por favor, asegúrate de proporcionar los valores correctos para estos campos.",
+        "evaluation": "order_benchmark",
+        "reason": "Respuesta JSON inválida",
+        "agent_s": 5.548251299995172,
+        "server_tps": 107.35334206634678,
+        "agent_output_tps": 16.041090280117167
+      }
+    },
+    {
+      "id": "99c88ae6-a5e3-4228-8657-fdf0019e4d73",
+      "experiment_id": "cf74b8be-968b-4540-8906-ee1969d0b28a",
+      "task_id": "eval-partial-return",
+      "branch": "B",
+      "repetition": 0,
+      "position": 5,
+      "status": "failed",
+      "queued_at": 1791814587.2257593,
+      "started_at": 1791814649.5170825,
+      "finished_at": 1791814666.3404233,
+      "result": {
+        "success": false,
+        "format_ok": false,
+        "queue_s": 62.29132318496704,
+        "input_tokens": 3682,
+        "output_tokens": 143,
+        "server_eval_s": 2.706536,
+        "calls": 5,
+        "tool_calls": 4,
+        "tool_errors": 1,
+        "tool_s": 0.0042794000037247315,
+        "usage_complete": true,
+        "evaluator_version": "arena-evaluation-v2",
+        "quality_evaluated": false,
+        "inference_identity": {
+          "identifier": "qwen2.5:7b",
+          "adapter": "ollama",
+          "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+          "server_version": "0.40.3",
+          "quantization": "Q4_K_M",
+          "verified": true,
+          "fingerprint": "9790b53a88dbd85dc7c7bdd749be79608c3d2c5ab49ca35d4ba108b50d4ebe7e"
+        },
+        "error": "ValueError: El servidor no devolvió una respuesta de texto válida",
+        "agent_s": 16.80945700000302,
+        "server_tps": 52.83506297348345,
+        "agent_output_tps": 8.507115964541525
+      }
+    },
+    {
+      "id": "53026e7a-f44a-4ba7-8db9-23688497892e",
+      "experiment_id": "cf74b8be-968b-4540-8906-ee1969d0b28a",
+      "task_id": "eval-month-boundary",
+      "branch": "B",
+      "repetition": 0,
+      "position": 6,
+      "status": "failed",
+      "queued_at": 1791814587.2257593,
+      "started_at": 1791814666.3454278,
+      "finished_at": 1791814686.6659927,
+      "result": {
+        "success": false,
+        "format_ok": false,
+        "queue_s": 79.11966848373413,
+        "input_tokens": 4686,
+        "output_tokens": 175,
+        "server_eval_s": 3.32402,
+        "calls": 6,
+        "tool_calls": 5,
+        "tool_errors": 1,
+        "tool_s": 0.00455080000392627,
+        "usage_complete": true,
+        "evaluator_version": "arena-evaluation-v2",
+        "quality_evaluated": false,
+        "inference_identity": {
+          "identifier": "qwen2.5:7b",
+          "adapter": "ollama",
+          "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+          "server_version": "0.40.3",
+          "quantization": "Q4_K_M",
+          "verified": true,
+          "fingerprint": "9790b53a88dbd85dc7c7bdd749be79608c3d2c5ab49ca35d4ba108b50d4ebe7e"
+        },
+        "error": "ValueError: El servidor no devolvió una respuesta de texto válida",
+        "agent_s": 20.306965800002217,
+        "server_tps": 52.647095986185406,
+        "agent_output_tps": 8.617732541804985
+      }
+    },
+    {
+      "id": "5913add9-3096-4ecd-9b0f-e2c72848c6d5",
+      "experiment_id": "cf74b8be-968b-4540-8906-ee1969d0b28a",
+      "task_id": "eval-month-boundary",
+      "branch": "A",
+      "repetition": 0,
+      "position": 7,
+      "status": "failed",
+      "queued_at": 1791814587.2257593,
+      "started_at": 1791814686.6699953,
+      "finished_at": 1791814692.2919776,
+      "result": {
+        "success": false,
+        "format_ok": false,
+        "queue_s": 99.44423604011536,
+        "input_tokens": 1197,
+        "output_tokens": 123,
+        "server_eval_s": 1.151334,
+        "calls": 2,
+        "tool_calls": 1,
+        "tool_errors": 1,
+        "tool_s": 0.0008107000030577183,
+        "usage_complete": true,
+        "evaluator_version": "arena-evaluation-v2",
+        "quality_evaluated": true,
+        "inference_identity": {
+          "identifier": "qwen2.5:3b",
+          "adapter": "ollama",
+          "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+          "server_version": "0.40.3",
+          "quantization": "Q4_K_M",
+          "verified": true,
+          "fingerprint": "a2d1b0a541b6f4bf1f9ec6a1eaf7e00b9e75646b4f5b7cd4c881d8daae3f6420"
+        },
+        "answer": "Los valores proporcionados para `order_status` y `order_date` no son válidos. Asegúrate de proporcionar los valores correctos según la documentación de los parámetros. Por ejemplo, `order_status` debe ser 'delivered' y `order_date` debe ser en el formato `YYYY-MM-DD`. Vuelve a intentarlo con los valores correctos.",
+        "evaluation": "order_benchmark",
+        "reason": "Respuesta JSON inválida",
+        "agent_s": 5.608508699995582,
+        "server_tps": 106.83259592785411,
+        "agent_output_tps": 21.93096357327517
+      }
+    }
+  ]
+}

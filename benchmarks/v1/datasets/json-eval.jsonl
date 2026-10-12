@@ -1,0 +1,6 @@
+{"id":"eval-product","input":"Extrae nombre y precio de: Producto: Regla; precio: 2.25 euros. Devuelve solo JSON con nombre y precio numérico, sin moneda.","expected_answer":"{\"nombre\":\"Regla\",\"precio\":2.25}"}
+{"id":"eval-inactive","input":"Ficha: cuenta activa: no. Devuelve solo JSON con activo booleano.","expected_answer":"{\"activo\":false}"}
+{"id":"eval-missing","input":"Personaje ficticio: Nombre: Leo. No se indica teléfono. Devuelve solo JSON con nombre y telefono; usa null para datos ausentes.","expected_answer":"{\"nombre\":\"Leo\",\"telefono\":null}"}
+{"id":"eval-list","input":"Códigos en orden: B2, A1, C3. Devuelve solo JSON con codigos como lista de cadenas en ese mismo orden.","expected_answer":"{\"codigos\":[\"B2\",\"A1\",\"C3\"]}"}
+{"id":"eval-zero","input":"Existencias: 0 unidades. Devuelve solo JSON con cantidad como número entero.","expected_answer":"{\"cantidad\":0}"}
+{"id":"eval-nested","input":"Producto: carpeta. Stock: 8. Devuelve solo JSON con producto, objeto con claves nombre y stock numérico.","expected_answer":"{\"producto\":{\"nombre\":\"carpeta\",\"stock\":8}}"}

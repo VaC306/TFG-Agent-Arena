@@ -1,0 +1,4 @@
+[
+  {"id":"dev-file-total","input":"Relaciona los códigos del catálogo JSON con las cantidades del CSV y usa la nota TXT. Calcula el precio total. Devuelve solo JSON con total numérico.","files":["catalog-dev.json","quantities-dev.csv","note-dev.txt"],"expected_answer":"{\"total\":35}"},
+  {"id":"dev-file-lookup","input":"Consulta catalog-dev.json. Devuelve solo JSON con el precio del código B, usando la clave precio y valor numérico.","files":["catalog-dev.json"],"expected_answer":"{\"precio\":5}"}
+]

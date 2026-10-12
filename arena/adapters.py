@@ -28,15 +28,19 @@ class Ollama:
             raise ValueError("El modelo debe estar instalado localmente y aparecer en /api/tags")
         return {"version": version.json(), "show": show.json(), "model": matching[0]}
 
-    async def chat(self, messages, config, remaining):
+    def payload(self, messages, config, remaining):
         options = {"temperature": config.temperature, "num_predict": remaining, "num_ctx": config.num_ctx}
         if config.seed is not None:
             options["seed"] = config.seed
+        payload = {"model": config.model, "messages": messages,
+                   "stream": False, "options": options, "keep_alive": self.keep_alive}
+        if config.tools_enabled:
+            payload['tools'] = SCHEMAS
+        return payload
+
+    async def chat(self, messages, config, remaining):
         async with httpx.AsyncClient(timeout=None, trust_env=False) as client:
-            payload = {"model": config.model, "messages": messages,
-                       "stream": False, "options": options, "keep_alive": self.keep_alive}
-            if config.tools_enabled:
-                payload['tools'] = SCHEMAS
+            payload = self.payload(messages, config, remaining)
             response = await client.post(self.url + "/api/chat", json=payload)
             response.raise_for_status()
             data = response.json()

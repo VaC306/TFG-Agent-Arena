@@ -19,6 +19,10 @@ body { margin: 0; }
 .profile-history > p { flex-basis: 100%; }
 .dialog-description { margin-top: 20px; line-height: 1.7; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
+.protocol-report { margin: 24px 0; }
+.protocol-report .hint { margin: 14px 0; }
+.protocol-notes { padding-left: 20px; font-size: 13px; line-height: 1.8; color: var(--muted); }
+.protocol-hash { overflow-wrap: anywhere; }
 button, input, select, textarea { font: inherit; }
 button, summary, select { cursor: pointer; }
 button { border: 0; }

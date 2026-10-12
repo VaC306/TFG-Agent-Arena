@@ -1,0 +1,465 @@
+{
+  "experiment_id": "f9376f27-eeb5-416e-a3a7-eca838fdff56",
+  "benchmark": {
+    "version": "arena-benchmarks-v1",
+    "suite": "text",
+    "split": "dev",
+    "manifest_sha256": "fc626af1909e4f40b37e4471ea27ffff3e378de6190d407820f471216a342142"
+  },
+  "data_sha256": "ac797c76fe08f99dc6f295a85a2c657a3e1f78e8db667124210fd2bffd639705",
+  "source_sha256": {
+    "accounts.py": "142cbf2c7571877a37197f1e111a3c4fb047c2fd92f9074ec1f289919fb529d3",
+    "adapters.py": "2bd17ebeff6c88e448cd9a6c34121d5fba97f4eefa30bff68d94cada183c4f4e",
+    "api.py": "802f5d7532fdbb2bcbda03078b3920d7927ca71d2a74b94e8d4522a65f3dbd69",
+    "attachments.py": "db1ade58c249baa6c1415752705dd8816e3127db588ef7240ce93fd475d79e2b",
+    "benchmarks.py": "7cc48029a90792580993d7a3fca8feab3b812daece0f27cbbcf5374ad6744d01",
+    "cli.py": "ab360a4a920120eaca5c063124b5b13c87c182a9f8a0016ac45cca7087e2fbb4",
+    "comparisons.py": "37463e6855548d7ec066f411cc09a53f511d9a269fabaae6359aa24a27f7aa9f",
+    "contracts.py": "d6622773221f28745c85c0cb72159676dbda1b8f33f22e90d05f4c5a4d21ce90",
+    "datasets.py": "f979a9e355cef883b022238404d7f27fa666a6b485ec44fdf42a2ea271e249aa",
+    "diagnostics.py": "262ec20efb0fbd643d5f12c1f7a1ecc8fbd985eabc61f9e1b344648b725265dd",
+    "evaluator.py": "a1d1c0a91d5cf3727910965337d956c018d65cde9c6dacb03bb216dc63af1b13",
+    "export.py": "552eb3623a0880f10458c529ec5f9d8c7086ddc09cb6cb2450c9b0aab39fa186",
+    "json_input.py": "d955862c26c26b026f7ad8ce08e8efae850269bfccd6ca8c55beac8429756624",
+    "protocol.py": "40aed51019f0130ff6cf2a6d9028b57617d5088b31f3689ca6a547d482d167f2",
+    "resources.py": "5fa55346518460f6ddc169cf26eb071b0531e082f628baccd127b6b07f3da488",
+    "runner.py": "876753094771dae89eeee0f557ff4631f881987357be262bdffa0f5121b0e4a1",
+    "scheduler.py": "fcf6644f32ef8616ddc6cbbc9671b68fc17683d4a17dbeb80c6f345c76160976",
+    "store.py": "48e30bdc8e67bd9b56b4036502897a0792b0bb3f255f218832140c97e03c4b12",
+    "tools.py": "12a3c582510b2bb070c8a0b1ee4f706db80f4810da7a6be4968619a4a7b6f172",
+    "worker.py": "e593043ba6f5f1500056ef009723f87bacc4683c43484ca24b84b939ddb24a8a",
+    "__init__.py": "91447944015cec709e8aa7655f7e9d64e1e4508e7023a57fe3746911c0fc6fed"
+  },
+  "config": {
+    "name": "arena-benchmarks-v1 text dev",
+    "adapter": "ollama",
+    "mode": "sequential",
+    "agents": {
+      "A": {
+        "model": "qwen2.5:3b",
+        "system_prompt": "Responde en español con únicamente el dato solicitado. Conserva la ortografía y los acentos. No añadas explicaciones, etiquetas ni puntuación extra.",
+        "temperature": 0.0,
+        "seed": 42,
+        "num_ctx": 4096,
+        "limits": {
+          "timeout_s": 90.0,
+          "max_calls": 8,
+          "max_tool_calls": 20,
+          "max_output_tokens": 1024
+        },
+        "prompt_template": "custom",
+        "tools_enabled": false
+      },
+      "B": {
+        "model": "qwen2.5:7b",
+        "system_prompt": "Responde en español con únicamente el dato solicitado. Conserva la ortografía y los acentos. No añadas explicaciones, etiquetas ni puntuación extra.",
+        "temperature": 0.0,
+        "seed": 42,
+        "num_ctx": 4096,
+        "limits": {
+          "timeout_s": 90.0,
+          "max_calls": 8,
+          "max_tool_calls": 20,
+          "max_output_tokens": 1024
+        },
+        "prompt_template": "custom",
+        "tools_enabled": false
+      }
+    },
+    "split": "dev",
+    "repetitions": 1,
+    "order_seed": 42,
+    "ollama_url": "http://127.0.0.1:11434",
+    "comparison": "different_models"
+  },
+  "conditions": {
+    "mode": "sequential",
+    "inputs_shared": true,
+    "warmup": "none",
+    "keep_alive": "0",
+    "resource_scope": "host_and_worker",
+    "seed_determinism": "not guaranteed"
+  },
+  "report": {
+    "version": "arena-protocol-v1",
+    "evaluator_version": "arena-evaluation-v2",
+    "comparison_scope": "models",
+    "inputs_shared": true,
+    "prompts_equal": true,
+    "parameters_equal": true,
+    "evaluations": [
+      "exact_match"
+    ],
+    "models": {
+      "B": {
+        "identifier": "qwen2.5:7b",
+        "adapter": "ollama",
+        "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+        "server_version": "0.40.3",
+        "quantization": "Q4_K_M",
+        "verified": true,
+        "fingerprint": "9790b53a88dbd85dc7c7bdd749be79608c3d2c5ab49ca35d4ba108b50d4ebe7e"
+      },
+      "A": {
+        "identifier": "qwen2.5:3b",
+        "adapter": "ollama",
+        "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+        "server_version": "0.40.3",
+        "quantization": "Q4_K_M",
+        "verified": true,
+        "fingerprint": "a2d1b0a541b6f4bf1f9ec6a1eaf7e00b9e75646b4f5b7cd4c881d8daae3f6420"
+      }
+    },
+    "branches": {
+      "A": {
+        "total": 3,
+        "answers": 3,
+        "evaluated": 3,
+        "correct": 3,
+        "execution_errors": 0,
+        "mean_answer_s": 3.0769542999987607
+      },
+      "B": {
+        "total": 3,
+        "answers": 3,
+        "evaluated": 3,
+        "correct": 3,
+        "execution_errors": 0,
+        "mean_answer_s": 3.6178850666668345
+      }
+    },
+    "warnings": [
+      "Había cambios sin commit al guardar. Para identificar el código, usa también las fuentes y hashes del informe.",
+      "Sin calentamiento previo. El tiempo del agente incluye consulta de metadatos y puede incluir carga del modelo.",
+      "Política de memoria del modelo (keep_alive): 0. No se garantiza un inicio en frío si otro programa lo tiene cargado.",
+      "Semilla fija no garantiza respuestas idénticas. La carga de otros programas no está aislada."
+    ]
+  },
+  "audit": {
+    "passed": true,
+    "errors": [],
+    "runs": 6,
+    "report": {
+      "version": "arena-protocol-v1",
+      "evaluator_version": "arena-evaluation-v2",
+      "comparison_scope": "models",
+      "inputs_shared": true,
+      "prompts_equal": true,
+      "parameters_equal": true,
+      "evaluations": [
+        "exact_match"
+      ],
+      "models": {
+        "B": {
+          "identifier": "qwen2.5:7b",
+          "adapter": "ollama",
+          "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+          "server_version": "0.40.3",
+          "quantization": "Q4_K_M",
+          "verified": true,
+          "fingerprint": "9790b53a88dbd85dc7c7bdd749be79608c3d2c5ab49ca35d4ba108b50d4ebe7e"
+        },
+        "A": {
+          "identifier": "qwen2.5:3b",
+          "adapter": "ollama",
+          "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+          "server_version": "0.40.3",
+          "quantization": "Q4_K_M",
+          "verified": true,
+          "fingerprint": "a2d1b0a541b6f4bf1f9ec6a1eaf7e00b9e75646b4f5b7cd4c881d8daae3f6420"
+        }
+      },
+      "branches": {
+        "A": {
+          "total": 3,
+          "answers": 3,
+          "evaluated": 3,
+          "correct": 3,
+          "execution_errors": 0,
+          "mean_answer_s": 3.0769542999987607
+        },
+        "B": {
+          "total": 3,
+          "answers": 3,
+          "evaluated": 3,
+          "correct": 3,
+          "execution_errors": 0,
+          "mean_answer_s": 3.6178850666668345
+        }
+      },
+      "warnings": [
+        "Había cambios sin commit al guardar. Para identificar el código, usa también las fuentes y hashes del informe.",
+        "Sin calentamiento previo. El tiempo del agente incluye consulta de metadatos y puede incluir carga del modelo.",
+        "Política de memoria del modelo (keep_alive): 0. No se garantiza un inicio en frío si otro programa lo tiene cargado.",
+        "Semilla fija no garantiza respuestas idénticas. La carga de otros programas no está aislada."
+      ]
+    }
+  },
+  "summary": {
+    "pairs": 3,
+    "inputs_shared": true,
+    "complete_pairs": true,
+    "success_rate": {
+      "A": 1.0,
+      "B": 1.0
+    },
+    "A_only_success": 0,
+    "B_only_success": 0,
+    "mcnemar_exact_p": null,
+    "note": "Descriptive results. Rates are conditional on evaluated responses; inspect execution errors and coverage. No paired inference for different inputs, missing scores or repeated cases."
+  },
+  "runs": [
+    {
+      "id": "ec34cadd-f42f-4414-9572-ac1bcdf84cd0",
+      "experiment_id": "f9376f27-eeb5-416e-a3a7-eca838fdff56",
+      "task_id": "capital",
+      "branch": "B",
+      "repetition": 0,
+      "position": 0,
+      "status": "succeeded",
+      "queued_at": 1791814207.1416817,
+      "started_at": 1791814207.149795,
+      "finished_at": 1791814211.190044,
+      "result": {
+        "success": true,
+        "format_ok": null,
+        "queue_s": 0.008113384246826172,
+        "input_tokens": 67,
+        "output_tokens": 3,
+        "server_eval_s": 0.048061,
+        "calls": 1,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "tool_s": 0.0,
+        "usage_complete": true,
+        "evaluator_version": "arena-evaluation-v2",
+        "quality_evaluated": true,
+        "inference_identity": {
+          "identifier": "qwen2.5:7b",
+          "adapter": "ollama",
+          "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+          "server_version": "0.40.3",
+          "quantization": "Q4_K_M",
+          "verified": true,
+          "fingerprint": "9790b53a88dbd85dc7c7bdd749be79608c3d2c5ab49ca35d4ba108b50d4ebe7e"
+        },
+        "answer": "París",
+        "evaluation": "exact_match",
+        "reason": "Comparación exacta con la respuesta esperada (sin espacios en los extremos)",
+        "agent_s": 4.027617600004305,
+        "server_tps": 62.42067372713843,
+        "agent_output_tps": 0.7448572078930218
+      }
+    },
+    {
+      "id": "42a2c748-4d9a-4569-a56f-395d7b34311a",
+      "experiment_id": "f9376f27-eeb5-416e-a3a7-eca838fdff56",
+      "task_id": "capital",
+      "branch": "A",
+      "repetition": 0,
+      "position": 1,
+      "status": "succeeded",
+      "queued_at": 1791814207.1416817,
+      "started_at": 1791814211.196036,
+      "finished_at": 1791814214.2722557,
+      "result": {
+        "success": true,
+        "format_ok": null,
+        "queue_s": 4.054354429244995,
+        "input_tokens": 67,
+        "output_tokens": 3,
+        "server_eval_s": 0.030375,
+        "calls": 1,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "tool_s": 0.0,
+        "usage_complete": true,
+        "evaluator_version": "arena-evaluation-v2",
+        "quality_evaluated": true,
+        "inference_identity": {
+          "identifier": "qwen2.5:3b",
+          "adapter": "ollama",
+          "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+          "server_version": "0.40.3",
+          "quantization": "Q4_K_M",
+          "verified": true,
+          "fingerprint": "a2d1b0a541b6f4bf1f9ec6a1eaf7e00b9e75646b4f5b7cd4c881d8daae3f6420"
+        },
+        "answer": "París",
+        "evaluation": "exact_match",
+        "reason": "Comparación exacta con la respuesta esperada (sin espacios en los extremos)",
+        "agent_s": 3.05401669999992,
+        "server_tps": 98.76543209876543,
+        "agent_output_tps": 0.9823128995987738
+      }
+    },
+    {
+      "id": "8249b2f1-3501-4218-9cc9-a5966cf0386b",
+      "experiment_id": "f9376f27-eeb5-416e-a3a7-eca838fdff56",
+      "task_id": "cuenta",
+      "branch": "B",
+      "repetition": 0,
+      "position": 2,
+      "status": "succeeded",
+      "queued_at": 1791814207.1416817,
+      "started_at": 1791814214.2772563,
+      "finished_at": 1791814217.9164157,
+      "result": {
+        "success": true,
+        "format_ok": null,
+        "queue_s": 7.135574579238892,
+        "input_tokens": 69,
+        "output_tokens": 3,
+        "server_eval_s": 0.04651,
+        "calls": 1,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "tool_s": 0.0,
+        "usage_complete": true,
+        "evaluator_version": "arena-evaluation-v2",
+        "quality_evaluated": true,
+        "inference_identity": {
+          "identifier": "qwen2.5:7b",
+          "adapter": "ollama",
+          "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+          "server_version": "0.40.3",
+          "quantization": "Q4_K_M",
+          "verified": true,
+          "fingerprint": "9790b53a88dbd85dc7c7bdd749be79608c3d2c5ab49ca35d4ba108b50d4ebe7e"
+        },
+        "answer": "42",
+        "evaluation": "exact_match",
+        "reason": "Comparación exacta con la respuesta esperada (sin espacios en los extremos)",
+        "agent_s": 3.6262356999941403,
+        "server_tps": 64.50225757901526,
+        "agent_output_tps": 0.8273041931623054
+      }
+    },
+    {
+      "id": "f8edf5e1-fd96-41d0-b797-95c7803b66cc",
+      "experiment_id": "f9376f27-eeb5-416e-a3a7-eca838fdff56",
+      "task_id": "cuenta",
+      "branch": "A",
+      "repetition": 0,
+      "position": 3,
+      "status": "succeeded",
+      "queued_at": 1791814207.1416817,
+      "started_at": 1791814217.9194293,
+      "finished_at": 1791814221.0259755,
+      "result": {
+        "success": true,
+        "format_ok": null,
+        "queue_s": 10.777747631072998,
+        "input_tokens": 69,
+        "output_tokens": 3,
+        "server_eval_s": 0.029944,
+        "calls": 1,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "tool_s": 0.0,
+        "usage_complete": true,
+        "evaluator_version": "arena-evaluation-v2",
+        "quality_evaluated": true,
+        "inference_identity": {
+          "identifier": "qwen2.5:3b",
+          "adapter": "ollama",
+          "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+          "server_version": "0.40.3",
+          "quantization": "Q4_K_M",
+          "verified": true,
+          "fingerprint": "a2d1b0a541b6f4bf1f9ec6a1eaf7e00b9e75646b4f5b7cd4c881d8daae3f6420"
+        },
+        "answer": "42",
+        "evaluation": "exact_match",
+        "reason": "Comparación exacta con la respuesta esperada (sin espacios en los extremos)",
+        "agent_s": 3.0928945999985444,
+        "server_tps": 100.18701576275716,
+        "agent_output_tps": 0.9699651582053304
+      }
+    },
+    {
+      "id": "05aa6524-ea50-4e84-8714-4fd0725cedd1",
+      "experiment_id": "f9376f27-eeb5-416e-a3a7-eca838fdff56",
+      "task_id": "lectura",
+      "branch": "A",
+      "repetition": 0,
+      "position": 4,
+      "status": "succeeded",
+      "queued_at": 1791814207.1416817,
+      "started_at": 1791814221.0299666,
+      "finished_at": 1791814224.173448,
+      "result": {
+        "success": true,
+        "format_ok": null,
+        "queue_s": 13.888284921646118,
+        "input_tokens": 92,
+        "output_tokens": 6,
+        "server_eval_s": 0.063988,
+        "calls": 1,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "tool_s": 0.0,
+        "usage_complete": true,
+        "evaluator_version": "arena-evaluation-v2",
+        "quality_evaluated": true,
+        "inference_identity": {
+          "identifier": "qwen2.5:3b",
+          "adapter": "ollama",
+          "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+          "server_version": "0.40.3",
+          "quantization": "Q4_K_M",
+          "verified": true,
+          "fingerprint": "a2d1b0a541b6f4bf1f9ec6a1eaf7e00b9e75646b4f5b7cd4c881d8daae3f6420"
+        },
+        "answer": "11:15",
+        "evaluation": "exact_match",
+        "reason": "Comparación exacta con la respuesta esperada (sin espacios en los extremos)",
+        "agent_s": 3.0839515999978175,
+        "server_tps": 93.76758142151652,
+        "agent_output_tps": 1.9455558251965583
+      }
+    },
+    {
+      "id": "6c05a6de-5c83-4161-bd95-b15f23e60056",
+      "experiment_id": "f9376f27-eeb5-416e-a3a7-eca838fdff56",
+      "task_id": "lectura",
+      "branch": "B",
+      "repetition": 0,
+      "position": 5,
+      "status": "succeeded",
+      "queued_at": 1791814207.1416817,
+      "started_at": 1791814224.1824565,
+      "finished_at": 1791814227.3979325,
+      "result": {
+        "success": true,
+        "format_ok": null,
+        "queue_s": 17.040774822235107,
+        "input_tokens": 92,
+        "output_tokens": 6,
+        "server_eval_s": 0.105916,
+        "calls": 1,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "tool_s": 0.0,
+        "usage_complete": true,
+        "evaluator_version": "arena-evaluation-v2",
+        "quality_evaluated": true,
+        "inference_identity": {
+          "identifier": "qwen2.5:7b",
+          "adapter": "ollama",
+          "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+          "server_version": "0.40.3",
+          "quantization": "Q4_K_M",
+          "verified": true,
+          "fingerprint": "9790b53a88dbd85dc7c7bdd749be79608c3d2c5ab49ca35d4ba108b50d4ebe7e"
+        },
+        "answer": "11:15",
+        "evaluation": "exact_match",
+        "reason": "Comparación exacta con la respuesta esperada (sin espacios en los extremos)",
+        "agent_s": 3.1998019000020577,
+        "server_tps": 56.64866497979531,
+        "agent_output_tps": 1.8751160814037087
+      }
+    }
+  ]
+}

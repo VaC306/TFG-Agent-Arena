@@ -60,13 +60,22 @@ export class AppComponent {
   summaries = computed(() => (['A', 'B'] as const).map(branch => {
     const runs = this.detail()?.runs.filter(r => r.branch === branch) ?? [];
     const finished = runs.filter(terminal);
-    const times = finished.flatMap(r => typeof r.result?.agent_s === 'number' ? [r.result.agent_s] : []);
+    const scored = finished.filter(r => !r.result?.error && ['completed','succeeded','failed'].includes(r.status) && typeof r.result?.success === 'boolean');
+    const times = finished.flatMap(r => !r.result?.error && r.result?.answer !== undefined && typeof r.result?.agent_s === 'number' ? [r.result.agent_s] : []);
     return { branch, total: runs.length, completed: finished.length,
-      evaluated: finished.filter(r => typeof r.result?.success === 'boolean').length,
-      success: finished.filter(r => r.result?.success).length,
+      evaluated: scored.length, success: scored.filter(r => r.result?.success).length,
+      errors: finished.filter(r => !!r.result?.error).length,
       mean: times.length ? times.reduce((a, b) => a + b, 0) / times.length : null,
     };
   }));
+
+  runLabel(run: Run) {
+    if (run.status === 'failed') return run.result?.error ? 'Error de ejecución' : 'No coincide';
+    return this.labels[run.status];
+  }
+  evaluationLabel(value: string) {
+    return ({exact_match:'Texto exacto', json_match:'JSON equivalente', none:'Sin evaluación automática', order_benchmark:'Criterios del benchmark de pedidos'} as Record<string,string>)[value] ?? value;
+  }
 
   constructor() {
     document.title = 'Comparar · Agent Arena';
@@ -167,6 +176,10 @@ export class AppComponent {
 
   answers(branch: 'A' | 'B') {
     return this.detail()?.runs.filter(run => run.branch === branch && !!run.result?.answer) ?? [];
+  }
+
+  referenceFor(run: Run) {
+    return this.savedTasks(run.branch).find(task => task.id === run.task_id)?.expected_answer;
   }
 
   async showTrace(run: Run) {

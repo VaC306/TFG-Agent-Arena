@@ -3,7 +3,7 @@
   <arena-info helpId="comparison-help" title="Una comparación, dos variantes" label="Ayuda para configurar la prueba">
     <h3>Un modelo</h3><p>Prueba dos prompts y entradas independientes con el mismo modelo. Si cambias también los datos, las diferencias no se pueden atribuir solo al prompt.</p>
     <h3>Dos modelos</h3><p>Ambos reciben la misma entrada y archivos. Puedes elegir instrucciones distintas para cada uno.</p>
-    <h3>Repeticiones y evaluación</h3><p>Cada caso se ejecuta en A y B tantas veces como indiques. Una respuesta esperada permite evaluar coincidencia exacta; sin ella, se muestran tiempos y recursos, pero no calidad.</p>
+    <h3>Repeticiones y evaluación</h3><p>Cada caso se ejecuta en A y B tantas veces como indiques. Elige texto exacto para respuestas concretas o JSON equivalente para extracción de datos. En respuestas abiertas, elige sin evaluación automática y revisa su calidad tú mismo.</p>
     <p>Las preferencias se guardan en tu perfil. Las entradas y los archivos se guardan al ejecutar la comparación.</p>
   </arena-info>
   <form #form="ngForm" (ngSubmit)="submit()" (input)="queueSave()" (change)="queueSave()">
@@ -19,6 +19,24 @@
         <div><label for="repetitions">Repeticiones (1–10)</label><input id="repetitions" name="repetitions" type="number" min="1" max="10" [(ngModel)]="repetitions" [attr.aria-invalid]="invalidField() === 'repetitions' ? 'true' : null" [attr.aria-describedby]="invalidField() === 'repetitions' ? 'composer-error' : null" required></div>
       </div>
       <div class="data-source"><label for="data-source">Datos de la prueba</label><select id="data-source" name="source" [(ngModel)]="source"><option value="manual">Entrada manual y adjuntos</option><option value="dataset">Importar dataset CSV / JSONL</option></select></div>
+      <div class="evaluation-settings">
+        <label for="evaluation-mode">Cómo evaluar las respuestas</label>
+        <select id="evaluation-mode" name="evaluation" [(ngModel)]="evaluation" aria-describedby="evaluation-description"><option value="exact_match">Texto exacto · respuesta concreta</option><option value="json_match">JSON equivalente · extracción de datos</option><option value="none">Sin evaluación automática · respuesta abierta</option></select>
+        <p id="evaluation-description" class="hint">{{ evaluation === 'exact_match' ? 'Compara con la respuesta esperada. Solo ignora espacios en los extremos; conserva mayúsculas y puntuación.' : evaluation === 'json_match' ? 'Compara valores y estructura JSON. Ignora el orden de claves y el formato; conserva el orden de listas y distingue booleanos de números.' : 'Se registran respuestas, tiempos y errores. La calidad queda sin puntuar para que puedas revisarla.' }} Sin referencia, el caso queda sin evaluar. La referencia nunca se envía al modelo.</p>
+        @if (evaluation !== 'none') { <a class="text-button" [href]="'/api/datasets/examples/' + evaluation" download>Descargar dataset de ejemplo ↗</a> }
+      </div>
+      <details class="protocol-settings"><summary>Condiciones de ejecución</summary>
+        <p class="hint">Estos parámetros se aplican por igual a A y B. Mantén también las mismas instrucciones para comparar solo los modelos.</p>
+        <div class="evaluation-settings"><label for="experiment-phase">Fase de la prueba</label><select id="experiment-phase" name="split" [(ngModel)]="split" aria-describedby="phase-help"><option value="dev">Desarrollo · ajustar y explorar</option><option value="eval">Evaluación · medir con casos reservados</option></select><p id="phase-help" class="hint">Reserva un dataset distinto para la evaluación final. Esta etiqueta registra la fase; no comprueba si ya utilizaste los casos para ajustar el prompt.</p></div>
+        <div class="protocol-fields">
+          <div><label for="temperature">Temperatura (0–2)</label><input id="temperature" name="temperature" type="number" min="0" max="2" step="0.1" [(ngModel)]="settings.temperature" [attr.aria-invalid]="invalidField() === 'temperature' ? 'true' : null" [attr.aria-describedby]="invalidField() === 'temperature' ? 'composer-error' : null" required></div>
+          <div><label for="seed">Semilla (0–2147483647)</label><input id="seed" name="seed" type="number" min="0" max="2147483647" step="1" [(ngModel)]="settings.seed" [attr.aria-invalid]="invalidField() === 'seed' ? 'true' : null" [attr.aria-describedby]="invalidField() === 'seed' ? 'composer-error' : null" required></div>
+          <div><label for="context">Contexto (512–131072 tokens)</label><input id="context" name="context" type="number" min="512" max="131072" step="1" [(ngModel)]="settings.num_ctx" [attr.aria-invalid]="invalidField() === 'context' ? 'true' : null" [attr.aria-describedby]="invalidField() === 'context' ? 'composer-error' : null" required></div>
+          <div><label for="output-limit">Máximo de salida (1–16384 tokens)</label><input id="output-limit" name="outputLimit" type="number" min="1" max="16384" step="1" [(ngModel)]="settings.max_output_tokens" [attr.aria-invalid]="invalidField() === 'output-limit' ? 'true' : null" [attr.aria-describedby]="invalidField() === 'output-limit' ? 'composer-error' : null" required></div>
+          <div><label for="timeout">Tiempo límite (1–3600 segundos)</label><input id="timeout" name="timeout" type="number" min="1" max="3600" step="1" [(ngModel)]="settings.timeout_s" [attr.aria-invalid]="invalidField() === 'timeout' ? 'true' : null" [attr.aria-describedby]="invalidField() === 'timeout' ? 'composer-error' : null" required></div>
+        </div>
+        <p class="hint">Orden A/B aleatorio con semilla fija, ejecución secuencial y sin calentamiento. La semilla ayuda a repetir las condiciones, pero no garantiza respuestas idénticas. El contexto debe ser compatible con el modelo y la memoria disponible.</p>
+      </details>
       <p class="hint mode-explanation">{{ source === 'dataset' ? 'Cada caso del dataset se ejecuta con ambos agentes. A y B reciben exactamente la misma entrada.' : mode === 'same_model' ? 'El modelo será el mismo para A y B. Cada rama tiene sus propios datos; esta prueba no aísla el efecto del prompt.' : 'A y B pueden usar modelos y prompts distintos, pero reciben exactamente los mismos archivos y entrada.' }}</p>
       @if (source === 'dataset') {
         <section class="dataset-import" aria-labelledby="dataset-title">
@@ -28,14 +46,14 @@
             <ul><li><code>id</code>: identificador único de cada caso.</li><li><code>input</code>: entrada de texto, hasta 6.000 caracteres.</li><li><code>expected_answer</code>: referencia opcional, hasta 6.000 caracteres.</li></ul>
             <pre>id,input,expected_answer
 saludo,Responde con la palabra hola,hola</pre>
-            <p>La referencia no se envía al modelo. Se compara con la respuesta ignorando espacios en los extremos. Descarga la plantilla para empezar.</p>
+            <p>La referencia no se envía al modelo. Se usa con la evaluación que elijas arriba. Descarga la plantilla para empezar.</p>
           </arena-info>
           <label for="dataset-file">Seleccionar dataset</label><input id="dataset-file" type="file" accept=".csv,.jsonl" [disabled]="datasetBusy()" (change)="importDataset($event)">
           @if (datasetBusy()) { <p class="hint" role="status">Validando estructura y casos…</p> }
           @if (datasetError()) { <p class="alert error" role="alert">{{ datasetError() }}</p> }
           @if (dataset(); as preview) {
             <p class="dataset-summary" role="status"><strong>{{ datasetName() }}</strong> · {{ preview.count }} casos · {{ preview.scored }} con referencia · {{ preview.count * repetitions * 2 }} ejecuciones</p>
-            <p class="hint">La evaluación usa coincidencia exacta, ignorando espacios en los extremos. Los casos sin referencia solo miden ejecución y recursos.</p>
+            <p class="hint">Se aplicará la evaluación elegida a todos los casos. Para JSON equivalente, cada referencia debe contener JSON válido. Los casos sin referencia quedan sin puntuar.</p>
             <div class="table-scroll dataset-preview" tabindex="0" role="region" aria-label="Vista previa del dataset, desplazable"><table><caption class="sr-only">Casos importados del dataset</caption><thead><tr><th scope="col">ID</th><th scope="col">Entrada</th><th scope="col">Respuesta esperada</th></tr></thead><tbody>@for (item of preview.cases; track item.id) { <tr><td>{{ item.id }}</td><td>{{ item.input }}</td><td>{{ item.expected_answer ?? 'Sin evaluar' }}</td></tr> }</tbody></table></div>
           }
         </section>

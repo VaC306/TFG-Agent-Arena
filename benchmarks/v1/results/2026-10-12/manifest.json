@@ -1,0 +1,23 @@
+{
+  "version": "arena-benchmarks-v1",
+  "origin": "Synthetic cases authored for Agent Arena; no personal data",
+  "sha256": {
+    "configs/protocol.json": "141e1ed6ad469060ff83dd62beda823d04372229047803b813a454d9c498c2a2",
+    "datasets/attachments-dev.json": "c0bd82324057ef944200bcd4e53fb2c7eea9e6f4562731ce851b4f02aade78a9",
+    "datasets/attachments-eval.json": "5d4bcc703215124e0591487094bc6891b4549bd93f9b628f1632295a5e23bc16",
+    "datasets/json-dev.jsonl": "0bb64007513f322cc34359b19fe7ed74580d9c49ca58fdb7c4441c4e90166de8",
+    "datasets/json-eval.jsonl": "9afd5cb8d4c951b85d59b09274b77de02a422748fdb255c8a5b5678735f5289f",
+    "datasets/orders-dev.jsonl": "83fde58f61e33367d01f7d522ec5a484fba443f173e3b24656f8f2fbbe117f09",
+    "datasets/orders-eval.jsonl": "82d0534c24fa26c8721b8721891bd506b4adeec9888c0cf35e099b79de725a56",
+    "datasets/text-dev.csv": "b89d311ccef9e8b90d7b7658f7989d744ebd5cb8455bc8cd6585a6d754237a4c",
+    "datasets/text-eval.csv": "00c1a99b0fea9b3066dfcba3703f2e8cefdb64bda114a0db1978897c41b20631",
+    "diagnostics/tool-calls.json": "a6a316f96e4328edd5302ffc3fa2210814c05c64c95f1195d38841f4b30b94ba",
+    "fixtures/catalog-dev.json": "49bba80b2b8b96506fddaa985ec4cd24d335cd5d126abcefabc0d31fa94e8db5",
+    "fixtures/catalog-eval.json": "3ec7f8f23949c19866fd7361e2343515977706ac6f6289160595746a56c1b879",
+    "fixtures/note-dev.txt": "0081074864a8710d11de7ba00c7f5468a4ba8f9ba18c19e6df700e966339b05e",
+    "fixtures/note-eval.txt": "6a4dbd959f1cda595899f902cb64d90200f8d26889e82dae56a97a699c5b0e7e",
+    "fixtures/orders.json": "1e3389d6b40b252b4cc5acf04f35b65d6fd0d006fc7c9cb990ea62cfec4a0021",
+    "fixtures/quantities-dev.csv": "6902792d7c9d7f434a9179760ce5676710d11469fa0e49fffe46540ad3c7f6ef",
+    "fixtures/quantities-eval.csv": "be4f9b20ac2b68290b02f6a92790e9375daf7222ffcc6c7b2420f27ae9fe11c7"
+  }
+}

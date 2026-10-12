@@ -1,0 +1,4 @@
+[
+  {"id":"eval-file-total","input":"Relaciona catalog-eval.json y quantities-eval.csv siguiendo note-eval.txt. Calcula el coste total en euros. Devuelve solo JSON con total numérico.","files":["catalog-eval.json","quantities-eval.csv","note-eval.txt"],"expected_answer":"{\"total\":29}"},
+  {"id":"eval-file-lookup","input":"Lee catalog-eval.json. Devuelve solo JSON con precio numérico del código R.","files":["catalog-eval.json"],"expected_answer":"{\"precio\":7}"}
+]
