@@ -65,6 +65,9 @@ class Store:
                     raise ValueError('Esta campaña tiene ejecuciones pendientes. Finalízalas o cancélalas antes de repetir.')
                 sequence = db.execute('SELECT COALESCE(MAX(sequence),0)+1 FROM campaign_attempts WHERE campaign_id=?',
                                       (campaign['id'],)).fetchone()[0]
+                plan = json.loads(self._campaign_row(db,campaign['id'])['data'])['snapshot']['config']
+                if plan.get('latency_study') and sequence > plan['planned_attempts']:
+                    raise ValueError('El estudio ya alcanzó los intentos previstos. Fija un nuevo diseño para ampliarlo, sin detener o ampliar la muestra según el resultado.')
                 snapshot['campaign'] = {k:v for k,v in campaign.items() if k != 'request_id'} | {'sequence':sequence}
             db.execute("INSERT INTO experiments VALUES (?,?)", (experiment_id, json.dumps(snapshot)))
             if self.owner_id is not None:

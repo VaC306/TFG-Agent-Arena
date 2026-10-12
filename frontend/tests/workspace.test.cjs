@@ -31,6 +31,20 @@ async function workspace(api={}) {
   return {app,...f};
 }
 const responseDetail = name => ({snapshot:{config:{name}},runs:[],name});
+test('latency planning enables warmup and balances repetitions without reducing the sample',()=>{
+  const f=fixture('composer.component.ts',{prompts:async()=>[]}),component=new f.exports.ComposerComponent();
+  component.settings={warmup:'none',order_policy:'random'};component.repetitions=3;
+  component.setLatencyStudy(true);
+  assert.equal(component.settings.warmup,'per_run');assert.equal(component.settings.order_policy,'balanced');assert.equal(component.repetitions,4);
+  component.setLatencyStudy(false);assert.equal(component.repetitions,4);
+});
+test('completed planned campaign cannot silently extend the sample',async()=>{
+  let calls=0;const f=fixture('campaigns.component.ts',{repeatCampaign:async()=>calls++});
+  const component=new f.exports.CampaignsComponent();component.selectedId.set('c');
+  component.detail.set({id:'c',design:{config:{latency_study:true,planned_attempts:2}},attempts:[{},{}]});
+  assert.equal(component.planFinished(),true);await component.repeat();assert.equal(calls,0);assert.equal(component.busy(),false);
+  component.detail.set({id:'c',design:{config:{latency_study:false}},attempts:[{},{}]});assert.equal(component.planFinished(),false);
+});
 test('worker checks coalesce, discard stale status on failure and recover',async()=>{
   const request=deferred();let calls=0;
   const api={workerStatus:()=>{calls++;return request.promise;}};

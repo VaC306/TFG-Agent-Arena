@@ -45,6 +45,7 @@ export class CampaignsComponent {
       : this.taskFilter() === 'errors' ? branches.some(b => b.summary.execution_errors > 0)
       : this.taskFilter() === 'coverage' ? branches.some(b => b.reference_evaluable && b.coverage !== 1) : true;
   }));
+  planFinished = computed(() => !!this.detail()?.design?.config.latency_study && this.detail()!.attempts.length >= (this.detail()!.design.config.planned_attempts ?? 2));
   stabilityLabel(value:string) {
     return ({insufficient:'Evidencia insuficiente',variable:'Calidad variable',always_correct:'Evaluadas siempre correctas',always_incorrect:'Evaluadas siempre incorrectas'} as Record<string,string>)[value] ?? value;
   }
@@ -146,7 +147,7 @@ export class CampaignsComponent {
   }
   async repeat() {
     const id = this.selectedId(), version = this.version;
-    if (!id || !this.detail() || this.detail()?.pending || this.error() || this.listError() || this.busy() || this.loading()) return;
+    if (!id || !this.detail() || this.detail()?.pending || this.planFinished() || this.error() || this.listError() || this.busy() || this.loading()) return;
     this.busy.set(true); this.notice.set('');
     const key = this.requests.get(id) ?? crypto.randomUUID();
     this.requests.set(id,key);

@@ -308,7 +308,7 @@ independientes ni calcula un ganador. La prueba de navegador de esta funcionalid
 repite el benchmark simulado: dos intentos de 16 ejecuciones, 8/8 aciertos por rama.
 La fijación de digest/servidor se verifica con adaptadores controlados.
 
-Controles actuales: 210 pruebas Python, 28 del frontend, compilación de producción
+Controles actuales: 240 pruebas Python, 30 del frontend, compilación de producción
 y comprobación de dependencias. Se comprobaron recarga, recuperación de API y
 vista móvil de campañas a 320/390 px; la accesibilidad completa sigue pendiente.
 El [registro de condiciones y estado del worker](condiciones-y-worker.md) permite
@@ -348,7 +348,9 @@ usar el [análisis por tarea e incertidumbre](analisis-por-tarea.md) sobre una c
 real homogénea y estudiar latencias con la política de calentamiento registrada. Las campañas facilitan repetir diseños conservando la
 evidencia. El [muestreo periódico y calentamiento opcional](mediciones-y-calentamiento.md)
 registran tiempos separados y recursos observados. Una comprobación real pequeña
-no justifica conclusiones generales de latencia. El estado del worker dispone de
+no justifica conclusiones generales de latencia. Los [estudios de tiempo de tarea](estudios-de-latencia.md)
+fijan orden equilibrado, medida y número de intentos; su piloto con 3B conservó
+respuestas incorrectas y diferencias según orden, sin producir inferencia engañosa. El estado del worker dispone de
 señal periódica. El modo simultáneo deberá etiquetar competencia por recursos y conservar
 la independencia de ramas. PENDIENTE: acordar planificación de los dos autores y
 reservar tiempo para experimentos, análisis y redacción final.

@@ -69,6 +69,10 @@ def protocol_report(snapshot, runs):
         warnings.append('Sin calentamiento previo. El tiempo del agente incluye consulta de metadatos y puede incluir carga del modelo.')
     if snapshot.get('conditions',{}).get('resource_sample_interval_s'):
         warnings.append('Recursos muestreados periódicamente en el host y worker: los máximos observados no son picos garantizados ni consumo exclusivo del modelo. El muestreo puede afectar a los tiempos.')
+    if snapshot.get('conditions',{}).get('order_policy')=='balanced':
+        warnings.append('Orden equilibrado: cada rama ejecuta primero la mitad de las repeticiones de cada caso. Se conserva el orden observado; esto no elimina efectos de caché o carga externa.')
+    if snapshot.get('conditions',{}).get('latency_plan'):
+        warnings.append('Estudio de tiempo de tarea fijado antes de ejecutar: completa todos los intentos previstos. No amplíes o detengas la muestra según la diferencia observada.')
     warnings.append('Política de memoria del modelo (keep_alive): ' + snapshot.get('conditions', {}).get('keep_alive', 'no registrada') + '. No se garantiza un inicio en frío si otro programa lo tiene cargado.')
     warnings.append('Semilla fija no garantiza respuestas idénticas. La carga de otros programas no está aislada.')
     if config['repetitions'] > 1:

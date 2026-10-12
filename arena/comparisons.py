@@ -57,6 +57,9 @@ class InferenceSettings(Contract):
     max_output_tokens: int = Field(default=4096, ge=1, le=16384, strict=True)
     timeout_s: int = Field(default=120, ge=1, le=3600, strict=True)
     warmup: Literal['none','per_run'] = 'none'
+    order_policy: Literal['random','balanced'] = 'random'
+    latency_study: bool = Field(default=False,strict=True)
+    planned_attempts: int = Field(default=2,ge=2,le=20,strict=True)
 
     @model_validator(mode='after')
     def context_budget(self):
@@ -87,6 +90,8 @@ class ComparisonRequest(Contract):
 
     @model_validator(mode='after')
     def validate_design(self):
+        if self.settings.latency_study and (self.dataset is None or self.evaluation == 'none' or any(c.expected_answer is None for c in self.dataset)):
+            raise ValueError('El estudio de latencia requiere un dataset compartido con referencia evaluable en todos los casos.')
         if set(self.agents) != {'A', 'B'}:
             raise ValueError('Se necesitan exactamente las ramas A y B')
         if any(not agent.system_prompt.strip() for agent in self.agents.values()):
@@ -118,6 +123,8 @@ class ComparisonRequest(Contract):
     def config(self):
         return Experiment(name=self.name, adapter=self.adapter, comparison=self.comparison,
                           warmup=self.settings.warmup,
+                          order_policy=self.settings.order_policy,latency_study=self.settings.latency_study,
+                          planned_attempts=self.settings.planned_attempts,
                           repetitions=self.repetitions, split=self.split, agents={branch: AgentConfig(
                               **agent.model_dump(), tools_enabled=False, temperature=self.settings.temperature,
                               seed=self.settings.seed, num_ctx=self.settings.num_ctx,

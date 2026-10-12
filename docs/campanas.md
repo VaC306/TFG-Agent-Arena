@@ -64,6 +64,10 @@ Las comparaciones nuevas permiten [calentamiento opcional y recursos periódicos
 La política queda fijada en el diseño; los registros antiguos conservan su alcance.
 La ejecución sigue siendo secuencial.
 
+Los [estudios de latencia](estudios-de-latencia.md) fijan antes de ejecutar el número
+de intentos y el tiempo de tarea como medida, con orden equilibrado. La campaña
+impide superar la muestra prevista y explica cuándo no se puede mostrar incertidumbre.
+
 ## Persistencia, solicitudes y borrado
 
 Se pueden añadir [anotaciones de condiciones externas](condiciones-y-worker.md)

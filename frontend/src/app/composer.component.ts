@@ -98,6 +98,13 @@ export class ComposerComponent {
     if (this.saveTimer) clearTimeout(this.saveTimer);
     this.saveTimer = setTimeout(() => { this.saveTimer = undefined; void this.savePreferences(); }, 650);
   }
+  setLatencyStudy(enabled:boolean) {
+    if (enabled) {
+      this.settings.warmup = 'per_run'; this.settings.order_policy = 'balanced';
+      if (this.repetitions % 2) this.repetitions += 1;
+    }
+    this.queueSave();
+  }
 
   private async savePreferences() {
     if (this.auth.user()?.id !== this.ownerId || this.modelsBusy()) return;
@@ -193,6 +200,7 @@ export class ComposerComponent {
       ['context',this.settings.num_ctx,512,131072,true], ['output-limit',this.settings.max_output_tokens,1,16384,true],
       ['timeout',this.settings.timeout_s,1,3600,true],
     ];
+    if (this.settings.latency_study) parameters.push(['planned-attempts',this.settings.planned_attempts,2,20,true]);
     const badParameter = parameters.find(([,n,min,max,integer]) => !Number.isFinite(n) || n < min || n > max || integer && !Number.isInteger(n));
     if (badParameter) {
       this.invalidField.set(badParameter[0]); this.error.set('Revisa este parámetro y los límites indicados.');
@@ -207,6 +215,13 @@ export class ComposerComponent {
     if (this.settings.max_output_tokens >= this.settings.num_ctx) {
       this.invalidField.set('output-limit'); this.error.set('El máximo de salida debe ser menor que el contexto para dejar espacio a la entrada.');
       const field = document.getElementById('output-limit'); const details = field?.closest('details'); if (details) details.open = true; field?.focus(); return;
+    }
+    if (this.settings.order_policy === 'balanced' && this.repetitions % 2 || this.settings.latency_study &&
+        (this.source !== 'dataset' || this.evaluation === 'none' || this.dataset()!.cases.some(c=>c.expected_answer == null))) {
+      this.error.set('El orden equilibrado exige repeticiones pares. Para estudiar tiempos importa un dataset compartido con referencia en todos los casos.');
+      const id = this.settings.order_policy === 'balanced' && this.repetitions % 2 ? 'repetitions' : 'data-source';
+      this.invalidField.set(id);
+      const field = document.getElementById(id); const details = field?.closest('details');if (details) details.open = true;field?.focus();return;
     }
     this.busy.set(true);
     this.invalidField.set('');

@@ -18,6 +18,7 @@ from .accounts import Accounts, COOKIE, SESSION_SECONDS, Credentials, Registrati
 from .json_input import load_json
 from .protocol import protocol_report
 from .resources import resources_csv
+from .latency_analysis import latency_csv
 from .model_results import latest_model_results, summarize
 from .result_report import markdown_report
 from .campaigns import CampaignRequest, AttemptRequest, AnnotationRequest, create_campaign, repeat_campaign, campaign_report, campaign_csv, campaign_markdown, task_analysis_csv
@@ -262,6 +263,14 @@ def create_app(db_path=None, root=None):
         try:
             return Response(task_analysis_csv(campaign_report(store,campaign_id)),media_type='text/csv; charset=utf-8',
                             headers={'Content-Disposition':'attachment; filename="arena-task-analysis.csv"'})
+        except KeyError:
+            raise HTTPException(404,'Campaña inexistente')
+
+    @app.get('/campaigns/{campaign_id}/latency.csv')
+    def export_latency(campaign_id:str,store:Store = Depends(user_store)):
+        try:
+            return Response(latency_csv(campaign_report(store,campaign_id)),media_type='text/csv; charset=utf-8',
+                            headers={'Content-Disposition':'attachment; filename="arena-latency.csv"'})
         except KeyError:
             raise HTTPException(404,'Campaña inexistente')
 

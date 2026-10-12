@@ -11,14 +11,15 @@ import scipy
 from scipy.stats import bootstrap
 from .model_results import evaluable, fingerprint, outcome, summarize
 from .protocol import quality_value, protocol_report
+from .latency_analysis import latency_analysis
 
-VERSION = 'arena-task-analysis-v1'
+VERSION = 'arena-task-analysis-v2'
 MIN_TASKS = 10
 MIN_ATTEMPTS = 2
 RESAMPLES = 4000
 SEED = 42
 SOURCES = {name:(Path(__file__).parent/name).read_bytes().decode('utf-8')
-           for name in ('task_analysis.py','model_results.py','protocol.py')}
+           for name in ('task_analysis.py','model_results.py','protocol.py','latency_analysis.py')}
 SOURCE_HASHES = {name:hashlib.sha256(source.encode('utf-8')).hexdigest() for name,source in SOURCES.items()}
 
 
@@ -94,6 +95,9 @@ def paired_analysis(snapshot,included,excluded):
     if not tasks: reasons.append('No hay tareas compartidas con referencia evaluable.')
     if counts['missing_pairs']: reasons.append('Faltan puntuaciones en pares A/B; errores de ejecución no se imputan como calidad incorrecta.')
     if excluded: reasons.append('Hay intentos excluidos o pendientes; el intervalo requiere una campaña completa y homogénea.')
+    latency_plan = snapshot.get('conditions',{}).get('latency_plan')
+    if latency_plan and len(included)!=latency_plan['planned_attempts']:
+        reasons.append('El estudio todavía no tiene todos los intentos fijados en su plan; no se presenta inferencia intermedia.')
     if len(included) < MIN_ATTEMPTS: reasons.append(f'Se requieren al menos {MIN_ATTEMPTS} intentos compatibles para este análisis de incertidumbre.')
     if len(tasks) < MIN_TASKS: reasons.append(f'Se requieren al menos {MIN_TASKS} tareas con referencia; repetir una tarea no aumenta este número.')
     stimuli = [fingerprint({'input':t['input'].strip(),'environment':snapshot['environments'].get(t['environment']),
@@ -138,6 +142,7 @@ def campaign_analysis(snapshot,attempts,evidence):
     rows = [{'task_id':tid,'branches':{b:task_branch(task_maps[b].get(tid),b,included) for b in ('A','B')}} for tid in ids]
     return {'version':VERSION,'source_sha256':SOURCE_HASHES,'included_attempts':[{'sequence':a['sequence'],'experiment_id':a['experiment_id']} for a,_ in included],
             'excluded_attempts':excluded,'tasks':rows,'paired':paired_analysis(snapshot,included,excluded),
+            'latency':latency_analysis(snapshot,included,excluded),
             'note':('Los contadores por tarea describen solo intentos terminados con condiciones compatibles. '
                     'Calidad = aciertos/respuestas evaluadas; cobertura = evaluadas/casos con referencia evaluable. '
                     'Los errores quedan separados. Estabilidad de calidad no significa respuestas idénticas. '

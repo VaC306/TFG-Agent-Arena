@@ -80,9 +80,16 @@ class Experiment(Contract):
     ollama_url: str = "http://127.0.0.1:11434"
     comparison: Literal["same_model", "different_models"] = "same_model"
     warmup: Literal['none','per_run'] = 'none'
+    order_policy: Literal['random','balanced'] = 'random'
+    latency_study: bool = Field(default=False,strict=True)
+    planned_attempts: int = Field(default=2,ge=2,le=20,strict=True)
 
     @model_validator(mode="after")
     def paired_model(self):
+        if self.order_policy == 'balanced' and self.repetitions % 2:
+            raise ValueError('El orden equilibrado requiere un número par de repeticiones por caso.')
+        if self.latency_study and (self.order_policy != 'balanced' or self.warmup != 'per_run'):
+            raise ValueError('El estudio de latencia requiere orden equilibrado y calentamiento antes de cada ejecución.')
         if set(self.agents) != {"A", "B"}:
             raise ValueError("Se requieren exactamente las ramas A y B")
         models = [a.model if ':' in a.model else a.model + ':latest' for a in self.agents.values()]

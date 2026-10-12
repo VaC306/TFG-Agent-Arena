@@ -201,5 +201,7 @@ def campaign_markdown(report):
             lines += [f'#### Variante {branch}',code_block(json.dumps(values,ensure_ascii=False,indent=2))]
     lines += ['## Diferencias emparejadas e incertidumbre',analysis['paired']['note'],
               code_block(json.dumps(analysis['paired'],ensure_ascii=False,indent=2)),
+              '## Tiempo de tarea y orden de ejecución',analysis['latency']['note'],
+              code_block(json.dumps(analysis['latency'],ensure_ascii=False,indent=2)),
               'El JSON de la campaña conserva las fuentes, entradas y resultados de cada intento. Las trazas se consultan en cada comparación.']
     return '\n\n'.join(lines)+'\n'

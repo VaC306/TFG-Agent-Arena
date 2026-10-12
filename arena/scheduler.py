@@ -25,6 +25,8 @@ def submit(store, config_path, tasks_path):
 
 
 def schedule(store, config, tasks, environments, branch_tasks=None, benchmark=None, campaign=None, conditions=None):
+    if config.latency_study and (branch_tasks is not None or not tasks or any(not(t.criteria or t.expected_answer is not None and t.evaluation!='none') for t in tasks)):
+        raise ValueError('El estudio de latencia requiere tareas compartidas con referencia evaluable; también se aplica a la CLI.')
     if campaign is None and config.adapter == "ollama" and os.environ.get("ARENA_OLLAMA_URL"):
         config.ollama_url = os.environ["ARENA_OLLAMA_URL"]
     code_files = list(Path(__file__).parent.glob("*.py"))
@@ -47,10 +49,14 @@ def schedule(store, config, tasks, environments, branch_tasks=None, benchmark=No
                                "warmup": config.warmup, "keep_alive": "5m" if config.warmup == 'per_run' else "0",
                                "resource_sample_interval_s": 1.0,
                                "resource_sampling": "periodic-v1; observed samples, not guaranteed peaks",
+                               "order_policy":config.order_policy,
+                               "latency_plan":{'version':'arena-latency-plan-v1','endpoint':'task_s',
+                                  'estimand':'equal-task mean paired B-minus-A seconds','planned_attempts':config.planned_attempts,
+                                  'question':'Diferencia de tiempo de tarea B−A bajo el diseño fijado; sin ranking general.'} if config.latency_study else None,
                                "resource_scope": "host_and_worker", "seed_determinism": "not guaranteed"}}
     snapshot['protocol'] = {'version':'arena-protocol-v1', 'evaluator_version':EVALUATOR_VERSION,
                             'identity_capture':'before each run; first observed identity pinned per model',
-                            'order':'seeded random A/B within each case and repetition',
+                            'order':'seeded initial A/B per case, reversed each repetition' if config.order_policy == 'balanced' else 'seeded random A/B within each case and repetition',
                             'reference_sent_to_model':False}
     if conditions is not None:
         snapshot['conditions'] = conditions
@@ -59,10 +65,17 @@ def schedule(store, config, tasks, environments, branch_tasks=None, benchmark=No
     snapshot["data_sha256"] = hashlib.sha256(json.dumps({"tasks": snapshot["tasks"], "branch_tasks": branch_tasks, "environments": environments}, sort_keys=True).encode()).hexdigest()
     experiment_id = str(uuid.uuid4())
     rng, runs = random.Random(config.order_seed), []
+    first_orders = {}
+    if config.order_policy == 'balanced':
+        for task in tasks:
+            branches = ['A','B'];rng.shuffle(branches);first_orders[task.id] = branches
     for repetition in range(config.repetitions):
         for task in tasks:
             branches = ["A", "B"]
-            rng.shuffle(branches)
+            if config.order_policy == 'balanced':
+                branches = first_orders[task.id][:] if repetition % 2 == 0 else list(reversed(first_orders[task.id]))
+            else:
+                rng.shuffle(branches)
             for branch in branches:
                 runs.append(Run(id=str(uuid.uuid4()), experiment_id=experiment_id, task_id=task.id,
                                 branch=branch, repetition=repetition, position=len(runs), queued_at=time.time()))

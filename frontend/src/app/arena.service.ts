@@ -6,8 +6,8 @@ export type PresetId = 'simulated' | 'ollama';
 export type Status = 'queued' | 'running' | 'completed' | 'succeeded' | 'failed' | 'timeout' | 'limit' | 'cancelled' | 'interrupted';
 export interface Agent { model: string; system_prompt: string; temperature?:number; seed?:number; num_ctx?:number; limits?:{max_output_tokens:number; timeout_s:number} }
 export type EvaluationMode = 'exact_match' | 'json_match' | 'none';
-export interface InferenceSettings { temperature:number; seed:number; num_ctx:number; max_output_tokens:number; timeout_s:number; warmup:'none'|'per_run' }
-export const defaultSettings = (): InferenceSettings => ({temperature:0, seed:42, num_ctx:16384, max_output_tokens:4096, timeout_s:120, warmup:'none'});
+export interface InferenceSettings { temperature:number; seed:number; num_ctx:number; max_output_tokens:number; timeout_s:number; warmup:'none'|'per_run';order_policy:'random'|'balanced';latency_study:boolean;planned_attempts:number }
+export const defaultSettings = (): InferenceSettings => ({temperature:0, seed:42, num_ctx:16384, max_output_tokens:4096, timeout_s:120, warmup:'none',order_policy:'random',latency_study:false,planned_attempts:2});
 export interface ProtocolReport {
   version:string; evaluator_version:string; comparison_scope:string; inputs_shared:boolean; prompts_equal:boolean;
   evaluations:string[]; warnings:string[];
@@ -17,7 +17,7 @@ export interface ProtocolReport {
 export interface Config {
   name: string; adapter: PresetId; split: string; repetitions: number;
   agents: { A: Agent; B: Agent };
-  comparison?: 'same_model' | 'different_models';
+  comparison?: 'same_model' | 'different_models';latency_study?:boolean;planned_attempts?:number;order_policy?:string;
 }
 export interface Preset { id: PresetId; config: Config }
 export interface ExperimentSummary {
@@ -49,7 +49,8 @@ export interface TaskSeries { sequence:number; experiment_id:string; summary:Res
 export interface TaskBranchAnalysis { present:boolean; reference_evaluable:boolean; input_preview:string; summary:ResultSummary; quality_rate:number|null; coverage:number|null; correct_reference_rate:number|null; quality_stability:'insufficient'|'variable'|'always_correct'|'always_incorrect'; between_attempt_changes:number; between_attempt_comparisons:number; series:TaskSeries[] }
 export interface TaskAnalysis { task_id:string; branches:Record<'A'|'B',TaskBranchAnalysis> }
 export interface PairedAnalysis { inputs_shared:boolean; scope:string; planned_pairs:number; evaluated_pairs:number; missing_pairs:number; both_correct:number; A_only_correct:number; B_only_correct:number; both_incorrect:number; task_count:number; mean_B_minus_A:number|null; interval:{low:number;high:number}|null; interval_unavailable_reasons:string[]; method:{name:string; confidence_level:number;resamples:number;seed:number;unit:string;min_tasks:number;min_attempts:number;input_sha256:string;numpy_version:string;scipy_version:string}; note:string }
-export interface CampaignAnalysis { version:string; included_attempts:{sequence:number;experiment_id:string}[]; excluded_attempts:{sequence:number;experiment_id:string;reasons:string[]}[]; tasks:TaskAnalysis[]; paired:PairedAnalysis; note:string }
+export interface LatencyAnalysis { version:string;scope:string;plan:{planned_attempts:number;question:string;endpoint:string}|null;included_attempts:number;excluded_attempts:number;task_count:number;planned_pairs:number;timed_pairs:number;missing_pairs:number;incorrect_pairs:number;unscored_pairs:number;mean_B_minus_A_s:number|null;by_order:Record<string,{timed_pairs:number;mean_B_minus_A_s:number|null}>;tasks:{task_id:string;planned_pairs:number;timed_pairs:number;mean_B_minus_A_s:number|null;A_first_pairs:number;B_first_pairs:number}[];interval:{low_s:number;high_s:number}|null;interval_unavailable_reasons:string[];method:unknown;note:string }
+export interface CampaignAnalysis { latency:LatencyAnalysis; version:string; included_attempts:{sequence:number;experiment_id:string}[]; excluded_attempts:{sequence:number;experiment_id:string;reasons:string[]}[]; tasks:TaskAnalysis[]; paired:PairedAnalysis; note:string }
 export interface CampaignDetail { id:string; name:string; source_id:string; created_at:number; design_sha256:string; design:{config:Config; tasks:SavedTask[]; branch_tasks:Record<string,SavedTask>|null; conditions:unknown; protocol:unknown}; expected_models:Record<string,{digest:string;server_version:string;quantization:string}>; case_count:number; attempts:CampaignAttempt[]; pending:number; note:string; analysis:CampaignAnalysis }
 export interface PromptTemplate { id: string; name: string; text: string }
 export interface Upload { name: string; data_base64: string; preview: string; image: boolean; size: number }

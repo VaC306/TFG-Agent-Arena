@@ -71,8 +71,8 @@ diseño experimental del TFG.
 - El CSV de evolución sigue mostrando cada intento por separado.
 - Markdown añade el análisis, exclusiones, diferencias y método.
 - JSON incluye la misma estructura `analysis`, evidencia original y
-  `analysis_sources`: fuentes exactas de `task_analysis.py`, `model_results.py`
-  y `protocol.py` usadas por el proceso para calcularlo, con SHA-256. Estas
+  `analysis_sources`: fuentes exactas de `task_analysis.py`, `model_results.py`,
+  `protocol.py` y `latency_analysis.py` usadas por el proceso para calcularlo, con SHA-256. Estas
   fuentes son distintas de las históricas que ejecutaron cada intento.
 
 El método registra versión del análisis, semilla, número de remuestreos,
