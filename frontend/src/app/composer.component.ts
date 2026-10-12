@@ -6,14 +6,17 @@ import { InputEditorComponent } from './input-editor.component';
 import { InfoDialogComponent } from './info-dialog.component';
 import { AuthService, Preferences } from './auth.service';
 import { textError, filenameError, modelIdentity } from './validation';
+import { LoadingIndicatorComponent } from './loading-indicator.component';
+import { LoadingService } from './loading.service';
 
 @Component({
-  selector: 'arena-composer', standalone: true, imports: [FormsModule, InputEditorComponent, InfoDialogComponent],
+  selector: 'arena-composer', standalone: true, imports: [FormsModule, InputEditorComponent, InfoDialogComponent,LoadingIndicatorComponent],
   templateUrl: './composer.component.html',
 })
 export class ComposerComponent {
   private api = inject(ArenaService);
   private auth = inject(AuthService);
+  private activity = inject(LoadingService);
   private saveTimer?: ReturnType<typeof setTimeout>;
   private ownerId = this.auth.user()?.id;
   preferencesNotice = signal('');
@@ -56,6 +59,7 @@ export class ComposerComponent {
     this.datasetName.set('');
     this.datasetError.set('');
     this.datasetBusy.set(true);
+    const endLoading = this.activity.begin();
     try {
       if (filenameError(file.name)) throw new Error(filenameError(file.name));
       if (!/\.(csv|jsonl)$/i.test(file.name)) throw new Error('Elige un dataset CSV o JSONL.');
@@ -68,7 +72,7 @@ export class ComposerComponent {
     } catch (error) {
       const detail = error instanceof HttpErrorResponse ? error.error?.detail : null;
       this.datasetError.set(typeof detail === 'string' ? detail : error instanceof HttpErrorResponse ? 'No se pudo validar el dataset. Comprueba la API y la estructura del archivo.' : error instanceof Error ? error.message : 'No se pudo leer el archivo UTF-8.');
-    } finally { this.datasetBusy.set(false); input.value = ''; }
+    } finally { endLoading(); this.datasetBusy.set(false); input.value = ''; }
   }
 
   constructor() {
@@ -123,14 +127,13 @@ export class ComposerComponent {
     try {
       const result = await this.api.models();
       this.models.set(result.models.map(model => model.name));
-      if (this.adapter === 'ollama') {
+      if (this.adapter === 'ollama' && result.available) {
         if (!this.models().includes(this.modelA)) this.modelA = this.models()[0] ?? '';
         this.syncModelB();
       }
       this.modelNotice.set(result.available ? (result.models.length ? `${result.models.length} modelos instalados.` : 'No hay modelos instalados. Instala uno en Ollama y actualiza la lista.') : 'Ollama no está disponible. Inícialo y actualiza la lista.');
     } catch {
       this.models.set([]);
-      if (this.adapter === 'ollama') { this.modelA = ''; this.modelB = ''; }
       this.modelNotice.set('No se pudo consultar Ollama. Comprueba la conexión y actualiza la lista.');
     } finally { this.modelsBusy.set(false); this.queueSave(); }
   }

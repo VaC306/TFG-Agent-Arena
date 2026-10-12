@@ -17,6 +17,8 @@ from .datasets import DatasetUpload, parse_dataset
 from .accounts import Accounts, COOKIE, SESSION_SECONDS, Credentials, Registration, Preferences, ProfileUpdate
 from .json_input import load_json
 from .protocol import protocol_report
+from .model_results import latest_model_results, summarize
+from .result_report import markdown_report
 import json
 
 
@@ -186,6 +188,10 @@ def create_app(db_path=None, root=None):
             (root / "configs" / f"{name}.json").read_text(encoding="utf-8")
         ).model_dump()} for name in ("simulated", "ollama")]
 
+    @app.get('/model-results')
+    def model_results(store: Store = Depends(user_store)):
+        return {'entries':latest_model_results(store)}
+
     @app.post("/experiments", status_code=201)
     async def create(request: Request, store: Store = Depends(user_store)):
         body = await auth_body(request, Submission, 1024)
@@ -195,7 +201,9 @@ def create_app(db_path=None, root=None):
     def get(experiment_id: str, store: Store = Depends(user_store)):
         try:
             snapshot, runs = store.snapshot(experiment_id), store.list_runs(experiment_id)
-            return {"snapshot": snapshot, "runs": runs, "protocol":protocol_report(snapshot, runs)}
+            overviews = {b:summarize([r for r in runs if r['branch'] == b],
+                [snapshot['branch_tasks'][b]] if snapshot.get('branch_tasks') else snapshot['tasks']) for b in ('A','B')}
+            return {"snapshot": snapshot, "runs": runs, "protocol":protocol_report(snapshot, runs),'overviews':overviews}
         except KeyError:
             raise HTTPException(404, "Experimento inexistente")
 
@@ -205,16 +213,27 @@ def create_app(db_path=None, root=None):
             snapshot, runs = store.snapshot(experiment_id), store.list_runs(experiment_id)
             data = {'experiment_id':experiment_id, 'snapshot':snapshot, 'runs':runs,
                     'report':protocol_report(snapshot, runs),
+                    'overviews':{b:summarize([r for r in runs if r['branch'] == b],
+                        [snapshot['branch_tasks'][b]] if snapshot.get('branch_tasks') else snapshot['tasks']) for b in ('A','B')},
                     'note':'Partial while runs are pending. Contains inputs and attachments. Full traces remain in the application.'}
             return Response(json.dumps(data, ensure_ascii=False, indent=2), media_type='application/json',
                             headers={'Content-Disposition':'attachment; filename="arena-reproducibility.json"'})
         except KeyError:
             raise HTTPException(404, 'Experimento inexistente')
 
+    @app.get('/experiments/{experiment_id}/report.md')
+    def readable_report(experiment_id: str, store: Store = Depends(user_store)):
+        try:
+            return Response(markdown_report(store.snapshot(experiment_id),store.list_runs(experiment_id)),
+                media_type='text/markdown; charset=utf-8',headers={'Content-Disposition':'attachment; filename="arena-results.md"'})
+        except KeyError:
+            raise HTTPException(404,'Experimento inexistente')
+
     @app.get("/experiments/{experiment_id}/metrics.csv")
     def export(experiment_id: str, store: Store = Depends(user_store)):
         try:
-            return Response(csv_text(store, experiment_id), media_type="text/csv")
+            return Response(csv_text(store, experiment_id), media_type="text/csv",
+                            headers={'Content-Disposition':'attachment; filename="metrics.csv"'})
         except KeyError:
             raise HTTPException(404, "Experimento inexistente")
 

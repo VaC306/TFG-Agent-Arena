@@ -109,8 +109,8 @@ def test_reference_never_sent_and_model_change_stops_inference(tmp_path):
 def test_report_does_not_claim_causality_or_score_execution_errors():
     snapshot = {'config':{'adapter':'ollama', 'repetitions':2, 'agents':{'A':{'system_prompt':'A'}, 'B':{'system_prompt':'B'}}},
                 'tasks':[task().model_dump()], 'conditions':{'inputs_shared':False}}
-    runs = [{'branch':'A','status':'failed','result':{'success':False,'error':'Connection failure','agent_s':2}},
-            {'branch':'B','status':'failed','result':{'success':False,'answer':'wrong','agent_s':1}}]
+    runs = [{'task_id':task().id,'branch':'A','status':'failed','result':{'success':False,'error':'Connection failure','agent_s':2}},
+            {'task_id':task().id,'branch':'B','status':'failed','result':{'success':False,'answer':'wrong','agent_s':1}}]
     report = protocol_report(snapshot, runs)
     assert report['comparison_scope'] == 'configurations'
     assert report['branches']['A']['evaluated'] == 0 and report['branches']['A']['mean_answer_s'] is None

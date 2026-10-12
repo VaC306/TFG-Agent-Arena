@@ -144,6 +144,26 @@ comparar tasas de éxito y tiempos, filtrar por rama, inspeccionar trazas, cance
 ejecuciones pendientes y descargar CSV. Los resultados proceden de SQLite; no se
 incluyen métricas de demostración inventadas en el frontend.
 
+La interfaz muestra indicadores de carga discretos en las solicitudes, formularios,
+resultados y preparación de archivos. El indicador general evita parpadeos en
+solicitudes rápidas y contempla operaciones simultáneas, errores y cancelaciones.
+Los mensajes son accesibles y las animaciones respetan el movimiento reducido.
+
+La pestaña **Modelos** conserva el último resultado completo por modelo, digest
+y tipo de prueba, a partir de todo el historial de tu cuenta. Los resultados en
+curso no reemplazan la ficha anterior. Puedes filtrar modelos reales o simulaciones,
+seleccionar dos fichas y abrir su comparación original. La biblioteca advierte si
+no coinciden los datos, prompts, parámetros, fase, código o condiciones registradas,
+o si no se verificó la identidad del modelo. No mezcla cuentas ni elige un ganador.
+Vaciar el historial también vacía esta biblioteca; las bases aisladas de benchmarks
+no forman parte del historial de una cuenta.
+
+Resultados distingue aciertos, respuestas incorrectas, formato inválido y errores
+de ejecución. Muestra casos con referencia, respuestas evaluadas, ejecuciones
+programadas y mediciones de tiempo. Las respuestas y referencias se ven lado a lado.
+Puedes descargar CSV, informe legible Markdown y JSON reproducible; el tiempo
+incluye preparación y carga, y no es una medida aislada de generación.
+
 Con la API y el worker anteriores activos, abre una tercera terminal:
 
 ```powershell
@@ -167,9 +187,10 @@ permiten seleccionar modelos instalados, editar prompts y cargar entradas o data
 desde la interfaz. El perfil recuerda modelos, prompts y parámetros, y cada cuenta
 tiene su historial. Consulta [cuentas y conexiones](docs/perfiles.md).
 Si los trabajos permanecen en cola, comprueba el worker:
-la interfaz no lo arranca automáticamente. El porcentaje de éxito considera
-solo ejecuciones terminales e incluye fallos y cancelaciones; durante una ejecución
-se muestra como resultado provisional. Los tiempos ausentes se muestran como «—».
+la interfaz no lo arranca automáticamente. Aciertos/casos con referencia incluye
+las ejecuciones programadas con evaluación habilitada, también errores y pendientes;
+el resultado es provisional mientras queden pendientes. La calidad condicional
+considera solo respuestas evaluadas. Los tiempos ausentes se muestran como «—».
 
 ## Comparación real con Ollama
 
@@ -271,6 +292,7 @@ configuración de red del host. La ejecución nativa es la ruta verificada.
 
 ## Documentación y estado
 
+- [Validación integral del 12 de octubre](docs/validacion-integral-2026-10-12.md): flujo aislado, métricas entre informes, recuperación y prueba pequeña con modelos reales.
 - [Memoria académica](docs/memoria.md): alcance, arquitectura, metodología y resultados.
 - [Decisiones](docs/decisiones.md): alternativas y justificación.
 - [Protocolo de evaluación](docs/protocolo-evaluacion.md): criterios, comparaciones justas, fases y límites de reproducibilidad. Ejemplos de datasets en `data/examples/`.
@@ -279,7 +301,7 @@ configuración de red del host. La ejecución nativa es la ruta verificada.
 - [Desarrollo, código final](experiments/simulated-dev-final-2026-10-08/summary.json): 16/16 ejecuciones simuladas correctas.
 - [Evaluación, código final](experiments/simulated-eval-2026-10-08/summary.json): 8/8 ejecuciones simuladas correctas.
 
-Validación nativa: 156 pruebas satisfactorias, instalación editable y `pip check`
+Validación nativa: 175 pruebas Python y 17 del frontend satisfactorias; `pip check`
 correctos. Angular compila en producción. Se comprobó en navegador el lanzamiento,
 actualización, cancelación, filtro, trazas y descarga CSV, además de la adaptación
 a un viewport móvil de 390 px. TestClient emite una advertencia de deprecación de

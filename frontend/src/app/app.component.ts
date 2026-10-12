@@ -6,17 +6,19 @@ import { ProfileComponent } from './profile.component';
 import { InfoDialogComponent } from './info-dialog.component';
 import { GuideComponent } from './guide.component';
 import { BrandMarkComponent } from './brand-mark.component';
+import { ModelLibraryComponent } from './model-library.component';
+import { LoadingIndicatorComponent } from './loading-indicator.component';
 import { AuthService } from './auth.service';
 import { ArenaService, ArenaEvent, ExperimentDetail, ExperimentSummary, Preset, PresetId, Run, Status, terminal } from './arena.service';
 
 @Component({
   selector: 'arena-workspace', standalone: true,
-  imports: [DatePipe, DecimalPipe, JsonPipe, FormsModule, ComposerComponent, ProfileComponent, InfoDialogComponent, GuideComponent, BrandMarkComponent],
+  imports: [DatePipe, DecimalPipe, JsonPipe, FormsModule, ComposerComponent, ProfileComponent, InfoDialogComponent, GuideComponent, BrandMarkComponent, ModelLibraryComponent, LoadingIndicatorComponent],
   templateUrl: './app.component.html',
 })
 export class AppComponent {
   auth = inject(AuthService);
-  view = signal<'compose' | 'results' | 'profile' | 'guide' | 'contact'>('compose');
+  view = signal<'compose' | 'results' | 'profile' | 'guide' | 'contact' | 'models'>('compose');
   private api = inject(ArenaService);
   private destroyed = false;
   private selectionVersion = 0;
@@ -24,11 +26,11 @@ export class AppComponent {
   private traceVersion = 0;
   private refreshing = false;
   private traceTrigger: HTMLElement | null = null;
-  navigate(view: 'compose' | 'results' | 'profile' | 'guide' | 'contact') {
+  navigate(view: 'compose' | 'results' | 'profile' | 'guide' | 'contact' | 'models') {
     this.view.set(view);
-    document.title = `${view === 'compose' ? 'Comparar' : view === 'results' ? 'Resultados' : view === 'guide' ? 'Guía' : view === 'contact' ? 'Contacto' : 'Perfil'} · Agent Arena`;
+    document.title = `${view === 'compose' ? 'Comparar' : view === 'results' ? 'Resultados' : view === 'guide' ? 'Guía' : view === 'contact' ? 'Contacto' : view === 'models' ? 'Modelos' : 'Perfil'} · Agent Arena`;
     requestAnimationFrame(() => {
-      const heading = document.getElementById(view === 'compose' ? 'page-title' : view === 'results' ? 'collection-title' : view === 'guide' ? 'guide-title' : view === 'contact' ? 'contact-title' : 'profile-title');
+      const heading = document.getElementById(view === 'compose' ? 'page-title' : view === 'results' ? 'collection-title' : view === 'guide' ? 'guide-title' : view === 'contact' ? 'contact-title' : view === 'models' ? 'models-title' : 'profile-title');
       heading?.setAttribute('tabindex', '-1');
       heading?.focus();
     });
@@ -58,19 +60,11 @@ export class AppComponent {
   pending = computed(() => this.detail()?.runs.some(r => !terminal(r)) ?? false);
   visibleRuns = computed(() => this.detail()?.runs.filter(r => this.branchFilter() === 'all' || r.branch === this.branchFilter()) ?? []);
   summaries = computed(() => (['A', 'B'] as const).map(branch => {
-    const runs = this.detail()?.runs.filter(r => r.branch === branch) ?? [];
-    const finished = runs.filter(terminal);
-    const scored = finished.filter(r => !r.result?.error && ['completed','succeeded','failed'].includes(r.status) && typeof r.result?.success === 'boolean');
-    const times = finished.flatMap(r => !r.result?.error && r.result?.answer !== undefined && typeof r.result?.agent_s === 'number' ? [r.result.agent_s] : []);
-    return { branch, total: runs.length, completed: finished.length,
-      evaluated: scored.length, success: scored.filter(r => r.result?.success).length,
-      errors: finished.filter(r => !!r.result?.error).length,
-      mean: times.length ? times.reduce((a, b) => a + b, 0) / times.length : null,
-    };
+    return {branch,...(this.detail()?.overviews?.[branch] ?? {total:0,finished:0,evaluated:0,planned_evaluable:0,correct:0,incorrect:0,invalid_format:0,execution_errors:0,unscored:0,pending:0,mean_answer_s:null,timed_answers:0})};
   }));
 
   runLabel(run: Run) {
-    if (run.status === 'failed') return run.result?.error ? 'Error de ejecución' : 'No coincide';
+    if (run.status === 'failed') return run.result?.error || run.result?.answer === undefined ? 'Error de ejecución' : run.result?.format_ok === false ? 'Formato inválido' : 'Respuesta incorrecta';
     return this.labels[run.status];
   }
   evaluationLabel(value: string) {
@@ -88,6 +82,7 @@ export class AppComponent {
 
   async initialize() {
     const version = ++this.initializationVersion;
+    const selection = this.selectionVersion;
     this.error.set('');
     this.loading.set(true);
     try {
@@ -95,9 +90,9 @@ export class AppComponent {
       if (this.destroyed || version !== this.initializationVersion) return;
       this.presets.set(presets);
       this.experiments.set(experiments);
-      if (experiments.length) await this.select(experiments[0].id);
+      if (experiments.length && selection === this.selectionVersion) await this.select(experiments[0].id);
     } catch { if (version === this.initializationVersion) this.error.set('No se puede conectar con la API. Comprueba que esté en marcha y pulsa Actualizar.'); }
-    finally { if (version === this.initializationVersion) this.loading.set(false); }
+    finally { if (version === this.initializationVersion && selection === this.selectionVersion) this.loading.set(false); }
   }
 
   async select(id: string) {
@@ -175,12 +170,15 @@ export class AppComponent {
   }
 
   answers(branch: 'A' | 'B') {
-    return this.detail()?.runs.filter(run => run.branch === branch && !!run.result?.answer) ?? [];
+    return this.detail()?.runs.filter(run => run.branch === branch && terminal(run)) ?? [];
   }
 
   referenceFor(run: Run) {
-    return this.savedTasks(run.branch).find(task => task.id === run.task_id)?.expected_answer;
+    const task = this.savedTasks(run.branch).find(task => task.id === run.task_id);
+    return task?.expected_answer ?? (task?.criteria ? JSON.stringify(task.criteria,null,2) : null);
   }
+
+  async openModelResult(id:string) { this.navigate('results'); await this.select(id); }
 
   async showTrace(run: Run) {
     this.traceTrigger = document.activeElement instanceof HTMLElement ? document.activeElement : null;

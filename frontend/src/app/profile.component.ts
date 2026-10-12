@@ -4,14 +4,16 @@ import { AuthService, accountError } from './auth.service';
 import { ArenaService, HistoryState } from './arena.service';
 import { textError } from './validation';
 import { containDialogFocus } from './info-dialog.component';
+import { LoadingIndicatorComponent } from './loading-indicator.component';
 
-@Component({selector:'arena-profile', standalone:true, imports:[FormsModule], template:`
+@Component({selector:'arena-profile', standalone:true, imports:[FormsModule,LoadingIndicatorComponent], template:`
   <section class="profile-view view-enter" aria-labelledby="profile-title">
     <div class="section-header"><div><p class="eyebrow">Tu espacio</p><h1 id="profile-title">Perfil</h1></div><button class="secondary" (click)="closed.emit()">Volver</button></div>
     <div class="profile-columns"><form #form="ngForm" (ngSubmit)="save()" class="profile-form">
       <h2>{{ auth.user()?.display_name }}</h2><p class="hint">{{ '@' + auth.user()?.username }} · Cuenta local</p>
       <label for="profile-name">Nombre visible</label><input id="profile-name" name="name" [(ngModel)]="name" (input)="invalidName.set(false); error.set('')" [attr.aria-invalid]="invalidName() ? 'true' : null" [attr.aria-describedby]="invalidName() ? 'profile-error' : null" required maxlength="80">
       <button class="primary" [disabled]="busy()">Guardar nombre</button>
+      @if (busy()) { <arena-loading label="Procesando cambios…" /> }
       <p class="hint">Tus selecciones de modelos, prompts y parámetros se guardan automáticamente. Tus experimentos pertenecen a esta cuenta.</p>
       <button type="button" class="text-button" [disabled]="busy()" (click)="logout()">Cerrar sesión</button>
       @if (message()) { <p class="hint" role="status">{{ message() }}</p> }
@@ -25,6 +27,7 @@ import { containDialogFocus } from './info-dialog.component';
     <section class="profile-history" aria-labelledby="history-settings-title">
       <div><h2 id="history-settings-title">Historial</h2><p class="hint">Elimina las comparaciones y sus resultados de esta cuenta. Tus preferencias se conservan.</p></div>
       <button #clearTrigger type="button" class="secondary" aria-haspopup="dialog" [disabled]="clearing() || loadingHistory()" (click)="reviewHistory()">{{ loadingHistory() ? 'Consultando…' : 'Vaciar historial' }}</button>
+      @if (loadingHistory()) { <arena-loading label="Consultando historial…" /> }
       @if (historyMessage()) { <p role="status" class="hint">{{ historyMessage() }}</p> }
       @if (historyError()) { <p role="alert" class="alert error">{{ historyError() }}</p> }
     </section>
@@ -34,6 +37,7 @@ import { containDialogFocus } from './info-dialog.component';
       @if (history()?.pending) { <p class="alert error" role="status">Hay {{ history()?.pending }} ejecuciones pendientes. Finalízalas o cancélalas antes de vaciar el historial.</p> }
       @if (history()?.count === 0) { <p class="hint">Tu historial ya está vacío.</p> }
       @if (dialogError()) { <p class="alert error" role="alert">{{ dialogError() }}</p> }
+      @if (clearing()) { <arena-loading label="Eliminando historial…" /> }
       <div class="dialog-actions"><button type="button" class="secondary" [disabled]="clearing()" (click)="clearDialog.close()">Cancelar</button><button type="button" class="primary" [disabled]="clearing() || !history()?.count || !!history()?.pending || !!dialogError()" (click)="confirmClear()">{{ clearing() ? 'Eliminando…' : 'Vaciar historial' }}</button></div>
     </dialog>
   </section>

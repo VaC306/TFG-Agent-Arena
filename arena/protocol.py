@@ -21,7 +21,7 @@ def inference_identity(identifier, metadata):
 
 def quality_value(run):
     result = run.get('result') or {}
-    if result.get('error') or run['status'] not in ('completed', 'succeeded', 'failed'):
+    if result.get('error') or run['status'] not in ('completed', 'succeeded', 'failed') or run['status'] == 'failed' and 'answer' not in result:
         return None
     return result.get('success') if isinstance(result.get('success'), bool) else None
 
@@ -56,7 +56,7 @@ def protocol_report(snapshot, runs):
         warnings.append('Había cambios sin commit al guardar. Para identificar el código, usa también las fuentes y hashes del informe.')
     if any('identidad del modelo' in (r.get('result') or {}).get('error', '') for r in runs):
         warnings.append('Se detectó un cambio de modelo o servidor. Las ejecuciones afectadas se detuvieron antes de enviar la entrada.')
-    if any(t.get('evaluation', 'exact_match') == 'none' or not t.get('expected_answer') and not t.get('criteria') for t in tasks):
+    if any(t.get('evaluation', 'exact_match') == 'none' or t.get('expected_answer') is None and not t.get('criteria') for t in tasks):
         warnings.append('Hay casos sin evaluación automática de calidad. Las respuestas abiertas requieren revisión humana.')
     if config['adapter'] != 'simulated' and (set(identities) != {'A', 'B'} or not all(i['verified'] for i in identities.values())):
         warnings.append('La identidad de ambos modelos aún no está verificada. Se registra al ejecutar, no al guardar.')
@@ -66,14 +66,12 @@ def protocol_report(snapshot, runs):
     if config['repetitions'] > 1:
         warnings.append('Las repeticiones de un mismo caso no son observaciones independientes.')
     branches = {}
+    from .model_results import summarize, outcome
     for branch in ('A', 'B'):
         selected = [r for r in runs if r['branch'] == branch]
-        scored = [quality_value(r) for r in selected if quality_value(r) is not None]
-        answers = [r for r in selected if 'answer' in (r.get('result') or {}) and not (r.get('result') or {}).get('error')]
-        times = [(r['result'])['agent_s'] for r in answers if isinstance(r['result'].get('agent_s'), (int, float))]
-        branches[branch] = {'total':len(selected), 'answers':len(answers), 'evaluated':len(scored),
-                            'correct':sum(scored), 'execution_errors':sum(bool((r.get('result') or {}).get('error')) for r in selected),
-                            'mean_answer_s':sum(times) / len(times) if times else None}
+        branch_tasks = [snapshot['branch_tasks'][branch]] if snapshot.get('branch_tasks') else snapshot['tasks']
+        branches[branch] = summarize(selected, branch_tasks) | {
+            'answers':sum('answer' in (r.get('result') or {}) and outcome(r) not in ('execution_error','pending') for r in selected)}
     return {'version':snapshot.get('protocol', {}).get('version', 'legacy'),
             'evaluator_version':snapshot.get('protocol', {}).get('evaluator_version', 'legacy'),
             'comparison_scope':('repeatability' if models_equal else 'models') if shared and prompts_equal and parameters_equal else 'configurations',

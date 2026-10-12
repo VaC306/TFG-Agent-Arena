@@ -49,7 +49,7 @@ saludo,Responde con la palabra hola,hola</pre>
             <p>La referencia no se envía al modelo. Se usa con la evaluación que elijas arriba. Descarga la plantilla para empezar.</p>
           </arena-info>
           <label for="dataset-file">Seleccionar dataset</label><input id="dataset-file" type="file" accept=".csv,.jsonl" [disabled]="datasetBusy()" (change)="importDataset($event)">
-          @if (datasetBusy()) { <p class="hint" role="status">Validando estructura y casos…</p> }
+          @if (datasetBusy()) { <arena-loading label="Validando estructura y casos…" /> }
           @if (datasetError()) { <p class="alert error" role="alert">{{ datasetError() }}</p> }
           @if (dataset(); as preview) {
             <p class="dataset-summary" role="status"><strong>{{ datasetName() }}</strong> · {{ preview.count }} casos · {{ preview.scored }} con referencia · {{ preview.count * repetitions * 2 }} ejecuciones</p>
@@ -59,7 +59,7 @@ saludo,Responde con la palabra hola,hola</pre>
         </section>
       }
       @if (adapter === 'simulated') { <p class="simulation-note">El simulador confirma la recepción de texto y archivos. No interpreta imágenes ni ejecuta los modelos indicados.</p> }
-      @else { <div class="models-help"><button type="button" class="text-button" [disabled]="modelsBusy()" (click)="loadModels()">↻ Actualizar modelos</button><span class="hint" role="status">{{ modelNotice() }}</span></div><p class="hint">Las imágenes requieren un modelo con visión. No se descargan modelos automáticamente.</p>@if (mode === 'different_models' && !modelsBusy() && models().length < 2) { <p class="hint">Para comparar dos modelos necesitas al menos dos instalados en Ollama.</p> } }
+      @else { <div class="models-help"><button type="button" class="text-button" [disabled]="modelsBusy()" (click)="loadModels()">↻ Actualizar modelos</button>@if (modelsBusy()) { <arena-loading label="Consultando modelos instalados…" /> } @else { <span class="hint" role="status">{{ modelNotice() }}</span> }</div><p class="hint">Las imágenes requieren un modelo con visión. No se descargan modelos automáticamente.</p>@if (mode === 'different_models' && !modelsBusy() && models().length < 2) { <p class="hint">Para comparar dos modelos necesitas al menos dos instalados en Ollama.</p> } }
       <div class="composer-columns">
         <section class="branch-editor" aria-label="Configuración A">
           <h3><span class="branch">A</span> Agente A</h3>
@@ -83,7 +83,7 @@ saludo,Responde con la palabra hola,hola</pre>
         </section>
       </div>
       @if (source === 'manual' && mode === 'different_models') { <div class="shared-input"><span class="tag">COMPARTIDO POR A Y B</span><arena-input-editor slot="shared" title="Entrada compartida" [value]="shared" [invalid]="invalidField() === 'shared-input'" [invalidReference]="invalidField() === 'shared-reference'" (readingChange)="readingShared = $event" /></div> }
-      <div class="composer-footer"><p class="hint">Sin referencia, la calidad queda sin evaluar.<br>Tu configuración se conserva con cada comparación.</p><button type="submit" class="primary" [disabled]="busy() || modelsBusy() || !validModels() || datasetBusy() || (source === 'dataset' && !dataset()) || readingA || readingB || readingShared || !templates().length">{{ busy() ? 'Guardando…' : 'Ejecutar comparación' }} <span aria-hidden="true">↗</span></button></div>
+      <div class="composer-footer"><p class="hint">Sin referencia, la calidad queda sin evaluar.<br>Tu configuración se conserva con cada comparación.</p><button type="submit" class="primary" [disabled]="busy() || modelsBusy() || !validModels() || datasetBusy() || (source === 'dataset' && !dataset()) || readingA || readingB || readingShared || !templates().length">@if (busy()) { <span class="loading-spinner" aria-hidden="true"></span> } {{ busy() ? 'Guardando…' : 'Ejecutar comparación' }} @if (!busy()) { <span aria-hidden="true">↗</span> }</button></div>
     </fieldset>
   </form>
   <p class="hint preferences-status" role="status">{{ preferencesNotice() || 'Modelos, prompts y parámetros se guardan en tu perfil. Los archivos y entradas se guardan al ejecutar.' }}</p>

@@ -1,0 +1,38 @@
+{
+  "id": "eb7bbb1d-f303-4916-a8e8-36d82605af11",
+  "verified_formats": [
+    "csv",
+    "md",
+    "json"
+  ],
+  "branches": {
+    "A": {
+      "total": 3,
+      "finished": 3,
+      "evaluated": 3,
+      "planned_evaluable": 3,
+      "correct": 2,
+      "incorrect": 1,
+      "invalid_format": 0,
+      "execution_errors": 0,
+      "unscored": 0,
+      "pending": 0,
+      "mean_answer_s": 3.031826166664056,
+      "timed_answers": 3
+    },
+    "B": {
+      "total": 3,
+      "finished": 3,
+      "evaluated": 3,
+      "planned_evaluable": 3,
+      "correct": 3,
+      "incorrect": 0,
+      "invalid_format": 0,
+      "execution_errors": 0,
+      "unscored": 0,
+      "pending": 0,
+      "mean_answer_s": 3.988070733331066,
+      "timed_answers": 3
+    }
+  }
+}

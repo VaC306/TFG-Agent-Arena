@@ -1,10 +1,12 @@
-import { Component, Input, Output, EventEmitter, signal } from '@angular/core';
+import { Component, DestroyRef, Input, Output, EventEmitter, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { InputData, Upload } from './arena.service';
 import { textError, filenameError, csvError } from './validation';
+import { LoadingIndicatorComponent } from './loading-indicator.component';
+import { LoadingService } from './loading.service';
 
 @Component({
-  selector: 'arena-input-editor', standalone: true, imports: [FormsModule],
+  selector: 'arena-input-editor', standalone: true, imports: [FormsModule,LoadingIndicatorComponent],
   template: `
     <label [for]="slot + '-input'">{{ title }}</label>
     <textarea [id]="slot + '-input'" [(ngModel)]="value.text" [ngModelOptions]="{standalone: true}"
@@ -16,7 +18,7 @@ import { textError, filenameError, csvError } from './validation';
         [attr.aria-describedby]="slot + '-file-help'" [disabled]="reading()" (change)="addFiles($event)">
       <p class="hint" [id]="slot + '-file-help'">Hasta 4 archivos, 1 MiB cada uno. Texto UTF-8; máximo conjunto: 20.000 caracteres.</p>
     </div>
-    @if (reading()) { <p role="status" class="hint">Preparando vista previa…</p> }
+    @if (reading()) { <arena-loading label="Preparando vista previa…" /> }
     @if (error()) { <p class="alert error" role="alert">{{ error() }}</p> }
     <div class="file-list">
       @for (file of value.files; track file.name) {
@@ -36,6 +38,16 @@ import { textError, filenameError, csvError } from './validation';
   `,
 })
 export class InputEditorComponent {
+  private activity = inject(LoadingService);
+  private destroyed = false;
+  private endReading?: () => void;
+  constructor() {
+    inject(DestroyRef).onDestroy(() => {
+      this.destroyed = true;
+      this.endReading?.();
+      this.readingChange.emit(false);
+    });
+  }
   @Input({required:true}) value!: InputData;
   @Input({required:true}) slot!: string;
   @Input() title = 'Entrada';
@@ -51,6 +63,8 @@ export class InputEditorComponent {
     this.error.set('');
     this.reading.set(true);
     this.readingChange.emit(true);
+    const endLoading = this.activity.begin();
+    this.endReading = endLoading;
     try {
       if (files.length + this.value.files.length > 4) throw new Error('Puedes adjuntar un máximo de 4 archivos por entrada.');
       const prepared: Upload[] = [];
@@ -95,9 +109,9 @@ export class InputEditorComponent {
       if ([...this.value.files, ...prepared].filter(f => !f.image).reduce((n,f) => n + [...f.preview].length,0) > 20000) {
         throw new Error('El texto de todos los adjuntos supera 20.000 caracteres.');
       }
-      this.value.files = [...this.value.files, ...prepared];
+      if (!this.destroyed) this.value.files = [...this.value.files, ...prepared];
     } catch (error) { this.error.set(error instanceof TypeError ? 'No se pudo leer el archivo. Los textos deben usar UTF-8.' : error instanceof Error ? error.message : 'No se pudieron preparar los adjuntos.'); }
-    finally { input.value = ''; this.reading.set(false); this.readingChange.emit(false); }
+    finally { endLoading(); this.endReading = undefined; input.value = ''; this.reading.set(false); if (!this.destroyed) this.readingChange.emit(false); }
   }
 
   remove(name: string) { this.value.files = this.value.files.filter(file => file.name !== name); }

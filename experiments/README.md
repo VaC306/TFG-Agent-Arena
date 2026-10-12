@@ -1,5 +1,9 @@
 # Evidencia experimental
 
+La [validación del flujo del 12 de octubre](local-flow-2026-10-12/README.md)
+añade informes descargados de una prueba real pequeña y una comparación simulada,
+en una base aislada. Su formato y limitaciones se describen en esa carpeta.
+
 Las carpetas fechadas el 8 de octubre de 2026 contienen exclusivamente
 ejecuciones del adaptador simulado. No hay resultados de inferencia real.
 

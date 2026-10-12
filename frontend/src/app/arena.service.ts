@@ -34,8 +34,10 @@ export interface Run {
   id: string; task_id: string; branch: 'A' | 'B'; repetition: number;
   status: Status; result: Result | null;
 }
-export interface SavedTask { id: string; input: string; expected_answer?: string | null; attachments?: {name: string; size: number; sha256: string}[] }
-export interface ExperimentDetail { snapshot: { config: Config; tasks?: SavedTask[]; branch_tasks?: Record<string, SavedTask> | null; conditions?: {inputs_shared?: boolean}; data_sha256?:string; git_commit?:string }; runs: Run[]; protocol?:ProtocolReport }
+export interface ResultSummary { total:number; finished:number; evaluated:number; planned_evaluable:number; correct:number; incorrect:number; invalid_format:number; execution_errors:number; unscored:number; pending:number; mean_answer_s:number|null; timed_answers:number }
+export interface ModelResult { comparison_conditions?:Record<string,unknown>; id:string; model:string; adapter:PresetId; digest:string|null; verified:boolean; kind:string; experiment_id:string; experiment_name:string; branch:string; updated_at:number; split:string; repetitions:number; summary:ResultSummary; cohort_key:string; conditions:{system_prompt:string; temperature:number; seed:number; num_ctx:number; limits:{max_output_tokens:number; timeout_s:number}; server_version:string|null; quantization:string|null; data_sha256:string; evaluator_versions:string[]} }
+export interface SavedTask { id: string; input: string; expected_answer?: string | null; evaluation?:EvaluationMode; criteria?:{total_cents:number; order_ids:string[]}; attachments?: {name: string; size: number; sha256: string}[] }
+export interface ExperimentDetail { snapshot: { config: Config; tasks?: SavedTask[]; branch_tasks?: Record<string, SavedTask> | null; conditions?: {inputs_shared?: boolean}; data_sha256?:string; git_commit?:string }; runs: Run[]; protocol?:ProtocolReport; overviews:Record<'A'|'B',ResultSummary> }
 export interface PromptTemplate { id: string; name: string; text: string }
 export interface Upload { name: string; data_base64: string; preview: string; image: boolean; size: number }
 export interface InputData { text: string; files: Upload[]; expected_answer: string }
@@ -58,6 +60,7 @@ export class ArenaService {
   private http = inject(HttpClient);
   private get<T>(path: string) { return firstValueFrom(this.http.get<T>('/api' + path).pipe(timeout(15000))); }
   experiments() { return this.get<ExperimentSummary[]>('/experiments'); }
+  modelResults() { return this.get<{entries:ModelResult[]}>('/model-results'); }
   historyState() { return this.get<HistoryState>('/profile/history'); }
   clearHistory(revision: string) {
     return firstValueFrom(this.http.delete<{deleted:number}>('/api/profile/history',

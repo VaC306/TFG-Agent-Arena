@@ -91,6 +91,17 @@ class Store:
             """, (self.owner_id, self.owner_id, limit)).fetchall()
             return [dict(row) for row in rows]
 
+    def result_experiments(self):
+        # Exclude embedded source contents; inspect all owned history, not just the latest 50.
+        fields = ('config','tasks','branch_tasks','environments','conditions','host','source_sha256')
+        projection = ', '.join("json_extract(e.snapshot, '$."+field+"') AS "+field for field in fields)
+        with self.connect() as db:
+            rows = db.execute('SELECT e.id, '+projection+''' FROM experiments e
+                WHERE (? IS NULL OR EXISTS (SELECT 1 FROM experiment_owners o
+                WHERE o.experiment_id=e.id AND o.owner_id=?)) ORDER BY e.rowid DESC''',
+                (self.owner_id,self.owner_id)).fetchall()
+            return [(r['id'],{field:json.loads(r[field]) if r[field] is not None else None for field in fields}) for r in rows]
+
     def _history_state(self, db):
         if self.owner_id is None:
             raise ValueError('Se requiere una cuenta para gestionar el historial')

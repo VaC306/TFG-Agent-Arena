@@ -28,6 +28,7 @@ def schedule(store, config, tasks, environments, branch_tasks=None, benchmark=No
     if config.adapter == "ollama" and os.environ.get("ARENA_OLLAMA_URL"):
         config.ollama_url = os.environ["ARENA_OLLAMA_URL"]
     code_files = list(Path(__file__).parent.glob("*.py"))
+    code_sources = {p.name:p.read_bytes() for p in code_files}
     try:
         repo = Path(__file__).resolve().parent.parent
         git = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"], capture_output=True, text=True)
@@ -40,8 +41,8 @@ def schedule(store, config, tasks, environments, branch_tasks=None, benchmark=No
     snapshot = {"config": config.model_dump(), "tasks": [t.model_dump() for t in tasks],
                 "branch_tasks": branch_tasks,
                 "environments": environments, "host": provenance(), "git_commit": commit, "git_worktree_dirty":dirty,
-                "source_sha256": {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in code_files},
-                "source": {p.name: p.read_text(encoding="utf-8") for p in code_files},
+                "source_sha256": {name: hashlib.sha256(content).hexdigest() for name,content in code_sources.items()},
+                "source": {name:content.decode("utf-8") for name,content in code_sources.items()},
                 "conditions": {"mode": "sequential", "inputs_shared": branch_tasks is None,
                                "warmup": "none", "keep_alive": "0",
                                "resource_scope": "host_and_worker", "seed_determinism": "not guaranteed"}}

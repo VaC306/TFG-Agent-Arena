@@ -1,0 +1,11 @@
+{
+  "library-desktop.jpg": "64dc170c3c6ca5c5f385b38ed23e02c540b2f2183636f1e95c51a879de6221fa",
+  "library.json": "fcd9d73edf4f793a0aaa10deda84999b652860998620926174779def24c6d80a",
+  "metrics.csv": "d40105dd67243abe2a823f6fc2f3bf135d2bd0b6dd443621d73cebcbd48d2813",
+  "report.md": "99b70c3cf210869c55681d1fc76559c950b4efb41c24a5c6a1c6af315ae894a3",
+  "reproducibility.json": "6495e4de014ce07bcf7afe6e665b404d4078f85da842cc7a8a334e8229ee2b9f",
+  "simulated-metrics.csv": "ff89c30cd88f453ad031ed4b5e3613918532f5717d623f6c289f3e005521fd63",
+  "simulated-report.md": "53f4ea6916fe70b1c57c4e6e25852b5f61557c877f514fac2ecf949630910876",
+  "simulated-reproducibility.json": "6222597e26aa1a9a66efbe9cbfeee7d2bff6b57677bbd45b96318d9c0baf0a7a",
+  "verified-summary.json": "32ab64d62f296d490cb4a2c658a8943524eeadff2f0745b4e691be97aa0e161a"
+}

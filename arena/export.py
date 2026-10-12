@@ -5,24 +5,37 @@ from pathlib import Path
 import pandas as pd
 from scipy.stats import binomtest
 from .protocol import quality_value
+from .model_results import outcome, evaluable
 
 
 FIELDS = ["id", "experiment_id", "task_id", "branch", "repetition", "position", "status", "adapter",
           "success", "format_ok", "evaluation", "queue_s", "agent_s", "input_tokens", "output_tokens", "usage_complete",
           "calls", "tool_calls", "tool_errors", "tool_s", "server_eval_s", "server_tps", "agent_output_tps", "error",
-          "evaluator_version", "quality_evaluated", "model_digest", "server_version", "answer"]
+          "evaluator_version", "quality_evaluated", "model_digest", "server_version", "answer", "outcome", "has_reference", "reference",
+          "agent_config", "split", "repetitions", "order_seed", "data_sha256", "source_sha256", "conditions"]
 
 
 def csv_text(store, experiment_id):
-    adapter = store.snapshot(experiment_id)["config"]["adapter"]
+    snapshot = store.snapshot(experiment_id)
+    adapter = snapshot["config"]["adapter"]
     output = io.StringIO(newline="")
     writer = csv.DictWriter(output, fieldnames=FIELDS, extrasaction="ignore")
     writer.writeheader()
     for run in store.list_runs(experiment_id):
         result = run['result'] or {}
         identity = result.get('inference_identity') or {}
+        tasks = [snapshot['branch_tasks'][run['branch']]] if snapshot.get('branch_tasks') else snapshot['tasks']
+        task = next(t for t in tasks if t['id'] == run['task_id'])
+        config = snapshot['config']
         row = run | {"adapter": adapter} | result | {'success':quality_value(run), 'quality_evaluated':quality_value(run) is not None,
-              'model_digest':identity.get('digest'), 'server_version':identity.get('server_version')}
+              'model_digest':identity.get('digest'), 'server_version':identity.get('server_version'),
+              'outcome':outcome(run), 'has_reference':evaluable(task),
+              'reference':json.dumps(task['criteria'],ensure_ascii=False) if task.get('criteria') else task.get('expected_answer'),
+              'agent_config':json.dumps(config['agents'][run['branch']],ensure_ascii=False),
+              'split':config['split'], 'repetitions':config['repetitions'], 'order_seed':config.get('order_seed'),
+              'data_sha256':snapshot.get('data_sha256'),
+              'source_sha256':json.dumps(snapshot.get('source_sha256'),sort_keys=True),
+              'conditions':json.dumps(snapshot.get('conditions'),sort_keys=True)}
         writer.writerow({k: "'" + v if isinstance(v, str) and v.lstrip().startswith(('=', '+', '-', '@')) else v for k, v in row.items()})
     return output.getvalue()
 

@@ -50,6 +50,12 @@ completa de conformidad.
 
 ## Revisión pendiente
 
+La [validación del 12 de octubre](validacion-integral-2026-10-12.md) añade la
+biblioteca y los informes: revisión móvil a 320/390 píxeles, modal con teclado,
+avisos de API/Ollama inaccesibles y comprobación básica de contraste. Las pruebas
+automatizadas de carga y selección sustituyen HTTP/Angular; no constituyen una
+auditoría con lector de pantalla.
+
 Los selectores conservan el control nativo y permiten personalizar la lista y
 animación con `appearance: base-select` cuando el navegador lo soporta.
 Sin ese soporte se mantiene la lista del sistema operativo. Las animaciones

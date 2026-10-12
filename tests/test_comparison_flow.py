@@ -75,13 +75,77 @@ def test_comparison_quality_matches_answers_through_api_worker_and_csv(tmp_path,
     exported = client.get('/experiments/' + eid + '/reproducibility.json').json()
     assert exported['report'] == detail['protocol']
     assert len(exported['runs']) == 10
+    entries = client.get('/model-results').json()['entries']
+    markdown = client.get('/experiments/' + eid + '/report.md').text
+    for branch in ('A','B'):
+        overview = detail['overviews'][branch]
+        assert exported['overviews'][branch] == overview
+        assert {key:detail['protocol']['branches'][branch][key] for key in overview} == overview
+        # Open and scored cases occupy different library cards; reconstruct totals.
+        cards = [e['summary'] for e in entries if e['branch'] == branch]
+        for key in ('total','evaluated','planned_evaluable','correct','incorrect','invalid_format','execution_errors','unscored','pending','timed_answers'):
+            assert sum(card[key] for card in cards) == overview[key]
+        selected = [row for row in rows if row['branch'] == branch]
+        assert sum(row['outcome'] == 'execution_error' for row in selected) == overview['execution_errors']
+        assert sum(row['outcome'] == 'invalid_format' for row in selected) == overview['invalid_format']
+        assert sum(row['has_reference'] == 'True' for row in selected) == overview['planned_evaluable']
+        assert f"Respuestas evaluadas: {overview['evaluated']}" in markdown
+        assert f"Errores de ejecución: {overview['execution_errors']}" in markdown
+
+
+def test_login_import_cancel_pending_and_exports_use_same_counts(tmp_path):
+    client = TestClient(create_app(tmp_path/'partial.sqlite', ROOT))
+    register_client(client)
+    assert client.post('/auth/logout').status_code == 200
+    assert client.post('/auth/login',json={'username':'tester','password':'test-password-123'}).status_code == 200
+    dataset = client.post('/datasets/validate',json={'filename':'dataset-ejemplo.csv',
+        'content':(ROOT/'data/dataset-ejemplo.csv').read_text(encoding='utf-8')}).json()
+    response = client.post('/comparisons',json={'name':'Isolated partial', 'adapter':'simulated',
+        'comparison':'different_models', 'agents':{b:{'model':'simulated-'+b.lower(),'system_prompt':'Same prompt'} for b in ('A','B')},
+        'dataset':dataset['cases']})
+    assert response.status_code == 201
+    eid = response.json()['id']
+    runs = client.get('/experiments/'+eid).json()['runs']
+    assert client.post('/runs/'+runs[0]['id']+'/cancel').status_code == 200
+    detail = client.get('/experiments/'+eid).json()
+    exported = client.get('/experiments/'+eid+'/reproducibility.json').json()
+    assert exported['overviews'] == detail['overviews']
+    assert client.get('/model-results').json()['entries'] == []
+    rows = list(csv.DictReader(io.StringIO(client.get('/experiments/'+eid+'/metrics.csv').text)))
+    assert sum(r['outcome'] == 'pending' for r in rows) == len(runs)-1
+    assert sum(r['outcome'] == 'execution_error' for r in rows) == 1
+    assert sum(s['execution_errors'] for s in detail['overviews'].values()) == 1
+    assert sum(s['pending'] for s in detail['overviews'].values()) == len(runs)-1
+    assert all(s['mean_answer_s'] is None for s in detail['overviews'].values())
+    assert 'informe es parcial' in client.get('/experiments/'+eid+'/report.md').text
+
+
+def test_simultaneous_submissions_are_isolated_and_workers_share_one_claim(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+    from test_comparisons import request_data
+    path = tmp_path/'concurrent.sqlite'
+    with TestClient(create_app(path,ROOT)) as client:
+        register_client(client)
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            responses = list(pool.map(lambda _:client.post('/comparisons',json=request_data('different_models')),range(2)))
+        assert all(r.status_code == 201 for r in responses)
+        ids = [r.json()['id'] for r in responses]
+        assert len(set(ids)) == 2
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            claims = list(pool.map(lambda _:Store(path).claim(),range(2)))
+        assert sum(run is not None for run in claims) == 1
+        active = next(run for run in claims if run is not None)
+        assert active['experiment_id'] in ids
+        details = [client.get('/experiments/'+eid).json() for eid in ids]
+        assert all(len(d['runs']) == 2 for d in details)
+        assert len({r['id'] for d in details for r in d['runs']}) == 4
 
 
 def test_verified_model_aliases_report_repeatability():
     snapshot = {'config':{'adapter':'ollama','repetitions':1,'agents':{
         b:{'model':m,'system_prompt':'Same prompt'} for b,m in [('A','alias-a'),('B','alias-b')]}},
-        'tasks':[{'expected_answer':'42'}]}
-    runs = [{'branch':b,'status':'succeeded','result':{'success':True,'inference_identity':{
+        'tasks':[{'id':'case','expected_answer':'42'}]}
+    runs = [{'task_id':'case','branch':b,'status':'succeeded','result':{'success':True,'inference_identity':{
         'verified':True,'digest':'a'*64}}} for b in ('A','B')]
     report = protocol_report(snapshot,runs)
     assert report['comparison_scope'] == 'repeatability'
