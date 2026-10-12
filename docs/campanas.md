@@ -60,8 +60,9 @@ compatibles, separa calidad y cobertura y muestra cambios de estados. Incluye
 diferencias emparejadas descriptivas e incertidumbre exploratoria bajo condiciones
 conservadoras; no declara rankings ni ganadores.
 Las repeticiones del mismo caso no son muestras independientes.
-La política de calentamiento heredada se mantiene; esta versión no introduce
-warmup ni ejecución simultánea. El muestreo de recursos sigue siendo discontinuo.
+Las comparaciones nuevas permiten [calentamiento opcional y recursos periódicos](mediciones-y-calentamiento.md).
+La política queda fijada en el diseño; los registros antiguos conservan su alcance.
+La ejecución sigue siendo secuencial.
 
 ## Persistencia, solicitudes y borrado
 

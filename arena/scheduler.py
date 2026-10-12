@@ -44,7 +44,9 @@ def schedule(store, config, tasks, environments, branch_tasks=None, benchmark=No
                 "source_sha256": {name: hashlib.sha256(content).hexdigest() for name,content in code_sources.items()},
                 "source": {name:content.decode("utf-8") for name,content in code_sources.items()},
                 "conditions": {"mode": "sequential", "inputs_shared": branch_tasks is None,
-                               "warmup": "none", "keep_alive": "0",
+                               "warmup": config.warmup, "keep_alive": "5m" if config.warmup == 'per_run' else "0",
+                               "resource_sample_interval_s": 1.0,
+                               "resource_sampling": "periodic-v1; observed samples, not guaranteed peaks",
                                "resource_scope": "host_and_worker", "seed_determinism": "not guaranteed"}}
     snapshot['protocol'] = {'version':'arena-protocol-v1', 'evaluator_version':EVALUATOR_VERSION,
                             'identity_capture':'before each run; first observed identity pinned per model',

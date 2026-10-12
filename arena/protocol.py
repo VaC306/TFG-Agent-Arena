@@ -63,7 +63,12 @@ def protocol_report(snapshot, runs):
         warnings.append('Hay casos sin evaluación automática de calidad. Las respuestas abiertas requieren revisión humana.')
     if config['adapter'] != 'simulated' and (set(identities) != {'A', 'B'} or not all(i['verified'] for i in identities.values())):
         warnings.append('La identidad de ambos modelos aún no está verificada. Se registra al ejecutar, no al guardar.')
-    warnings.append('Sin calentamiento previo. El tiempo del agente incluye consulta de metadatos y puede incluir carga del modelo.')
+    if snapshot.get('conditions',{}).get('warmup','none') == 'per_run':
+        warnings.append('Calentamiento neutro de un token antes de cada ejecución; tokens y duración separados. El tiempo total del agente lo incluye. No garantiza modelo residente ni un estado térmico estable.')
+    else:
+        warnings.append('Sin calentamiento previo. El tiempo del agente incluye consulta de metadatos y puede incluir carga del modelo.')
+    if snapshot.get('conditions',{}).get('resource_sample_interval_s'):
+        warnings.append('Recursos muestreados periódicamente en el host y worker: los máximos observados no son picos garantizados ni consumo exclusivo del modelo. El muestreo puede afectar a los tiempos.')
     warnings.append('Política de memoria del modelo (keep_alive): ' + snapshot.get('conditions', {}).get('keep_alive', 'no registrada') + '. No se garantiza un inicio en frío si otro programa lo tiene cargado.')
     warnings.append('Semilla fija no garantiza respuestas idénticas. La carga de otros programas no está aislada.')
     if config['repetitions'] > 1:

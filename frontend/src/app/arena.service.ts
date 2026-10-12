@@ -6,8 +6,8 @@ export type PresetId = 'simulated' | 'ollama';
 export type Status = 'queued' | 'running' | 'completed' | 'succeeded' | 'failed' | 'timeout' | 'limit' | 'cancelled' | 'interrupted';
 export interface Agent { model: string; system_prompt: string; temperature?:number; seed?:number; num_ctx?:number; limits?:{max_output_tokens:number; timeout_s:number} }
 export type EvaluationMode = 'exact_match' | 'json_match' | 'none';
-export interface InferenceSettings { temperature:number; seed:number; num_ctx:number; max_output_tokens:number; timeout_s:number }
-export const defaultSettings = (): InferenceSettings => ({temperature:0, seed:42, num_ctx:16384, max_output_tokens:4096, timeout_s:120});
+export interface InferenceSettings { temperature:number; seed:number; num_ctx:number; max_output_tokens:number; timeout_s:number; warmup:'none'|'per_run' }
+export const defaultSettings = (): InferenceSettings => ({temperature:0, seed:42, num_ctx:16384, max_output_tokens:4096, timeout_s:120, warmup:'none'});
 export interface ProtocolReport {
   version:string; evaluator_version:string; comparison_scope:string; inputs_shared:boolean; prompts_equal:boolean;
   evaluations:string[]; warnings:string[];
@@ -29,13 +29,16 @@ export interface Result {
   input_tokens?: number; output_tokens?: number; usage_complete?: boolean;
   tool_calls?: number; tool_errors?: number; server_tps?: number | null;
   error?: string; answer?: string; reason?: string;
+  preparation_s?:number; task_s?:number|null; failure_phase?:string|null;
+  warmup?:{policy:string;status:string;duration_s?:number;usage?:unknown};
+  resources?:{samples:number;peak_worker_rss_bytes:number|null;min_host_ram_available_bytes:number|null;peak_host_gpu_used_bytes:unknown;worker_cpu_delta_s:number|null;max_gap_s:number|null;sampling_overhead_s:number;unavailable:string[]};
 }
 export interface Run {
   id: string; task_id: string; branch: 'A' | 'B'; repetition: number;
   status: Status; result: Result | null;
 }
 export interface ResultSummary { total:number; finished:number; evaluated:number; planned_evaluable:number; correct:number; incorrect:number; invalid_format:number; execution_errors:number; unscored:number; pending:number; mean_answer_s:number|null; timed_answers:number }
-export interface ModelResult { external_deviation?:boolean; annotations?:OperatorAnnotation[]; comparison_conditions?:Record<string,unknown>; id:string; model:string; adapter:PresetId; digest:string|null; verified:boolean; kind:string; experiment_id:string; experiment_name:string; branch:string; updated_at:number; split:string; repetitions:number; summary:ResultSummary; cohort_key:string; conditions:{system_prompt:string; temperature:number; seed:number; num_ctx:number; limits:{max_output_tokens:number; timeout_s:number}; server_version:string|null; quantization:string|null; data_sha256:string; evaluator_versions:string[]} }
+export interface ModelResult { external_deviation?:boolean; annotations?:OperatorAnnotation[]; comparison_conditions?:Record<string,unknown>; id:string; model:string; adapter:PresetId; digest:string|null; verified:boolean; kind:string; experiment_id:string; experiment_name:string; branch:string; updated_at:number; split:string; repetitions:number; summary:ResultSummary; cohort_key:string; conditions:{system_prompt:string; temperature:number; seed:number; num_ctx:number; limits:{max_output_tokens:number; timeout_s:number}; server_version:string|null; quantization:string|null; data_sha256:string; evaluator_versions:string[];warmup_policy?:string;resource_sample_interval_s?:number|null} }
 export interface SavedTask { id: string; input: string; expected_answer?: string | null; evaluation?:EvaluationMode; criteria?:{total_cents:number; order_ids:string[]}; attachments?: {name: string; size: number; sha256: string}[] }
 export interface ExperimentDetail { campaign?:{id:string;sequence:number}|null; snapshot: { config: Config; tasks?: SavedTask[]; branch_tasks?: Record<string, SavedTask> | null; conditions?: {inputs_shared?: boolean}; data_sha256?:string; git_commit?:string }; runs: Run[]; protocol?:ProtocolReport; overviews:Record<'A'|'B',ResultSummary> }
 export interface CampaignSummary { id:string; name:string; created_at:number; source_id:string; adapter:PresetId; split:string; attempts:number; pending:number }

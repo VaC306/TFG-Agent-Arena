@@ -17,6 +17,7 @@ from .datasets import DatasetUpload, parse_dataset
 from .accounts import Accounts, COOKIE, SESSION_SECONDS, Credentials, Registration, Preferences, ProfileUpdate
 from .json_input import load_json
 from .protocol import protocol_report
+from .resources import resources_csv
 from .model_results import latest_model_results, summarize
 from .result_report import markdown_report
 from .campaigns import CampaignRequest, AttemptRequest, AnnotationRequest, create_campaign, repeat_campaign, campaign_report, campaign_csv, campaign_markdown, task_analysis_csv
@@ -200,6 +201,14 @@ def create_app(db_path=None, root=None):
     @app.get('/worker/status')
     def worker_status(store: Store = Depends(user_store)):
         return store.worker_status()
+
+    @app.get('/experiments/{experiment_id}/resources.csv')
+    def export_resources(experiment_id:str,store:Store = Depends(user_store)):
+        try:
+            return Response(resources_csv(store,experiment_id),media_type='text/csv; charset=utf-8',
+                            headers={'Content-Disposition':'attachment; filename="arena-resources.csv"'})
+        except KeyError:
+            raise HTTPException(404,'Experimento inexistente')
 
     @app.post('/campaigns/{campaign_id}/attempts/{experiment_id}/annotations',status_code=201)
     async def annotate(campaign_id:str,experiment_id:str,request:Request,store:Store = Depends(user_store)):

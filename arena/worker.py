@@ -35,7 +35,8 @@ async def work(store, once=False):
                     next(Task.model_validate(t) for t in snapshot["tasks"] if t["id"] == run["task_id"]))
             adapter = Simulated() if config.adapter == "simulated" else Ollama(
                 config.ollama_url, keep_alive=snapshot.get('conditions', {}).get('keep_alive', '0' if config.comparison == 'different_models' else '5m'))
-            status = await execute(run, task, snapshot["environments"][task.environment], config.agents[run["branch"]], adapter, store)
+            status = await execute(run, task, snapshot["environments"][task.environment], config.agents[run["branch"]], adapter, store,
+                                   measurement=snapshot.get('conditions'))
             state[0] = 'idle'
             store.worker_signal(worker_id,'idle')
             if status == "interrupted":

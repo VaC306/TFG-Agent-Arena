@@ -56,6 +56,7 @@ class InferenceSettings(Contract):
     num_ctx: int = Field(default=16384, ge=512, le=131072, strict=True)
     max_output_tokens: int = Field(default=4096, ge=1, le=16384, strict=True)
     timeout_s: int = Field(default=120, ge=1, le=3600, strict=True)
+    warmup: Literal['none','per_run'] = 'none'
 
     @model_validator(mode='after')
     def context_budget(self):
@@ -116,6 +117,7 @@ class ComparisonRequest(Contract):
 
     def config(self):
         return Experiment(name=self.name, adapter=self.adapter, comparison=self.comparison,
+                          warmup=self.settings.warmup,
                           repetitions=self.repetitions, split=self.split, agents={branch: AgentConfig(
                               **agent.model_dump(), tools_enabled=False, temperature=self.settings.temperature,
                               seed=self.settings.seed, num_ctx=self.settings.num_ctx,

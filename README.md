@@ -77,6 +77,6 @@ conclusiones sobre modelos requieren experimentos reales y casos revisados.
 - [Operación local y CLI](docs/operacion-local.md).
 - [Datasets y evaluación](docs/datasets.md) · [Protocolo reproducible](docs/protocolo-evaluacion.md).
 - [Campañas](docs/campanas.md) · [Análisis por tarea](docs/analisis-por-tarea.md).
-- [Condiciones externas y worker](docs/condiciones-y-worker.md).
+- [Condiciones externas y worker](docs/condiciones-y-worker.md) · [Mediciones y calentamiento](docs/mediciones-y-calentamiento.md).
 - [Validación integral](docs/validacion-integral-2026-10-12.md) · [Pruebas reales](docs/diagnostico-herramientas.md).
 - [Memoria del TFG](docs/memoria.md) · [Accesibilidad](docs/accesibilidad.md).

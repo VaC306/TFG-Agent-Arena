@@ -401,4 +401,6 @@ html { scrollbar-gutter: stable; }
 .campaign-annotations form button { justify-self:start; }
 .operator-note { border-top:1px solid var(--line); padding:16px 0; }
 .operator-note-text { white-space:pre-wrap; overflow-wrap:anywhere; }
+.measurement-report details { padding:16px 0; border-top:1px solid var(--line); }
+.measurement-report details p { margin:16px 0; }
 @media(max-width:760px) { .campaign-worker, .campaign-annotations { padding:22px; } }

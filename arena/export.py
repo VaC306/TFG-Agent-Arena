@@ -6,13 +6,15 @@ import pandas as pd
 from scipy.stats import binomtest
 from .protocol import quality_value
 from .model_results import outcome, evaluable
+from .resources import resources_csv
 
 
 FIELDS = ["id", "experiment_id", "task_id", "branch", "repetition", "position", "status", "adapter",
           "success", "format_ok", "evaluation", "queue_s", "agent_s", "input_tokens", "output_tokens", "usage_complete",
           "calls", "tool_calls", "tool_errors", "tool_s", "server_eval_s", "server_tps", "agent_output_tps", "error",
           "evaluator_version", "quality_evaluated", "model_digest", "server_version", "answer", "outcome", "has_reference", "reference",
-          "agent_config", "split", "repetitions", "order_seed", "data_sha256", "source_sha256", "conditions", "operator_annotations"]
+          "agent_config", "split", "repetitions", "order_seed", "data_sha256", "source_sha256", "conditions", "operator_annotations",
+          "preparation_s", "task_s", "warmup_policy", "warmup_status", "warmup_s", "warmup_usage", "failure_phase", "resource_summary"]
 
 
 def csv_text(store, experiment_id):
@@ -25,6 +27,7 @@ def csv_text(store, experiment_id):
     for run in store.list_runs(experiment_id):
         result = run['result'] or {}
         identity = result.get('inference_identity') or {}
+        warm = result.get('warmup') or {}
         tasks = [snapshot['branch_tasks'][run['branch']]] if snapshot.get('branch_tasks') else snapshot['tasks']
         task = next(t for t in tasks if t['id'] == run['task_id'])
         config = snapshot['config']
@@ -38,6 +41,8 @@ def csv_text(store, experiment_id):
               'source_sha256':json.dumps(snapshot.get('source_sha256'),sort_keys=True),
               'conditions':json.dumps(snapshot.get('conditions'),sort_keys=True),
               'operator_annotations':json.dumps(annotations,ensure_ascii=False)}
+        row.update(warmup_policy=warm.get('policy'),warmup_status=warm.get('status'),warmup_s=warm.get('duration_s'),
+                   warmup_usage=json.dumps(warm.get('usage'),ensure_ascii=False),resource_summary=json.dumps(result.get('resources'),ensure_ascii=False))
         writer.writerow({k: "'" + v if isinstance(v, str) and v.lstrip().startswith(('=', '+', '-', '@')) else v for k, v in row.items()})
     return output.getvalue()
 
@@ -72,6 +77,7 @@ def export_bundle(store, experiment_id, directory):
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=False)
     (directory / "metrics.csv").write_text(csv_text(store, experiment_id), encoding="utf-8", newline='')
+    (directory / "resources.csv").write_text(resources_csv(store,experiment_id),encoding='utf-8',newline='')
     runs = store.list_runs(experiment_id)
     (directory / "snapshot.json").write_text(json.dumps(store.snapshot(experiment_id), indent=2, ensure_ascii=False), encoding="utf-8")
     (directory / "runs.json").write_text(json.dumps(runs, indent=2, ensure_ascii=False), encoding="utf-8")

@@ -5,7 +5,7 @@ import time
 import httpx
 from .evaluator import evaluate
 from .tools import Tools
-from .resources import sample
+from .resources import sample, ResourceMonitor
 from .attachments import user_message
 from .protocol import inference_identity
 from .evaluator import EVALUATOR_VERSION
@@ -19,7 +19,7 @@ class Cancelled(Exception):
     pass
 
 
-async def execute(run, task, environment, config, adapter, store):
+async def execute(run, task, environment, config, adapter, store, measurement=None):
     started = time.perf_counter()
     tools = Tools(environment)
     messages = [{"role": "system", "content": config.system_prompt}, user_message(task)]
@@ -28,10 +28,14 @@ async def execute(run, task, environment, config, adapter, store):
                "input_tokens": 0, "output_tokens": 0, "server_eval_s": 0., "calls": 0,
                "tool_calls": 0, "tool_errors": 0, "tool_s": 0., "usage_complete": True}
     metrics.update(evaluator_version=EVALUATOR_VERSION, quality_evaluated=False)
+    measurement = measurement or {}
+    warmup = measurement.get('warmup','none')
+    metrics.update(warmup={'policy':warmup,'status':'not_requested' if warmup == 'none' else 'not_started'},task_s=None)
+    monitor = ResourceMonitor(store,run['id'],measurement.get('resource_sample_interval_s'),sample)
+    task_started = None
     if task.criteria is None and (task.expected_answer is None or task.evaluation == 'none'):
         metrics.update(success=None, format_ok=None, evaluation='not_evaluated')
     store.event(run["id"], "input", {"messages": messages, "environment": environment})
-    store.event(run["id"], "resources", sample())
 
     async def checked(awaitable):
         pending = asyncio.create_task(awaitable)
@@ -47,13 +51,47 @@ async def execute(run, task, environment, config, adapter, store):
                 await asyncio.gather(pending, return_exceptions=True)
 
     async def loop():
+        nonlocal task_started
+        prepare_start = time.perf_counter()
         metadata = await checked(adapter.metadata(config.model))
         identity = inference_identity(config.model, metadata)
         store.record_inference_metadata(run, metadata, identity)
         metrics['inference_identity'] = identity
+        metrics['preparation_s'] = time.perf_counter()-prepare_start
         if any(a.media_type.startswith('image/') for a in task.attachments):
             if 'simulated' not in metadata.get('adapter', '') and 'vision' not in metadata.get('show', {}).get('capabilities', []):
                 raise ValueError('El modelo no declara capacidad de visión; no se enviaron las imágenes')
+        if warmup == 'per_run':
+            monitor.phase = 'warmup'
+            warm_config = config.model_copy(update={'tools_enabled':False})
+            warm_messages = [{'role':'user','content':'Reply OK.'}]
+            request = {'messages':warm_messages,'max_output_tokens':1}
+            if callable(getattr(adapter,'payload',None)):
+                request['payload'] = adapter.payload(warm_messages,warm_config,1)
+            store.event(run['id'],'warmup_request',request)
+            warm_start = time.perf_counter()
+            metrics['warmup']['status'] = 'running'
+            try:
+                response = await checked(adapter.chat(warm_messages,warm_config,1))
+                if response.get('done') is not True:
+                    raise ValueError('Incomplete warmup response')
+                counters = {k:response.get(k) for k in ('prompt_eval_count','eval_count','eval_duration','load_duration','total_duration')}
+                for key in ('prompt_eval_count','eval_count','eval_duration'):
+                    if type(counters[key]) is not int or counters[key] < 0:
+                        raise ValueError('Invalid warmup usage counters')
+                metrics['warmup'].update(status='completed',usage=counters)
+                store.event(run['id'],'warmup_response',{'usage':counters,'done_reason':response.get('done_reason')})
+                # Model identity must still match before sending the actual input.
+                metadata = await checked(adapter.metadata(config.model))
+                identity = inference_identity(config.model,metadata)
+                store.record_inference_metadata(run,metadata,identity)
+            except BaseException:
+                metrics['warmup']['status'] = 'failed'
+                raise
+            finally:
+                metrics['warmup']['duration_s'] = time.perf_counter()-warm_start
+        monitor.phase = 'task'
+        task_started = time.perf_counter()
         for _ in range(config.limits.max_calls):
             if store.cancelled(run["id"]):
                 raise Cancelled()
@@ -125,6 +163,7 @@ async def execute(run, task, environment, config, adapter, store):
         raise LimitReached("model_calls")
 
     try:
+        await monitor.start()
         async with asyncio.timeout(config.limits.timeout_s):
             status = await loop()
     except (TimeoutError, httpx.TimeoutException) as exc:
@@ -137,8 +176,13 @@ async def execute(run, task, environment, config, adapter, store):
         status, metrics["error"] = "interrupted", "Worker interrupted"
     except Exception as exc:
         status, metrics["error"] = "failed", f"{type(exc).__name__}: {exc}"
+    if task_started is not None:
+        metrics['task_s'] = time.perf_counter()-task_started
+    monitor.phase = 'finished'
+    await monitor.stop()
+    metrics['resources'] = monitor.summary()
+    metrics['failure_phase'] = ('task' if task_started is not None else 'warmup' if metrics['warmup']['status'] == 'failed' else 'preparation') if 'error' in metrics else None
     metrics["agent_s"] = time.perf_counter() - started
     metrics["server_tps"] = metrics["output_tokens"] / metrics["server_eval_s"] if metrics["server_eval_s"] and metrics["usage_complete"] else None
     metrics["agent_output_tps"] = metrics["output_tokens"] / metrics["agent_s"] if metrics["usage_complete"] else None
-    store.event(run["id"], "resources", sample())
     return store.finish(run, metrics, status)

@@ -9,6 +9,7 @@ from .contracts import Contract, Experiment, Task
 from .model_results import fingerprint, summarize
 from .scheduler import schedule
 from .result_report import code_block
+from .resources import measurement_records
 from .task_analysis import campaign_analysis, task_analysis_csv, SOURCES as ANALYSIS_SOURCES
 
 
@@ -122,6 +123,7 @@ def attempt_report(store, attempt, data, snapshot=None, runs=None):
     return attempt | {'created_at':min(r['queued_at'] for r in runs),'complete':pending == 0,
                       'compatible':not warnings,'warnings':warnings,'overviews':summaries,
                       'annotations':annotations,
+                      'measurements':measurement_records(runs),
                       'data_sha256':snapshot.get('data_sha256'),'source_sha256':snapshot.get('source_sha256')}
 
 
@@ -161,7 +163,7 @@ def campaign_report(store,campaign_id, include_evidence=False):
 
 def campaign_csv(report):
     output = io.StringIO(newline='')
-    fields = ['campaign_id','design_sha256','attempt','experiment_id','branch','complete','compatible','warnings','annotations',
+    fields = ['campaign_id','design_sha256','attempt','experiment_id','branch','complete','compatible','warnings','annotations','measurements',
               'total','finished','planned_evaluable','evaluated','correct','incorrect','invalid_format','execution_errors',
               'unscored','pending','mean_answer_s','timed_answers']
     writer = csv.DictWriter(output,fieldnames=fields)
@@ -171,7 +173,8 @@ def campaign_csv(report):
             writer.writerow({'campaign_id':report['id'],'design_sha256':report['design_sha256'],'attempt':attempt['sequence'],
                 'experiment_id':attempt['experiment_id'],'branch':branch,'complete':attempt['complete'],
                 'compatible':attempt['compatible'],'warnings':' · '.join(attempt['warnings']),
-                'annotations':json.dumps(attempt['annotations'],ensure_ascii=False),**summary})
+                'annotations':json.dumps(attempt['annotations'],ensure_ascii=False),
+                'measurements':json.dumps([m for m in attempt['measurements'] if m['branch']==branch],ensure_ascii=False),**summary})
     return output.getvalue()
 
 
@@ -184,6 +187,7 @@ def campaign_markdown(report):
         lines += [f"## Intento {attempt['sequence']}",code_block(attempt['experiment_id']),
                   'Condiciones registradas compatibles.' if attempt['compatible'] else ' · '.join(attempt['warnings'])]
         lines += ['### Anotaciones del operador (no son mediciones automáticas)',code_block(json.dumps(attempt['annotations'],ensure_ascii=False,indent=2))]
+        lines += ['### Tiempos separados y recursos observados',code_block(json.dumps(attempt['measurements'],ensure_ascii=False,indent=2))]
         for branch,s in attempt['overviews'].items():
             lines += [f"### Variante {branch}",f"Aciertos: {s['correct']}/{s['planned_evaluable']} casos con referencia evaluable." if s['planned_evaluable'] else 'Sin casos con referencia evaluable.',
                       code_block(json.dumps(s,ensure_ascii=False,indent=2))]

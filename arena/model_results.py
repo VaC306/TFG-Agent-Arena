@@ -3,6 +3,7 @@ import hashlib
 import json
 import math
 from .protocol import quality_value
+from .resources import measurement_records
 
 TERMINAL_ERRORS = {'timeout','limit','cancelled','interrupted'}
 
@@ -95,8 +96,11 @@ def latest_model_results(store):
                           'kind':kind,'experiment_id':eid,'experiment_name':config['name'],'branch':branch,
                           'updated_at':timestamp,'split':config['split'],'repetitions':config['repetitions'],
                           'summary':summarize(chosen,cases),'cohort_key':fingerprint(cohort),'comparison_conditions':cohort,
+                          'measurements':measurement_records(chosen),
                           'conditions':{'system_prompt':agent['system_prompt'],'temperature':agent.get('temperature'),
                                         'seed':agent.get('seed'),'num_ctx':agent.get('num_ctx'),'limits':agent.get('limits'),
+                                        'warmup_policy':(snapshot.get('conditions') or {}).get('warmup','none'),
+                                        'resource_sample_interval_s':(snapshot.get('conditions') or {}).get('resource_sample_interval_s'),
                                         'server_version':identity.get('server_version'),'quantization':identity.get('quantization'),
                                         'data_sha256':fingerprint(cases),'evaluator_versions':versions}}
                 if key not in latest or timestamp > latest[key]['updated_at']:

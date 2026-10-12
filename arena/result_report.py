@@ -19,6 +19,12 @@ def markdown_report(snapshot,runs):
              'Aciertos sobre casos con referencia incluye los fallos y errores de esos casos en el denominador. La calidad entre respuestas evaluadas excluye errores de ejecución.\n']
     labels = {'correct':'Correcta','incorrect':'Respuesta incorrecta','invalid_format':'Formato inválido',
               'execution_error':'Error de ejecución','unscored':'Sin evaluar','pending':'Pendiente'}
+    lines += ['## Tiempos por ejecución y recursos observados',
+              'El tiempo total incluye preparación, calentamiento si se solicitó y muestreo. El tiempo de tarea incluye inferencia, herramientas y evaluación. Worker RSS/CPU no mide el servidor Ollama; RAM/GPU del host incluye otros procesos. Máximos observados no son picos garantizados.']
+    for run in runs:
+        result = run.get('result') or {}
+        lines += [code_block(json.dumps({'run_id':run['id'],'branch':run['branch'],'task_id':run['task_id'],
+                   **{k:result.get(k) for k in ('agent_s','preparation_s','task_s','warmup','resources','failure_phase')}},ensure_ascii=False,indent=2))]
     for branch in ('A','B'):
         tasks = [snapshot['branch_tasks'][branch]] if snapshot.get('branch_tasks') else snapshot['tasks']
         selected = [r for r in runs if r['branch'] == branch]

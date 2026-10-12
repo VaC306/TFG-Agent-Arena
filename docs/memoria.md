@@ -345,10 +345,11 @@ controladas, sin permitir todavía conclusiones sobre rendimiento de modelos.
 
 La siguiente prioridad es ampliar la evaluación con casos reservados y revisados,
 usar el [análisis por tarea e incertidumbre](analisis-por-tarea.md) sobre una campaña
-real homogénea y definir una política de calentamiento
-para estudiar latencias. Las campañas facilitan repetir diseños conservando la
-evidencia. Queda pendiente muestreo periódico de recursos; el estado del worker ya
-dispone de señal periódica. El modo simultáneo deberá etiquetar competencia por recursos y conservar
+real homogénea y estudiar latencias con la política de calentamiento registrada. Las campañas facilitan repetir diseños conservando la
+evidencia. El [muestreo periódico y calentamiento opcional](mediciones-y-calentamiento.md)
+registran tiempos separados y recursos observados. Una comprobación real pequeña
+no justifica conclusiones generales de latencia. El estado del worker dispone de
+señal periódica. El modo simultáneo deberá etiquetar competencia por recursos y conservar
 la independencia de ramas. PENDIENTE: acordar planificación de los dos autores y
 reservar tiempo para experimentos, análisis y redacción final.
 

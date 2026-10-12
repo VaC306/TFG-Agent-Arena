@@ -112,14 +112,14 @@ def test_worker_heartbeats_during_run_and_stops_on_cancellation(tmp_path,monkeyp
     from test_comparisons import request_data
     client.post('/comparisons',json=request_data())
     entered = asyncio.Event()
-    async def blocked(*args):
+    async def blocked(*args,**kwargs):
         entered.set()
         await asyncio.Event().wait()
     monkeypatch.setattr('arena.worker.execute',blocked)
     store = Store(path)
     async def check():
         task = asyncio.create_task(work(store))
-        await entered.wait()
+        await asyncio.wait_for(entered.wait(),5)
         first = store.worker_status()['last_signal_at']
         await asyncio.sleep(2.1)
         status = store.worker_status()

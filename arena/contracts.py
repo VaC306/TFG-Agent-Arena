@@ -79,6 +79,7 @@ class Experiment(Contract):
     order_seed: int = 42
     ollama_url: str = "http://127.0.0.1:11434"
     comparison: Literal["same_model", "different_models"] = "same_model"
+    warmup: Literal['none','per_run'] = 'none'
 
     @model_validator(mode="after")
     def paired_model(self):
@@ -121,5 +122,6 @@ class ResourceSample(Contract):
     scope: Literal["host_and_worker"] = "host_and_worker"
     ram_available_bytes: int | None = None
     worker_rss_bytes: int | None = None
+    worker_cpu_s: float | None = None
     gpu: list[dict] | None = None
     unavailable: list[str] = []
