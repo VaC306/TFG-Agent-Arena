@@ -3,8 +3,16 @@
   <p class="hint">Crea una campaña desde una comparación terminada en Resultados. Cada intento conserva sus propios resultados y trazas.</p>
   @if (listError()) { <p class="alert error" role="alert">{{ listError() }} <button class="text-button" (click)="initialize()">Reintentar</button></p> }
   @if (loadingList()) { <arena-loading label="Cargando campañas…" /> }
+  <section class="panel campaign-worker" aria-labelledby="worker-title"><div class="section-header"><h2 id="worker-title">Estado del worker</h2><button class="text-button" (click)="checkWorker()">Comprobar</button></div>
+    @if (workerError()) { <p class="alert" role="status">{{ workerError() }}</p> }
+    @if (worker(); as state) {
+      <p role="status">{{ state.state === 'active' ? 'Señal reciente · ' + state.active_workers + ' workers activos · ' + state.busy_workers + ' ocupados' : state.state === 'unobserved' ? 'Todavía no hay una señal registrada del worker.' : 'Sin señal reciente del worker. Puede estar detenido o no responder.' }}</p>
+      <p class="hint">Cola de tu cuenta: {{ state.queued }} en espera · {{ state.running }} en ejecución.@if (state.oldest_pending_age_s !== null) { Antigüedad máxima: {{ state.oldest_pending_age_s | number:'1.0-0' }} s. } Última comprobación: {{ state.observed_at * 1000 | date:'HH:mm:ss' }}.</p>
+      <p class="hint">La señal corresponde a esta base de datos, no garantiza que Ollama responda. Sin señal durante {{ state.stale_after_s }} s, revisa el proceso y su terminal. No se recuperan ejecuciones automáticamente.</p>
+    } @else if (!workerError()) { <p class="hint">Comprobando estado…</p> }
+  </section>
   @if (campaigns().length) {
-    <label for="campaign-selector">Campaña</label><select id="campaign-selector" class="campaign-selector" [ngModel]="selectedId()" (ngModelChange)="select($event)" [disabled]="busy()"><option value="" disabled>Selecciona una campaña</option>@for (campaign of campaigns(); track campaign.id) { <option [value]="campaign.id">{{ campaign.name }} · {{ campaign.attempts }} intentos</option> }</select>
+    <label for="campaign-selector">Campaña</label><select id="campaign-selector" class="campaign-selector" [ngModel]="selectedId()" (ngModelChange)="select($event)" [disabled]="busy() || savingNote()"><option value="" disabled>Selecciona una campaña</option>@for (campaign of campaigns(); track campaign.id) { <option [value]="campaign.id">{{ campaign.name }} · {{ campaign.attempts }} intentos</option> }</select>
   }
   @if (error()) { <p class="alert error" role="alert">{{ error() }} <button class="text-button" (click)="refresh()" [disabled]="busy()">Reintentar actualización</button></p> }
   @if (notice()) { <p class="alert" role="status">{{ notice() }}</p> }
@@ -28,6 +36,21 @@
           }
         }
       </tbody></table></div>
+    </section>
+    <section class="panel campaign-annotations" aria-labelledby="annotations-title"><h2 id="annotations-title">Condiciones externas por intento</h2>
+      <p class="hint">Registra carga de otros programas, estado térmico o incidencias del servidor. Son declaraciones del operador con fecha de registro; no son mediciones automáticas. Se añaden al historial sin editar las anteriores ni el diseño.</p>
+      <form (ngSubmit)="saveNote()">
+        <label for="annotation-attempt">Intento</label><select id="annotation-attempt" name="noteAttempt" [(ngModel)]="noteAttempt" [disabled]="savingNote()"><option value="" disabled>Selecciona un intento</option>@for (attempt of campaign.attempts; track attempt.experiment_id) { <option [value]="attempt.experiment_id">Intento {{ attempt.sequence }}</option> }</select>
+        <label for="annotation-kind">Tipo de anotación</label><select id="annotation-kind" name="noteKind" [(ngModel)]="noteKind" [disabled]="savingNote()"><option value="deviation">Diferencia de condiciones · excluye del análisis compatible</option><option value="observation">Observación · conserva la compatibilidad registrada</option></select>
+        <label for="annotation-text">Condiciones observadas</label><textarea id="annotation-text" name="noteText" [(ngModel)]="noteText" maxlength="2000" rows="3" [disabled]="savingNote()" aria-describedby="annotation-help"></textarea><p id="annotation-help" class="hint">Máximo 2.000 caracteres. Describe cuándo sucedió si lo registras después. Una diferencia declarada impide comparar este resultado directamente en la biblioteca.</p>
+        <button class="secondary" type="submit" [disabled]="savingNote() || loading() || !noteAttempt || !noteText.trim()">{{ savingNote() ? 'Guardando anotación…' : 'Guardar anotación' }}</button>
+      </form>
+      @if (noteError()) { <p class="alert error" role="alert">{{ noteError() }}</p> }@if (noteNotice()) { <p class="alert" role="status">{{ noteNotice() }}</p> }
+      @for (attempt of campaign.attempts; track attempt.experiment_id) {
+        <details class="saved-config"><summary>Intento {{ attempt.sequence }} · {{ attempt.annotations.length }} anotaciones</summary>
+          @for (note of attempt.annotations; track note.id) { <div class="operator-note"><p>{{ note.kind === 'deviation' ? 'Diferencia declarada' : 'Observación' }} · registrada el {{ note.created_at * 1000 | date:'dd/MM/yyyy HH:mm:ss' }}</p><p class="operator-note-text">{{ note.text }}</p></div> } @empty { <p class="hint">Sin anotaciones del operador. Esto no demuestra condiciones externas idénticas.</p> }
+        </details>
+      }
     </section>
     @if (campaign.analysis; as analysis) {
       <section class="panel campaign-analysis" aria-labelledby="analysis-title"><h2 id="analysis-title">Qué cambia en cada tarea</h2><p class="hint">{{ analysis.included_attempts.length }}/{{ campaign.attempts.length }} intentos incluidos · {{ analysis.tasks.length }} tareas. Solo se analizan intentos terminados con condiciones compatibles.</p><p class="hint analysis-note">{{ analysis.note }}</p>

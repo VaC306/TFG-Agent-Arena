@@ -3,6 +3,7 @@ import csv
 import io
 import json
 import uuid
+from typing import Literal
 from pydantic import Field, field_validator
 from .contracts import Contract, Experiment, Task
 from .model_results import fingerprint, summarize
@@ -25,6 +26,19 @@ class CampaignRequest(Contract):
 
 class AttemptRequest(Contract):
     request_id: uuid.UUID
+
+
+class AnnotationRequest(Contract):
+    request_id: uuid.UUID
+    kind: Literal['observation','deviation'] = 'deviation'
+    text: str = Field(min_length=1,max_length=2000)
+
+    @field_validator('text')
+    @classmethod
+    def nonblank(cls,value):
+        if not value.strip():
+            raise ValueError('Describe las condiciones observadas')
+        return value.strip()
 
 
 def observed_models(runs, adapter):
@@ -82,6 +96,9 @@ def attempt_report(store, attempt, data, snapshot=None, runs=None):
     runs = store.list_runs(attempt['experiment_id']) if runs is None else runs
     baseline = data['snapshot']
     warnings = []
+    annotations = store.annotations(attempt['experiment_id'])
+    if any(a['kind'] == 'deviation' for a in annotations):
+        warnings.append('Diferencia de condiciones externas declarada por el operador; intento excluido del análisis compatible.')
     if fingerprint(frozen_design(snapshot)) != data['design_sha256']:
         warnings.append('Diseño distinto: configuración, datos, evaluación o condiciones.')
     if snapshot.get('source_sha256') != baseline.get('source_sha256'):
@@ -104,6 +121,7 @@ def attempt_report(store, attempt, data, snapshot=None, runs=None):
         warnings.append('Versión del evaluador distinta de la campaña.')
     return attempt | {'created_at':min(r['queued_at'] for r in runs),'complete':pending == 0,
                       'compatible':not warnings,'warnings':warnings,'overviews':summaries,
+                      'annotations':annotations,
                       'data_sha256':snapshot.get('data_sha256'),'source_sha256':snapshot.get('source_sha256')}
 
 
@@ -143,7 +161,7 @@ def campaign_report(store,campaign_id, include_evidence=False):
 
 def campaign_csv(report):
     output = io.StringIO(newline='')
-    fields = ['campaign_id','design_sha256','attempt','experiment_id','branch','complete','compatible','warnings',
+    fields = ['campaign_id','design_sha256','attempt','experiment_id','branch','complete','compatible','warnings','annotations',
               'total','finished','planned_evaluable','evaluated','correct','incorrect','invalid_format','execution_errors',
               'unscored','pending','mean_answer_s','timed_answers']
     writer = csv.DictWriter(output,fieldnames=fields)
@@ -152,7 +170,8 @@ def campaign_csv(report):
         for branch,summary in attempt['overviews'].items():
             writer.writerow({'campaign_id':report['id'],'design_sha256':report['design_sha256'],'attempt':attempt['sequence'],
                 'experiment_id':attempt['experiment_id'],'branch':branch,'complete':attempt['complete'],
-                'compatible':attempt['compatible'],'warnings':' · '.join(attempt['warnings']),**summary})
+                'compatible':attempt['compatible'],'warnings':' · '.join(attempt['warnings']),
+                'annotations':json.dumps(attempt['annotations'],ensure_ascii=False),**summary})
     return output.getvalue()
 
 
@@ -164,6 +183,7 @@ def campaign_markdown(report):
     for attempt in report['attempts']:
         lines += [f"## Intento {attempt['sequence']}",code_block(attempt['experiment_id']),
                   'Condiciones registradas compatibles.' if attempt['compatible'] else ' · '.join(attempt['warnings'])]
+        lines += ['### Anotaciones del operador (no son mediciones automáticas)',code_block(json.dumps(attempt['annotations'],ensure_ascii=False,indent=2))]
         for branch,s in attempt['overviews'].items():
             lines += [f"### Variante {branch}",f"Aciertos: {s['correct']}/{s['planned_evaluable']} casos con referencia evaluable." if s['planned_evaluable'] else 'Sin casos con referencia evaluable.',
                       code_block(json.dumps(s,ensure_ascii=False,indent=2))]

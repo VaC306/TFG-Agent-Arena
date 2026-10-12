@@ -395,3 +395,10 @@ html { scrollbar-gutter: stable; }
   * { scrollbar-color: auto; scrollbar-width: auto; }
   ::-webkit-scrollbar-thumb { background: ButtonText; }
 }
+
+.campaign-worker, .campaign-annotations { padding:28px; margin:24px 0; min-width:0; }
+.campaign-annotations form { display:grid; gap:12px; max-width:760px; margin:24px 0; }
+.campaign-annotations form button { justify-self:start; }
+.operator-note { border-top:1px solid var(--line); padding:16px 0; }
+.operator-note-text { white-space:pre-wrap; overflow-wrap:anywhere; }
+@media(max-width:760px) { .campaign-worker, .campaign-annotations { padding:22px; } }

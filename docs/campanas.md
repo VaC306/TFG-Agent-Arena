@@ -65,6 +65,11 @@ warmup ni ejecución simultánea. El muestreo de recursos sigue siendo discontin
 
 ## Persistencia, solicitudes y borrado
 
+Se pueden añadir [anotaciones de condiciones externas](condiciones-y-worker.md)
+a cada intento. Las diferencias declaradas excluyen su evidencia del análisis
+compatible sin reescribir el snapshot. La vista muestra también la señal reciente
+del worker y la cola de la cuenta; no recupera trabajos automáticamente.
+
 SQLite añade `campaigns` y `campaign_attempts` sin borrar ni modificar experimentos
 existentes. Las campañas, sus intentos y sus exportaciones están restringidos a
 la cuenta propietaria. Vaciar el historial también elimina las campañas y sus
@@ -86,6 +91,8 @@ tras recargar o navegar, revisa los intentos antes de repetir una solicitud dudo
 - `GET /campaigns`: campañas y progreso de la cuenta.
 - `GET /campaigns/{id}`: diseño fijado y evolución de todos los intentos.
 - `POST /campaigns/{id}/attempts`: `{request_id}` con UUID; no acepta cambios de diseño.
+- `POST /campaigns/{id}/attempts/{experiment_id}/annotations`: nota acumulativa del operador.
+- `GET /worker/status`: señal de procesos y cola de la cuenta.
 - `GET /campaigns/{id}/export.csv`: una fila por intento y rama.
 - `GET /campaigns/{id}/analysis.csv`: una fila por tarea y rama con series y cobertura.
 - `GET /campaigns/{id}/export.md`: diseño, modelos fijados, contadores y advertencias.

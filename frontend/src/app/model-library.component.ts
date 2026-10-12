@@ -31,7 +31,7 @@ export class ModelLibraryComponent {
   });
   compatible = computed(() => {
     const [a,b] = this.compared();
-    return !this.error() && !!a && !!b && a.adapter === 'ollama' && b.adapter === 'ollama' && a.verified && b.verified
+    return !this.error() && !!a && !!b && !a.external_deviation && !b.external_deviation && a.adapter === 'ollama' && b.adapter === 'ollama' && a.verified && b.verified
       && a.digest !== b.digest && a.cohort_key === b.cohort_key;
   });
   constructor() {

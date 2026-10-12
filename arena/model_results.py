@@ -56,6 +56,8 @@ def latest_model_results(store):
     latest = {}
     for eid,snapshot in store.result_experiments():
         runs = store.list_runs(eid)
+        annotations = store.annotations(eid)
+        deviations = [a for a in annotations if a['kind'] == 'deviation']
         config = snapshot['config']
         for branch in ('A','B'):
             selected = [r for r in runs if r['branch'] == branch]
@@ -85,8 +87,12 @@ def latest_model_results(store):
                           'evaluator_versions':versions,'server_version':identity.get('server_version'),
                           'order_seed':config.get('order_seed'),
                           'host':{k:host.get(k) for k in ('platform','python','cpu','logical_cpus','ram_total_bytes','packages')}}
+                if deviations:
+                    # A declared deviation cannot silently match any other result's cohort.
+                    cohort['external_deviations'] = {'experiment_id':eid,'annotations':deviations}
                 record = {'id':fingerprint(key),'model':model,'adapter':config['adapter'],'digest':identity.get('digest'),
-                          'verified':stable,'kind':kind,'experiment_id':eid,'experiment_name':config['name'],'branch':branch,
+                          'verified':stable,'external_deviation':bool(deviations),'annotations':annotations,
+                          'kind':kind,'experiment_id':eid,'experiment_name':config['name'],'branch':branch,
                           'updated_at':timestamp,'split':config['split'],'repetitions':config['repetitions'],
                           'summary':summarize(chosen,cases),'cohort_key':fingerprint(cohort),'comparison_conditions':cohort,
                           'conditions':{'system_prompt':agent['system_prompt'],'temperature':agent.get('temperature'),

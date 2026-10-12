@@ -308,9 +308,13 @@ independientes ni calcula un ganador. La prueba de navegador de esta funcionalid
 repite el benchmark simulado: dos intentos de 16 ejecuciones, 8/8 aciertos por rama.
 La fijación de digest/servidor se verifica con adaptadores controlados.
 
-Controles actuales: 188 pruebas Python, 22 del frontend, compilación de producción
+Controles actuales: 210 pruebas Python, 28 del frontend, compilación de producción
 y comprobación de dependencias. Se comprobaron recarga, recuperación de API y
 vista móvil de campañas a 320/390 px; la accesibilidad completa sigue pendiente.
+El [registro de condiciones y estado del worker](condiciones-y-worker.md) permite
+documentar observaciones por intento y excluir diferencias declaradas. Las señales
+informan de actividad reciente del proceso sin demostrar progreso de Ollama. Se
+verifican con procesos y datos aislados, sin nueva inferencia real en este hito.
 
 ## 9. Limitaciones y amenazas a la validez
 
@@ -343,7 +347,8 @@ La siguiente prioridad es ampliar la evaluación con casos reservados y revisado
 usar el [análisis por tarea e incertidumbre](analisis-por-tarea.md) sobre una campaña
 real homogénea y definir una política de calentamiento
 para estudiar latencias. Las campañas facilitan repetir diseños conservando la
-evidencia. Quedan pendientes muestreo periódico y estado del worker. El modo simultáneo deberá etiquetar competencia por recursos y conservar
+evidencia. Queda pendiente muestreo periódico de recursos; el estado del worker ya
+dispone de señal periódica. El modo simultáneo deberá etiquetar competencia por recursos y conservar
 la independencia de ramas. PENDIENTE: acordar planificación de los dos autores y
 reservar tiempo para experimentos, análisis y redacción final.
 

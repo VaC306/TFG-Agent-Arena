@@ -19,7 +19,7 @@ from .json_input import load_json
 from .protocol import protocol_report
 from .model_results import latest_model_results, summarize
 from .result_report import markdown_report
-from .campaigns import CampaignRequest, AttemptRequest, create_campaign, repeat_campaign, campaign_report, campaign_csv, campaign_markdown, task_analysis_csv
+from .campaigns import CampaignRequest, AttemptRequest, AnnotationRequest, create_campaign, repeat_campaign, campaign_report, campaign_csv, campaign_markdown, task_analysis_csv
 import json
 
 
@@ -197,6 +197,20 @@ def create_app(db_path=None, root=None):
     def campaigns(store: Store = Depends(user_store)):
         return store.list_campaigns()
 
+    @app.get('/worker/status')
+    def worker_status(store: Store = Depends(user_store)):
+        return store.worker_status()
+
+    @app.post('/campaigns/{campaign_id}/attempts/{experiment_id}/annotations',status_code=201)
+    async def annotate(campaign_id:str,experiment_id:str,request:Request,store:Store = Depends(user_store)):
+        body = await auth_body(request,AnnotationRequest,16*1024)
+        try:
+            return {'id':store.annotate_attempt(campaign_id,experiment_id,str(body.request_id),body.kind,body.text)}
+        except KeyError:
+            raise HTTPException(404,'Intento inexistente')
+        except ValueError as exc:
+            raise HTTPException(409,str(exc))
+
     @app.post('/campaigns',status_code=201)
     async def new_campaign(request: Request, store: Store = Depends(user_store)):
         body = await auth_body(request,CampaignRequest,4096)
@@ -253,7 +267,9 @@ def create_app(db_path=None, root=None):
             snapshot, runs = store.snapshot(experiment_id), store.list_runs(experiment_id)
             overviews = {b:summarize([r for r in runs if r['branch'] == b],
                 [snapshot['branch_tasks'][b]] if snapshot.get('branch_tasks') else snapshot['tasks']) for b in ('A','B')}
-            return {"snapshot": snapshot, "runs": runs, "protocol":protocol_report(snapshot, runs),'overviews':overviews,
+            annotations = store.annotations(experiment_id)
+            return {"snapshot": snapshot, "runs": runs, 'annotations':annotations,
+                    "protocol":protocol_report(snapshot | {'operator_annotations':annotations}, runs),'overviews':overviews,
                     'campaign':store.experiment_campaign(experiment_id)}
         except KeyError:
             raise HTTPException(404, "Experimento inexistente")
@@ -262,9 +278,11 @@ def create_app(db_path=None, root=None):
     def reproducibility(experiment_id: str, store: Store = Depends(user_store)):
         try:
             snapshot, runs = store.snapshot(experiment_id), store.list_runs(experiment_id)
+            annotations = store.annotations(experiment_id)
             data = {'experiment_id':experiment_id, 'snapshot':snapshot, 'runs':runs,
                     'campaign':store.experiment_campaign(experiment_id),
-                    'report':protocol_report(snapshot, runs),
+                    'annotations':annotations,
+                    'report':protocol_report(snapshot | {'operator_annotations':annotations}, runs),
                     'overviews':{b:summarize([r for r in runs if r['branch'] == b],
                         [snapshot['branch_tasks'][b]] if snapshot.get('branch_tasks') else snapshot['tasks']) for b in ('A','B')},
                     'note':'Partial while runs are pending. Contains inputs and attachments. Full traces remain in the application.'}
@@ -276,7 +294,7 @@ def create_app(db_path=None, root=None):
     @app.get('/experiments/{experiment_id}/report.md')
     def readable_report(experiment_id: str, store: Store = Depends(user_store)):
         try:
-            return Response(markdown_report(store.snapshot(experiment_id),store.list_runs(experiment_id)),
+            return Response(markdown_report(store.snapshot(experiment_id) | {'operator_annotations':store.annotations(experiment_id)},store.list_runs(experiment_id)),
                 media_type='text/markdown; charset=utf-8',headers={'Content-Disposition':'attachment; filename="arena-results.md"'})
         except KeyError:
             raise HTTPException(404,'Experimento inexistente')

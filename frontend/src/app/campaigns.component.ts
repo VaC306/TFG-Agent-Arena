@@ -1,7 +1,7 @@
 import { Component, computed, DestroyRef, inject, input, output, signal } from '@angular/core';
 import { DatePipe, DecimalPipe, JsonPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ArenaService, CampaignDetail, CampaignSummary } from './arena.service';
+import { ArenaService, CampaignDetail, CampaignSummary, WorkerStatus } from './arena.service';
 import { accountError } from './auth.service';
 import { LoadingIndicatorComponent } from './loading-indicator.component';
 
@@ -13,6 +13,8 @@ export class CampaignsComponent {
   private version = 0;
   private listVersion = 0;
   private refreshing = false;
+  private checkingWorker = false;
+  private annotationRequests = new Map<string,string>();
   // Preserve the key after an uncertain response so retrying cannot enqueue a duplicate.
   private requests = new Map<string,string>();
   initialId = input('');
@@ -27,6 +29,14 @@ export class CampaignsComponent {
   error = signal('');
   listError = signal('');
   notice = signal('');
+  worker = signal<WorkerStatus|null>(null);
+  workerError = signal('');
+  savingNote = signal(false);
+  noteError = signal('');
+  noteNotice = signal('');
+  noteAttempt = '';
+  noteKind = 'deviation';
+  noteText = '';
   taskFilter = signal('all');
   visibleTasks = computed(() => (this.detail()?.analysis?.tasks ?? []).filter(task => {
     const branches = [task.branches.A,task.branches.B];
@@ -43,6 +53,7 @@ export class CampaignsComponent {
   }
   constructor() {
     const timer = setInterval(() => {
+      void this.checkWorker();
       if (this.detail()?.pending && !this.loading() && !this.busy()) void this.refresh();
     },2500);
     inject(DestroyRef).onDestroy(() => {this.destroyed = true; ++this.version; ++this.listVersion; clearInterval(timer);});
@@ -62,6 +73,7 @@ export class CampaignsComponent {
     }
   }
   async initialize() {
+    void this.checkWorker();
     await this.loadList();
     if (this.destroyed || this.selectedId()) return;
     const id = this.initialId() || this.campaigns()[0]?.id;
@@ -79,6 +91,8 @@ export class CampaignsComponent {
   async select(id:string) {
     const version = ++this.version;
     this.taskFilter.set('all');
+    this.noteAttempt = ''; this.noteText = ''; this.noteKind = 'deviation';
+    this.noteError.set(''); this.noteNotice.set('');
     this.selectedId.set(id); this.detail.set(null); this.notice.set(''); this.error.set(''); this.loading.set(true);
     try {
       const detail = await this.api.campaign(id);
@@ -87,6 +101,7 @@ export class CampaignsComponent {
     finally { if (!this.destroyed && version === this.version) this.loading.set(false); }
   }
   async refresh() {
+    void this.checkWorker();
     if (this.refreshing || this.loading()) return;
     this.refreshing = true;
     const id = this.selectedId(), version = this.version;
@@ -98,6 +113,36 @@ export class CampaignsComponent {
       }
     } catch { if (!this.destroyed && version === this.version) this.error.set('No se pudo actualizar. Los datos visibles pueden estar desactualizados; reintenta antes de repetir.'); }
     finally { this.refreshing = false; }
+  }
+  async checkWorker() {
+    if (this.checkingWorker || this.destroyed) return;
+    this.checkingWorker = true;
+    try {
+      const state = await this.api.workerStatus();
+      if (!this.destroyed) { this.worker.set(state); this.workerError.set(''); }
+    } catch {
+      if (!this.destroyed) { this.worker.set(null); this.workerError.set('No se pudo comprobar el worker. Reintenta la conexión.'); }
+    } finally { this.checkingWorker = false; }
+  }
+  async saveNote() {
+    const campaign = this.detail(), version = this.version, text = this.noteText.trim(), experiment = this.noteAttempt;
+    if (!campaign || !text || Array.from(text).length > 2000 || this.savingNote() || this.loading() ||
+        !campaign.attempts.some(a=>a.experiment_id===experiment)) return;
+    const payload = {experiment,kind:this.noteKind,text};
+    const key = JSON.stringify(payload), request_id = this.annotationRequests.get(key) ?? crypto.randomUUID();
+    this.annotationRequests.set(key,request_id);
+    this.savingNote.set(true); this.noteError.set(''); this.noteNotice.set('');
+    try {
+      await this.api.annotateAttempt(campaign.id,experiment,{request_id,kind:payload.kind,text});
+      this.changed.emit();
+      const updated = await this.api.campaign(campaign.id);
+      this.annotationRequests.delete(key);
+      if (this.destroyed || version !== this.version) return;
+      this.acceptDetail(updated);
+      this.noteText = ''; this.noteNotice.set('Anotación guardada. Las diferencias declaradas excluyen el intento del análisis compatible.');
+    } catch(error) {
+      if (!this.destroyed && version === this.version) this.noteError.set(accountError(error)+' Reintenta el mismo contenido; se conserva la clave para evitar duplicados.');
+    } finally { if (!this.destroyed) this.savingNote.set(false); }
   }
   async repeat() {
     const id = this.selectedId(), version = this.version;

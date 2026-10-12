@@ -31,6 +31,40 @@ async function workspace(api={}) {
   return {app,...f};
 }
 const responseDetail = name => ({snapshot:{config:{name}},runs:[],name});
+test('worker checks coalesce, discard stale status on failure and recover',async()=>{
+  const request=deferred();let calls=0;
+  const api={workerStatus:()=>{calls++;return request.promise;}};
+  const f=fixture('campaigns.component.ts',api),component=new f.exports.CampaignsComponent();
+  component.worker.set({state:'active'});
+  const checking=component.checkWorker();await component.checkWorker();assert.equal(calls,1);
+  request.reject(new Error('Offline'));await checking;
+  assert.equal(component.worker(),null);assert.ok(component.workerError());
+  api.workerStatus=async()=>({state:'no_recent_signal'});
+  await component.checkWorker();assert.equal(component.worker().state,'no_recent_signal');assert.equal(component.workerError(),'');
+});
+test('uncertain annotation refresh retries with same key and preserves draft',async()=>{
+  const keys=[];let fail=true;
+  const f=fixture('campaigns.component.ts',{annotateAttempt:async(_c,_e,body)=>keys.push(body.request_id),campaign:async()=>{
+    if(fail)throw new Error('Offline');return {id:'c',attempts:[{experiment_id:'e'}]};
+  }}),component=new f.exports.CampaignsComponent();
+  component.detail.set({id:'c',attempts:[{experiment_id:'e'}]});component.noteAttempt='e';component.noteText='Different load';
+  await component.saveNote();assert.equal(component.savingNote(),false);assert.ok(component.noteError());assert.equal(component.noteText,'Different load');
+  fail=false;await component.saveNote();assert.equal(keys[0],keys[1]);assert.equal(component.noteText,'');assert.ok(component.noteNotice());
+});
+test('late annotation completion cannot replace the newly selected campaign',async()=>{
+  const request=deferred();
+  const f=fixture('campaigns.component.ts',{annotateAttempt:()=>request.promise,campaign:async id=>({id,attempts:[]})});
+  const component=new f.exports.CampaignsComponent();component.detail.set({id:'old',attempts:[{experiment_id:'e'}]});
+  component.noteAttempt='e';component.noteText='Old conditions';const saving=component.saveNote();
+  await component.select('new');component.noteText='New draft';request.resolve({id:'note'});await saving;
+  assert.equal(component.detail().id,'new');assert.equal(component.noteText,'New draft');assert.equal(component.noteNotice(),'');
+});
+test('library rejects declared external deviations despite matching model cohorts',()=>{
+  const f=fixture('model-library.component.ts',{modelResults:async()=>({entries:[]})}),component=new f.exports.ModelLibraryComponent();
+  const base={adapter:'ollama',verified:true,cohort_key:'same',kind:'text',model:'model'};
+  component.entries.set([{...base,id:'a',digest:'aaa',external_deviation:true},{...base,id:'b',digest:'bbb'}]);
+  component.selected.set(['a','b']);assert.equal(component.compatible(),false);
+});
 test('task filters distinguish correctness variation, coverage, errors and changes',()=>{
   const f=fixture('campaigns.component.ts',{}), component=new f.exports.CampaignsComponent();
   const branch=(extra={})=>({reference_evaluable:true,quality_stability:'always_correct',coverage:1,between_attempt_changes:0,summary:{execution_errors:0},...extra});

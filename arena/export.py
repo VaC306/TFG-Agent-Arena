@@ -12,12 +12,13 @@ FIELDS = ["id", "experiment_id", "task_id", "branch", "repetition", "position", 
           "success", "format_ok", "evaluation", "queue_s", "agent_s", "input_tokens", "output_tokens", "usage_complete",
           "calls", "tool_calls", "tool_errors", "tool_s", "server_eval_s", "server_tps", "agent_output_tps", "error",
           "evaluator_version", "quality_evaluated", "model_digest", "server_version", "answer", "outcome", "has_reference", "reference",
-          "agent_config", "split", "repetitions", "order_seed", "data_sha256", "source_sha256", "conditions"]
+          "agent_config", "split", "repetitions", "order_seed", "data_sha256", "source_sha256", "conditions", "operator_annotations"]
 
 
 def csv_text(store, experiment_id):
     snapshot = store.snapshot(experiment_id)
     adapter = snapshot["config"]["adapter"]
+    annotations = store.annotations(experiment_id)
     output = io.StringIO(newline="")
     writer = csv.DictWriter(output, fieldnames=FIELDS, extrasaction="ignore")
     writer.writeheader()
@@ -35,7 +36,8 @@ def csv_text(store, experiment_id):
               'split':config['split'], 'repetitions':config['repetitions'], 'order_seed':config.get('order_seed'),
               'data_sha256':snapshot.get('data_sha256'),
               'source_sha256':json.dumps(snapshot.get('source_sha256'),sort_keys=True),
-              'conditions':json.dumps(snapshot.get('conditions'),sort_keys=True)}
+              'conditions':json.dumps(snapshot.get('conditions'),sort_keys=True),
+              'operator_annotations':json.dumps(annotations,ensure_ascii=False)}
         writer.writerow({k: "'" + v if isinstance(v, str) and v.lstrip().startswith(('=', '+', '-', '@')) else v for k, v in row.items()})
     return output.getvalue()
 
@@ -54,11 +56,14 @@ def paired_summary(store, experiment_id):
     # Repetitions are clustered by task; avoid treating them as independent observations.
     repeats = snapshot["config"]["repetitions"]
     complete_pairs = inputs_shared and len(paired) == len(pairs)
-    p_value = binomtest(wins_a, wins_a + wins_b).pvalue if wins_a + wins_b and repeats == 1 and complete_pairs else None
+    annotations = store.annotations(experiment_id)
+    deviation = any(a['kind'] == 'deviation' for a in annotations)
+    p_value = binomtest(wins_a, wins_a + wins_b).pvalue if wins_a + wins_b and repeats == 1 and complete_pairs and not deviation else None
     rates = {branch: (float(group.success.dropna().mean()) if group.success.notna().any() else None)
              for branch, group in frame.groupby('branch')}
     return {"pairs": len(paired), "inputs_shared": inputs_shared, "complete_pairs":complete_pairs, "success_rate": rates,
             "A_only_success": wins_a, "B_only_success": wins_b, "mcnemar_exact_p": p_value,
+            'operator_annotations':annotations,'external_deviation':deviation,
             "note": "Descriptive results. Rates are conditional on evaluated responses; inspect execution errors and coverage. No paired inference for different inputs, missing scores or repeated cases."}
 
 
@@ -70,6 +75,7 @@ def export_bundle(store, experiment_id, directory):
     runs = store.list_runs(experiment_id)
     (directory / "snapshot.json").write_text(json.dumps(store.snapshot(experiment_id), indent=2, ensure_ascii=False), encoding="utf-8")
     (directory / "runs.json").write_text(json.dumps(runs, indent=2, ensure_ascii=False), encoding="utf-8")
+    (directory / "operator-annotations.json").write_text(json.dumps(store.annotations(experiment_id),indent=2,ensure_ascii=False),encoding='utf-8')
     with (directory / "events.jsonl").open("w", encoding="utf-8") as file:
         for run in runs:
             for event in store.events(run["id"]):

@@ -39,6 +39,9 @@ def protocol_report(snapshot, runs):
     identities = {r['branch']: (r.get('result') or {}).get('inference_identity') for r in runs
                   if (r.get('result') or {}).get('inference_identity')}
     warnings = []
+    for annotation in snapshot.get('operator_annotations',[]):
+        warnings.append(('Diferencia de condiciones externas' if annotation['kind'] == 'deviation' else 'Observación del operador')
+                        + ' (declarada, no medida): ' + annotation['text'])
     same_digest = (set(identities) == {'A', 'B'} and all(i['verified'] for i in identities.values())
                    and identities['A']['digest'] == identities['B']['digest'])
     if same_digest and not models_equal:

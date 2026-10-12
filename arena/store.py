@@ -36,6 +36,12 @@ class Store:
                     campaign_id TEXT NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
                     sequence INTEGER NOT NULL, request_id TEXT,
                     UNIQUE(campaign_id,sequence), UNIQUE(campaign_id,request_id));
+                CREATE TABLE IF NOT EXISTS attempt_annotations(
+                    id TEXT PRIMARY KEY, experiment_id TEXT NOT NULL REFERENCES experiments(id) ON DELETE CASCADE,
+                    created_at REAL NOT NULL, kind TEXT NOT NULL, text TEXT NOT NULL);
+                CREATE INDEX IF NOT EXISTS annotations_experiment ON attempt_annotations(experiment_id);
+                CREATE TABLE IF NOT EXISTS worker_signals(
+                    id TEXT PRIMARY KEY, updated_at REAL NOT NULL, state TEXT NOT NULL);
             """)
 
     @contextmanager
@@ -125,6 +131,44 @@ class Store:
         with self.connect() as db:
             row = db.execute('SELECT campaign_id AS id,sequence FROM campaign_attempts WHERE experiment_id=?',(experiment_id,)).fetchone()
             return dict(row) if row else None
+
+    def annotations(self, experiment_id):
+        self.check_experiment(experiment_id)
+        with self.connect() as db:
+            return [dict(r) for r in db.execute('SELECT * FROM attempt_annotations WHERE experiment_id=? ORDER BY created_at,rowid',(experiment_id,))]
+
+    def annotate_attempt(self, campaign_id, experiment_id, request_id, kind, text):
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            self._campaign_row(db,campaign_id)
+            if not db.execute('SELECT 1 FROM campaign_attempts WHERE campaign_id=? AND experiment_id=?',(campaign_id,experiment_id)).fetchone():
+                raise KeyError(experiment_id)
+            previous = db.execute('SELECT * FROM attempt_annotations WHERE id=?',(request_id,)).fetchone()
+            if previous:
+                if (previous['experiment_id'],previous['kind'],previous['text']) != (experiment_id,kind,text):
+                    raise ValueError('La clave de anotación ya corresponde a otro contenido.')
+                return request_id
+            db.execute('INSERT INTO attempt_annotations VALUES (?,?,?,?,?)',(request_id,experiment_id,time.time(),kind,text))
+            return request_id
+
+    def worker_signal(self, worker_id, state):
+        with self.connect() as db:
+            db.execute('INSERT INTO worker_signals VALUES (?,?,?) ON CONFLICT(id) DO UPDATE SET updated_at=excluded.updated_at,state=excluded.state',
+                       (worker_id,time.time(),state))
+
+    def worker_status(self):
+        now = time.time()
+        with self.connect() as db:
+            signals = db.execute('SELECT updated_at,state FROM worker_signals').fetchall()
+            live = [s for s in signals if s['state'] != 'stopped' and 0 <= now-s['updated_at'] <= 15]
+            queue = db.execute('''SELECT r.status,r.data FROM runs r JOIN experiment_owners o ON o.experiment_id=r.experiment_id
+                WHERE o.owner_id=? AND r.status IN ('queued','running')''',(self.owner_id,)).fetchall()
+        runs = [json.loads(r['data']) for r in queue]
+        return {'observed_at':now,'state':'active' if live else 'unobserved' if not signals else 'no_recent_signal',
+                'active_workers':len(live),'busy_workers':sum(s['state'] == 'busy' for s in live),
+                'last_signal_at':max((s['updated_at'] for s in signals),default=None),'stale_after_s':15,
+                'queued':sum(r['status']=='queued' for r in queue),'running':sum(r['status']=='running' for r in queue),
+                'oldest_pending_age_s':max((max(0,now-r['queued_at']) for r in runs),default=None)}
 
     def snapshot(self, experiment_id):
         self.check_experiment(experiment_id)

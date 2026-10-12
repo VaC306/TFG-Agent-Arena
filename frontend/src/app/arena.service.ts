@@ -35,11 +35,13 @@ export interface Run {
   status: Status; result: Result | null;
 }
 export interface ResultSummary { total:number; finished:number; evaluated:number; planned_evaluable:number; correct:number; incorrect:number; invalid_format:number; execution_errors:number; unscored:number; pending:number; mean_answer_s:number|null; timed_answers:number }
-export interface ModelResult { comparison_conditions?:Record<string,unknown>; id:string; model:string; adapter:PresetId; digest:string|null; verified:boolean; kind:string; experiment_id:string; experiment_name:string; branch:string; updated_at:number; split:string; repetitions:number; summary:ResultSummary; cohort_key:string; conditions:{system_prompt:string; temperature:number; seed:number; num_ctx:number; limits:{max_output_tokens:number; timeout_s:number}; server_version:string|null; quantization:string|null; data_sha256:string; evaluator_versions:string[]} }
+export interface ModelResult { external_deviation?:boolean; annotations?:OperatorAnnotation[]; comparison_conditions?:Record<string,unknown>; id:string; model:string; adapter:PresetId; digest:string|null; verified:boolean; kind:string; experiment_id:string; experiment_name:string; branch:string; updated_at:number; split:string; repetitions:number; summary:ResultSummary; cohort_key:string; conditions:{system_prompt:string; temperature:number; seed:number; num_ctx:number; limits:{max_output_tokens:number; timeout_s:number}; server_version:string|null; quantization:string|null; data_sha256:string; evaluator_versions:string[]} }
 export interface SavedTask { id: string; input: string; expected_answer?: string | null; evaluation?:EvaluationMode; criteria?:{total_cents:number; order_ids:string[]}; attachments?: {name: string; size: number; sha256: string}[] }
 export interface ExperimentDetail { campaign?:{id:string;sequence:number}|null; snapshot: { config: Config; tasks?: SavedTask[]; branch_tasks?: Record<string, SavedTask> | null; conditions?: {inputs_shared?: boolean}; data_sha256?:string; git_commit?:string }; runs: Run[]; protocol?:ProtocolReport; overviews:Record<'A'|'B',ResultSummary> }
 export interface CampaignSummary { id:string; name:string; created_at:number; source_id:string; adapter:PresetId; split:string; attempts:number; pending:number }
-export interface CampaignAttempt { experiment_id:string; sequence:number; request_id:string|null; created_at:number; complete:boolean; compatible:boolean; warnings:string[]; overviews:Record<'A'|'B',ResultSummary> }
+export interface OperatorAnnotation { id:string; experiment_id:string;created_at:number;kind:'observation'|'deviation';text:string }
+export interface WorkerStatus { observed_at:number;state:'active'|'unobserved'|'no_recent_signal';active_workers:number;busy_workers:number;last_signal_at:number|null;stale_after_s:number;queued:number;running:number;oldest_pending_age_s:number|null }
+export interface CampaignAttempt { annotations:OperatorAnnotation[]; experiment_id:string; sequence:number; request_id:string|null; created_at:number; complete:boolean; compatible:boolean; warnings:string[]; overviews:Record<'A'|'B',ResultSummary> }
 export interface TaskSeries { sequence:number; experiment_id:string; summary:ResultSummary; quality_rate:number|null; outcomes:string[] }
 export interface TaskBranchAnalysis { present:boolean; reference_evaluable:boolean; input_preview:string; summary:ResultSummary; quality_rate:number|null; coverage:number|null; correct_reference_rate:number|null; quality_stability:'insufficient'|'variable'|'always_correct'|'always_incorrect'; between_attempt_changes:number; between_attempt_comparisons:number; series:TaskSeries[] }
 export interface TaskAnalysis { task_id:string; branches:Record<'A'|'B',TaskBranchAnalysis> }
@@ -69,6 +71,10 @@ export class ArenaService {
   private get<T>(path: string) { return firstValueFrom(this.http.get<T>('/api' + path).pipe(timeout(15000))); }
   experiments() { return this.get<ExperimentSummary[]>('/experiments'); }
   modelResults() { return this.get<{entries:ModelResult[]}>('/model-results'); }
+  workerStatus() { return this.get<WorkerStatus>('/worker/status'); }
+  annotateAttempt(id:string,experiment_id:string,body:{request_id:string;kind:string;text:string}) {
+    return firstValueFrom(this.http.post<{id:string}>(`/api/campaigns/${encodeURIComponent(id)}/attempts/${encodeURIComponent(experiment_id)}/annotations`,body).pipe(timeout(30000)));
+  }
   campaigns() { return this.get<CampaignSummary[]>('/campaigns'); }
   campaign(id:string) { return this.get<CampaignDetail>(`/campaigns/${encodeURIComponent(id)}`); }
   createCampaign(experiment_id:string,name:string) {
