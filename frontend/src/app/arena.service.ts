@@ -37,7 +37,10 @@ export interface Run {
 export interface ResultSummary { total:number; finished:number; evaluated:number; planned_evaluable:number; correct:number; incorrect:number; invalid_format:number; execution_errors:number; unscored:number; pending:number; mean_answer_s:number|null; timed_answers:number }
 export interface ModelResult { comparison_conditions?:Record<string,unknown>; id:string; model:string; adapter:PresetId; digest:string|null; verified:boolean; kind:string; experiment_id:string; experiment_name:string; branch:string; updated_at:number; split:string; repetitions:number; summary:ResultSummary; cohort_key:string; conditions:{system_prompt:string; temperature:number; seed:number; num_ctx:number; limits:{max_output_tokens:number; timeout_s:number}; server_version:string|null; quantization:string|null; data_sha256:string; evaluator_versions:string[]} }
 export interface SavedTask { id: string; input: string; expected_answer?: string | null; evaluation?:EvaluationMode; criteria?:{total_cents:number; order_ids:string[]}; attachments?: {name: string; size: number; sha256: string}[] }
-export interface ExperimentDetail { snapshot: { config: Config; tasks?: SavedTask[]; branch_tasks?: Record<string, SavedTask> | null; conditions?: {inputs_shared?: boolean}; data_sha256?:string; git_commit?:string }; runs: Run[]; protocol?:ProtocolReport; overviews:Record<'A'|'B',ResultSummary> }
+export interface ExperimentDetail { campaign?:{id:string;sequence:number}|null; snapshot: { config: Config; tasks?: SavedTask[]; branch_tasks?: Record<string, SavedTask> | null; conditions?: {inputs_shared?: boolean}; data_sha256?:string; git_commit?:string }; runs: Run[]; protocol?:ProtocolReport; overviews:Record<'A'|'B',ResultSummary> }
+export interface CampaignSummary { id:string; name:string; created_at:number; source_id:string; adapter:PresetId; split:string; attempts:number; pending:number }
+export interface CampaignAttempt { experiment_id:string; sequence:number; request_id:string|null; created_at:number; complete:boolean; compatible:boolean; warnings:string[]; overviews:Record<'A'|'B',ResultSummary> }
+export interface CampaignDetail { id:string; name:string; source_id:string; created_at:number; design_sha256:string; design:{config:Config; tasks:SavedTask[]; branch_tasks:Record<string,SavedTask>|null; conditions:unknown; protocol:unknown}; expected_models:Record<string,{digest:string;server_version:string;quantization:string}>; case_count:number; attempts:CampaignAttempt[]; pending:number; note:string }
 export interface PromptTemplate { id: string; name: string; text: string }
 export interface Upload { name: string; data_base64: string; preview: string; image: boolean; size: number }
 export interface InputData { text: string; files: Upload[]; expected_answer: string }
@@ -61,6 +64,14 @@ export class ArenaService {
   private get<T>(path: string) { return firstValueFrom(this.http.get<T>('/api' + path).pipe(timeout(15000))); }
   experiments() { return this.get<ExperimentSummary[]>('/experiments'); }
   modelResults() { return this.get<{entries:ModelResult[]}>('/model-results'); }
+  campaigns() { return this.get<CampaignSummary[]>('/campaigns'); }
+  campaign(id:string) { return this.get<CampaignDetail>(`/campaigns/${encodeURIComponent(id)}`); }
+  createCampaign(experiment_id:string,name:string) {
+    return firstValueFrom(this.http.post<{id:string}>('/api/campaigns',{experiment_id,name}).pipe(timeout(30000)));
+  }
+  repeatCampaign(id:string,request_id:string) {
+    return firstValueFrom(this.http.post<{id:string}>(`/api/campaigns/${encodeURIComponent(id)}/attempts`,{request_id}).pipe(timeout(30000)));
+  }
   historyState() { return this.get<HistoryState>('/profile/history'); }
   clearHistory(revision: string) {
     return firstValueFrom(this.http.delete<{deleted:number}>('/api/profile/history',

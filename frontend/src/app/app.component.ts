@@ -7,18 +7,25 @@ import { InfoDialogComponent } from './info-dialog.component';
 import { GuideComponent } from './guide.component';
 import { BrandMarkComponent } from './brand-mark.component';
 import { ModelLibraryComponent } from './model-library.component';
+import { CampaignsComponent } from './campaigns.component';
+import { accountError } from './auth.service';
+import { textError } from './validation';
 import { LoadingIndicatorComponent } from './loading-indicator.component';
 import { AuthService } from './auth.service';
 import { ArenaService, ArenaEvent, ExperimentDetail, ExperimentSummary, Preset, PresetId, Run, Status, terminal } from './arena.service';
 
 @Component({
   selector: 'arena-workspace', standalone: true,
-  imports: [DatePipe, DecimalPipe, JsonPipe, FormsModule, ComposerComponent, ProfileComponent, InfoDialogComponent, GuideComponent, BrandMarkComponent, ModelLibraryComponent, LoadingIndicatorComponent],
+  imports: [DatePipe, DecimalPipe, JsonPipe, FormsModule, ComposerComponent, ProfileComponent, InfoDialogComponent, GuideComponent, BrandMarkComponent, ModelLibraryComponent, CampaignsComponent, LoadingIndicatorComponent],
   templateUrl: './app.component.html',
 })
 export class AppComponent {
   auth = inject(AuthService);
-  view = signal<'compose' | 'results' | 'profile' | 'guide' | 'contact' | 'models'>('compose');
+  view = signal<'compose' | 'results' | 'profile' | 'guide' | 'contact' | 'models' | 'campaigns'>('compose');
+  campaignId = signal('');
+  campaignName = signal('');
+  campaignError = signal('');
+  campaignBusy = signal(false);
   private api = inject(ArenaService);
   private destroyed = false;
   private selectionVersion = 0;
@@ -26,11 +33,11 @@ export class AppComponent {
   private traceVersion = 0;
   private refreshing = false;
   private traceTrigger: HTMLElement | null = null;
-  navigate(view: 'compose' | 'results' | 'profile' | 'guide' | 'contact' | 'models') {
+  navigate(view: 'compose' | 'results' | 'profile' | 'guide' | 'contact' | 'models' | 'campaigns') {
     this.view.set(view);
-    document.title = `${view === 'compose' ? 'Comparar' : view === 'results' ? 'Resultados' : view === 'guide' ? 'Guía' : view === 'contact' ? 'Contacto' : view === 'models' ? 'Modelos' : 'Perfil'} · Agent Arena`;
+    document.title = `${view === 'compose' ? 'Comparar' : view === 'results' ? 'Resultados' : view === 'guide' ? 'Guía' : view === 'contact' ? 'Contacto' : view === 'models' ? 'Modelos' : view === 'campaigns' ? 'Campañas' : 'Perfil'} · Agent Arena`;
     requestAnimationFrame(() => {
-      const heading = document.getElementById(view === 'compose' ? 'page-title' : view === 'results' ? 'collection-title' : view === 'guide' ? 'guide-title' : view === 'contact' ? 'contact-title' : view === 'models' ? 'models-title' : 'profile-title');
+      const heading = document.getElementById(view === 'compose' ? 'page-title' : view === 'results' ? 'collection-title' : view === 'guide' ? 'guide-title' : view === 'contact' ? 'contact-title' : view === 'models' ? 'models-title' : view === 'campaigns' ? 'campaigns-title' : 'profile-title');
       heading?.setAttribute('tabindex', '-1');
       heading?.focus();
     });
@@ -103,9 +110,10 @@ export class AppComponent {
     this.branchFilter.set('all');
     this.loading.set(true);
     this.error.set('');
+    this.campaignError.set('');
     try {
       const detail = await this.api.detail(id);
-      if (version === this.selectionVersion && !this.destroyed) this.detail.set(detail);
+      if (version === this.selectionVersion && !this.destroyed) { this.detail.set(detail); this.campaignName.set(detail.snapshot.config.name); }
     } catch { if (version === this.selectionVersion) this.error.set('No se ha podido cargar la comparación. Puedes volver a intentarlo.'); }
     finally { if (version === this.selectionVersion) this.loading.set(false); }
   }
@@ -179,6 +187,24 @@ export class AppComponent {
   }
 
   async openModelResult(id:string) { this.navigate('results'); await this.select(id); }
+
+  openCampaign(id:string) { this.campaignId.set(id); this.navigate('campaigns'); }
+
+  async createCampaign() {
+    if (this.campaignBusy() || this.pending() || !this.detail()) return;
+    const invalid = textError(this.campaignName(),'Nombre de campaña',120);
+    if (invalid) { this.campaignError.set(invalid); document.getElementById('campaign-name')?.focus(); return; }
+    const id = this.selectedId(), version = this.selectionVersion;
+    this.campaignBusy.set(true); this.campaignError.set('');
+    try {
+      const created = await this.api.createCampaign(id,this.campaignName());
+      if (!this.destroyed && version === this.selectionVersion) {
+        if (this.view() === 'results') this.openCampaign(created.id);
+        await this.refresh();
+      }
+    } catch(error) { if (!this.destroyed && version === this.selectionVersion) this.campaignError.set(accountError(error)); }
+    finally { if (!this.destroyed) this.campaignBusy.set(false); }
+  }
 
   async showTrace(run: Run) {
     this.traceTrigger = document.activeElement instanceof HTMLElement ? document.activeElement : null;

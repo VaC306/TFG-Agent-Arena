@@ -24,8 +24,8 @@ def submit(store, config_path, tasks_path):
     return schedule(store, config, tasks, environments)
 
 
-def schedule(store, config, tasks, environments, branch_tasks=None, benchmark=None):
-    if config.adapter == "ollama" and os.environ.get("ARENA_OLLAMA_URL"):
+def schedule(store, config, tasks, environments, branch_tasks=None, benchmark=None, campaign=None, conditions=None):
+    if campaign is None and config.adapter == "ollama" and os.environ.get("ARENA_OLLAMA_URL"):
         config.ollama_url = os.environ["ARENA_OLLAMA_URL"]
     code_files = list(Path(__file__).parent.glob("*.py"))
     code_sources = {p.name:p.read_bytes() for p in code_files}
@@ -50,6 +50,8 @@ def schedule(store, config, tasks, environments, branch_tasks=None, benchmark=No
                             'identity_capture':'before each run; first observed identity pinned per model',
                             'order':'seeded random A/B within each case and repetition',
                             'reference_sent_to_model':False}
+    if conditions is not None:
+        snapshot['conditions'] = conditions
     if benchmark is not None:
         snapshot['benchmark'] = benchmark
     snapshot["data_sha256"] = hashlib.sha256(json.dumps({"tasks": snapshot["tasks"], "branch_tasks": branch_tasks, "environments": environments}, sort_keys=True).encode()).hexdigest()
@@ -62,5 +64,4 @@ def schedule(store, config, tasks, environments, branch_tasks=None, benchmark=No
             for branch in branches:
                 runs.append(Run(id=str(uuid.uuid4()), experiment_id=experiment_id, task_id=task.id,
                                 branch=branch, repetition=repetition, position=len(runs), queued_at=time.time()))
-    store.create(experiment_id, snapshot, runs)
-    return experiment_id
+    return store.create(experiment_id, snapshot, runs, campaign=campaign)

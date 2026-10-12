@@ -25,7 +25,7 @@ import { LoadingIndicatorComponent } from './loading-indicator.component';
       <p class="hint">Todavía no se conectan cuentas externas ni se solicitan claves de estos servicios.</p>
     </section></div>
     <section class="profile-history" aria-labelledby="history-settings-title">
-      <div><h2 id="history-settings-title">Historial</h2><p class="hint">Elimina las comparaciones y sus resultados de esta cuenta. Tus preferencias se conservan.</p></div>
+      <div><h2 id="history-settings-title">Historial</h2><p class="hint">Elimina las comparaciones, campañas y resultados de esta cuenta. Tus preferencias se conservan.</p></div>
       <button #clearTrigger type="button" class="secondary" aria-haspopup="dialog" [disabled]="clearing() || loadingHistory()" (click)="reviewHistory()">{{ loadingHistory() ? 'Consultando…' : 'Vaciar historial' }}</button>
       @if (loadingHistory()) { <arena-loading label="Consultando historial…" /> }
       @if (historyMessage()) { <p role="status" class="hint">{{ historyMessage() }}</p> }
@@ -33,7 +33,7 @@ import { LoadingIndicatorComponent } from './loading-indicator.component';
     </section>
     <dialog #clearDialog class="info-dialog" aria-modal="true" aria-labelledby="clear-title" aria-describedby="clear-description" (keydown)="containFocus($event)" (cancel)="cancelDialog($event)" (close)="restoreFocus()">
       <p class="eyebrow">Tu historial</p><h2 id="clear-title" tabindex="-1">¿Vaciar el historial?</h2>
-      <p id="clear-description" class="dialog-description">Se eliminarán {{ history()?.count }} comparaciones, junto con sus resultados, archivos y eventos. No se pueden recuperar.</p>
+      <p id="clear-description" class="dialog-description">Se eliminarán {{ history()?.count }} comparaciones, junto con sus campañas, resultados, archivos y eventos. No se pueden recuperar.</p>
       @if (history()?.pending) { <p class="alert error" role="status">Hay {{ history()?.pending }} ejecuciones pendientes. Finalízalas o cancélalas antes de vaciar el historial.</p> }
       @if (history()?.count === 0) { <p class="hint">Tu historial ya está vacío.</p> }
       @if (dialogError()) { <p class="alert error" role="alert">{{ dialogError() }}</p> }

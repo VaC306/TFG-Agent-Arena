@@ -331,6 +331,21 @@ arena-loading { display:block; margin:10px 0; }
 .answer-reference { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
 .answer-reference pre { white-space:pre-wrap; overflow-wrap:anywhere; }
 .model-library { padding-bottom:40px; }
+.campaigns-view { padding-bottom:40px; }
+.campaign-selector { display:block; width:min(100%,560px); margin:10px 0 28px; }
+.campaign-create { padding:24px; margin:24px 0; display:flex; flex-wrap:wrap; align-items:center; gap:20px; }
+.campaign-create > div { flex:1; min-width:min(260px,100%); }
+.campaign-create > p { flex-basis:100%; }
+.campaign-create form { display:flex; flex-wrap:wrap; align-items:center; gap:12px; max-width:100%; }
+.campaign-create input { min-width:0; width:min(260px,100%); }
+.campaign-detail,.campaign-evolution { padding:28px; margin:24px 0; min-width:0; }
+.campaign-detail .result-downloads { margin-top:24px; }
+.campaign-detail .saved-config { margin:24px 0; }
+.campaign-note { margin-top:20px; }
+.campaign-evolution > .hint { margin:16px 0 24px; }
+.campaign-evolution table { min-width:900px; }
+.campaign-evolution td:last-child { min-width:220px; max-width:320px; }
+@media(max-width:760px) { .campaign-create,.campaign-detail,.campaign-evolution { padding:22px; } .campaign-create form { flex-direction:column; align-items:stretch; width:100%; } .campaign-create input { width:100%; } }
 .library-toolbar { display:flex; align-items:center; flex-wrap:wrap; gap:20px; margin:30px 0; }
 .library-toolbar label { display:flex; align-items:center; gap:14px; }
 .library-toolbar select { min-width:200px; }

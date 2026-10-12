@@ -2,7 +2,7 @@
 <div class="shell">
   <header class="topbar">
     <a class="brand" href="#main" (click)="navigate('compose')" aria-label="Agent Arena, inicio"><arena-brand-mark />Agent Arena</a>
-    <nav class="workspace-nav" aria-label="Secciones"><button [class.current]="view() === 'compose'" [attr.aria-current]="view() === 'compose' ? 'page' : null" (click)="navigate('compose')">Comparar</button><button [class.current]="view() === 'results'" [attr.aria-current]="view() === 'results' ? 'page' : null" (click)="navigate('results')">Resultados</button><button [class.current]="view() === 'models'" [attr.aria-current]="view() === 'models' ? 'page' : null" (click)="navigate('models')">Modelos</button><button [class.current]="view() === 'guide'" [attr.aria-current]="view() === 'guide' ? 'page' : null" (click)="navigate('guide')">Guía</button><button [class.current]="view() === 'contact'" [attr.aria-current]="view() === 'contact' ? 'page' : null" (click)="navigate('contact')">Contacto</button></nav>
+    <nav class="workspace-nav" aria-label="Secciones"><button [class.current]="view() === 'compose'" [attr.aria-current]="view() === 'compose' ? 'page' : null" (click)="navigate('compose')">Comparar</button><button [class.current]="view() === 'results'" [attr.aria-current]="view() === 'results' ? 'page' : null" (click)="navigate('results')">Resultados</button><button [class.current]="view() === 'models'" [attr.aria-current]="view() === 'models' ? 'page' : null" (click)="navigate('models')">Modelos</button><button [class.current]="view() === 'campaigns'" [attr.aria-current]="view() === 'campaigns' ? 'page' : null" (click)="campaignId.set(''); navigate('campaigns')">Campañas</button><button [class.current]="view() === 'guide'" [attr.aria-current]="view() === 'guide' ? 'page' : null" (click)="navigate('guide')">Guía</button><button [class.current]="view() === 'contact'" [attr.aria-current]="view() === 'contact' ? 'page' : null" (click)="navigate('contact')">Contacto</button></nav>
     <details class="history-menu" #historyMenu (keydown.escape)="historyMenu.open = false; historySummary.focus()"><summary #historySummary>Historial <span class="count">{{ experiments().length }}</span></summary>
     <div class="history-popover">
     <div class="history-heading">Tus experimentos <span>Últimos 50</span></div>
@@ -27,6 +27,7 @@
     @if (view() === 'profile') { <arena-profile (closed)="navigate('compose')" (historyCleared)="historyCleared()" /> }
     @if (view() === 'guide') { <arena-guide (start)="navigate('compose')" /> }
     @if (view() === 'models') { <arena-model-library (opened)="openModelResult($event)" /> }
+    @if (view() === 'campaigns') { <arena-campaigns [initialId]="campaignId()" (opened)="openModelResult($event)" (changed)="refresh()" /> }
     @if (view() === 'contact') {
       <section class="contact-view view-enter" aria-labelledby="contact-title">
         <header class="contact-intro"><p class="eyebrow">Agent Arena / El proyecto</p><h1 id="contact-title" tabindex="-1">Contacto.</h1><p class="subheading">Un trabajo de fin de grado para la<br><strong>Universidad Complutense de Madrid.</strong></p><p class="hint">Desarrollado por Rishi Pursnani Mirpuri y Alejando Ramos Yañez.</p></header>
@@ -66,6 +67,16 @@
         <div class="section-header"><div><p class="eyebrow">02 / RESULTADOS</p><h2 id="results-title">{{ experiment.snapshot.config.name }}</h2><p class="run-id">{{ selectedId() }}</p></div><div class="result-downloads"><a class="secondary" [href]="'/api/experiments/' + selectedId() + '/metrics.csv'" download="metrics.csv">↓ CSV</a><a class="secondary" [href]="'/api/experiments/' + selectedId() + '/report.md'" download="arena-results.md">↓ Informe</a></div></div>
         <div class="experiment-meta"><span class="tag">{{ experiment.snapshot.config.adapter === 'simulated' ? 'SIMULACIÓN' : 'OLLAMA' }}</span><span>Secuencial A/B</span><span>A: {{ experiment.snapshot.config.agents.A.model }}</span><span>B: {{ experiment.snapshot.config.agents.B.model }}</span><span>{{ completed() }}/{{ experiment.runs.length }} finalizadas</span></div>
         <progress [value]="completed()" [max]="experiment.runs.length" aria-label="Ejecuciones finalizadas"></progress>
+        <section class="campaign-create panel" aria-label="Campaña experimental">
+          @if (experiment.campaign; as campaign) {
+            <p class="hint">Intento {{ campaign.sequence }} de una campaña con diseño fijado.</p><button class="secondary" (click)="openCampaign(campaign.id)">Ver campaña y evolución ↗</button>
+          } @else {
+            <div><h3>Repetir este diseño</h3><p class="hint">Fija datos, referencias, prompts y parámetros en una campaña. Cada intento tendrá resultados nuevos.</p></div>
+            <form (ngSubmit)="createCampaign()"><label for="campaign-name">Nombre de campaña</label><input id="campaign-name" name="campaignName" [ngModel]="campaignName()" (ngModelChange)="campaignName.set($event); campaignError.set('')" maxlength="120" required [disabled]="campaignBusy()" [attr.aria-describedby]="campaignError() ? 'campaign-error' : 'campaign-create-help'" [attr.aria-invalid]="campaignError() ? 'true' : null"><button class="secondary" type="submit" [disabled]="campaignBusy() || pending()">{{ campaignBusy() ? 'Fijando diseño…' : 'Crear campaña' }}</button></form>
+            <p class="hint" id="campaign-create-help">La comparación debe estar terminada. Para modelos reales, las identidades deben estar verificadas.</p>
+            @if (campaignError()) { <p id="campaign-error" class="alert error" role="alert">{{ campaignError() }}</p> }
+          }
+        </section>
         @if (experiment.protocol; as protocol) {
           <details class="saved-config protocol-report"><summary>Evaluación y condiciones de esta prueba</summary>
             <p class="hint">{{ protocol.comparison_scope === 'models' ? 'Mismos datos, instrucciones y parámetros: comparación de modelos.' : protocol.comparison_scope === 'repeatability' ? 'Mismo modelo, datos, instrucciones y parámetros: prueba de repetibilidad.' : 'Comparación de configuraciones: hay diferencias en datos, instrucciones o parámetros.' }}</p>

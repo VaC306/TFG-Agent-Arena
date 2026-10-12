@@ -27,6 +27,15 @@ class Store:
                 CREATE TABLE IF NOT EXISTS experiment_owners(
                     experiment_id TEXT PRIMARY KEY REFERENCES experiments(id), owner_id TEXT NOT NULL);
                 CREATE INDEX IF NOT EXISTS owners_user ON experiment_owners(owner_id);
+                CREATE TABLE IF NOT EXISTS campaigns(
+                    id TEXT PRIMARY KEY, owner_id TEXT NOT NULL, name TEXT NOT NULL,
+                    created_at REAL NOT NULL, source_id TEXT NOT NULL, data TEXT NOT NULL);
+                CREATE INDEX IF NOT EXISTS campaigns_owner ON campaigns(owner_id);
+                CREATE TABLE IF NOT EXISTS campaign_attempts(
+                    experiment_id TEXT PRIMARY KEY REFERENCES experiments(id),
+                    campaign_id TEXT NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+                    sequence INTEGER NOT NULL, request_id TEXT,
+                    UNIQUE(campaign_id,sequence), UNIQUE(campaign_id,request_id));
             """)
 
     @contextmanager
@@ -36,14 +45,86 @@ class Store:
             db.execute("PRAGMA foreign_keys=ON")
             yield db
 
-    def create(self, experiment_id, snapshot, runs):
+    def create(self, experiment_id, snapshot, runs, campaign=None):
         with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            if campaign:
+                self._campaign_row(db,campaign['id'])
+                previous = db.execute('SELECT experiment_id FROM campaign_attempts WHERE campaign_id=? AND request_id=?',
+                                      (campaign['id'],campaign['request_id'])).fetchone()
+                if previous:
+                    return previous[0]
+                if db.execute('''SELECT 1 FROM runs r JOIN campaign_attempts a ON a.experiment_id=r.experiment_id
+                    WHERE a.campaign_id=? AND r.status IN ('queued','running')''',(campaign['id'],)).fetchone():
+                    raise ValueError('Esta campaña tiene ejecuciones pendientes. Finalízalas o cancélalas antes de repetir.')
+                sequence = db.execute('SELECT COALESCE(MAX(sequence),0)+1 FROM campaign_attempts WHERE campaign_id=?',
+                                      (campaign['id'],)).fetchone()[0]
+                snapshot['campaign'] = {k:v for k,v in campaign.items() if k != 'request_id'} | {'sequence':sequence}
             db.execute("INSERT INTO experiments VALUES (?,?)", (experiment_id, json.dumps(snapshot)))
             if self.owner_id is not None:
                 db.execute('INSERT INTO experiment_owners VALUES (?,?)', (experiment_id, self.owner_id))
             for run in runs:
                 db.execute("INSERT INTO runs(id,experiment_id,position,status,data) VALUES (?,?,?,?,?)",
                            (run.id, experiment_id, run.position, run.status, run.model_dump_json()))
+            if campaign:
+                db.execute('INSERT INTO campaign_attempts VALUES (?,?,?,?)',
+                           (experiment_id,campaign['id'],sequence,campaign['request_id']))
+            return experiment_id
+
+    def _campaign_row(self, db, campaign_id):
+        if self.owner_id is None:
+            raise ValueError('Se requiere una cuenta para gestionar campañas')
+        row = db.execute('SELECT * FROM campaigns WHERE id=? AND owner_id=?',(campaign_id,self.owner_id)).fetchone()
+        if row is None:
+            raise KeyError(campaign_id)
+        return row
+
+    def create_campaign(self, campaign_id, name, source_id, data):
+        self.check_experiment(source_id)
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            if self.owner_id is None:
+                raise ValueError('Se requiere una cuenta para gestionar campañas')
+            if not db.execute('SELECT 1 FROM experiment_owners WHERE experiment_id=? AND owner_id=?',
+                              (source_id,self.owner_id)).fetchone():
+                raise KeyError(source_id)
+            previous = db.execute('SELECT campaign_id FROM campaign_attempts WHERE experiment_id=?',(source_id,)).fetchone()
+            if previous:
+                return previous[0]  # Retrying creation after a lost response cannot duplicate a campaign.
+            if db.execute("SELECT 1 FROM runs WHERE experiment_id=? AND status IN ('queued','running')",(source_id,)).fetchone():
+                raise ValueError('Finaliza o cancela la comparación antes de crear una campaña.')
+            db.execute('INSERT INTO campaigns VALUES (?,?,?,?,?,?)',
+                       (campaign_id,self.owner_id,name,time.time(),source_id,json.dumps(data)))
+            db.execute('INSERT INTO campaign_attempts VALUES (?,?,1,NULL)',(source_id,campaign_id))
+            return campaign_id
+
+    def campaign(self, campaign_id):
+        with self.connect() as db:
+            row = dict(self._campaign_row(db,campaign_id))
+            row['data'] = json.loads(row['data'])
+            row.pop('owner_id')
+            row['attempts'] = [dict(r) for r in db.execute('SELECT experiment_id,sequence,request_id FROM campaign_attempts WHERE campaign_id=? ORDER BY sequence',
+                                                         (campaign_id,))]
+            return row
+
+    def list_campaigns(self):
+        if self.owner_id is None:
+            raise ValueError('Se requiere una cuenta para gestionar campañas')
+        with self.connect() as db:
+            return [dict(row) for row in db.execute('''SELECT c.id,c.name,c.created_at,c.source_id,
+                json_extract(c.data,'$.snapshot.config.adapter') AS adapter,
+                json_extract(c.data,'$.snapshot.config.split') AS split,
+                COUNT(a.experiment_id) AS attempts,
+                (SELECT COUNT(*) FROM runs r JOIN campaign_attempts ca ON ca.experiment_id=r.experiment_id
+                 WHERE ca.campaign_id=c.id AND r.status IN ('queued','running')) AS pending
+                FROM campaigns c LEFT JOIN campaign_attempts a ON a.campaign_id=c.id
+                WHERE c.owner_id=? GROUP BY c.id ORDER BY c.created_at DESC,c.rowid DESC''',(self.owner_id,))]
+
+    def experiment_campaign(self, experiment_id):
+        self.check_experiment(experiment_id)
+        with self.connect() as db:
+            row = db.execute('SELECT campaign_id AS id,sequence FROM campaign_attempts WHERE experiment_id=?',(experiment_id,)).fetchone()
+            return dict(row) if row else None
 
     def snapshot(self, experiment_id):
         self.check_experiment(experiment_id)
@@ -57,6 +138,10 @@ class Store:
         self.check_run(run['id'])
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
+            snapshot = json.loads(db.execute('SELECT snapshot FROM experiments WHERE id=?',(run['experiment_id'],)).fetchone()[0])
+            expected = snapshot.get('campaign',{}).get('expected_models',{}).get(run['branch'])
+            if expected and expected['fingerprint'] != identity['fingerprint']:
+                raise ValueError('La identidad del modelo o su servidor difiere de la fijada en la campaña. No se envió la entrada al modelo.')
             previous = db.execute('''SELECT e.payload FROM events e JOIN runs r ON r.id=e.run_id
                 WHERE r.experiment_id=? AND e.kind='inference_metadata'
                 AND json_extract(e.payload, '$.arena_identity.identifier')=? ORDER BY e.seq LIMIT 1''',
@@ -128,6 +213,7 @@ class Store:
             if state['pending']:
                 raise ValueError('Finaliza o cancela las ejecuciones pendientes antes de vaciar el historial.')
             owned = 'SELECT experiment_id FROM experiment_owners WHERE owner_id=?'
+            db.execute('DELETE FROM campaigns WHERE owner_id=?',(self.owner_id,))
             db.execute(f'DELETE FROM events WHERE run_id IN (SELECT id FROM runs WHERE experiment_id IN ({owned}))', (self.owner_id,))
             db.execute(f'DELETE FROM runs WHERE experiment_id IN ({owned})', (self.owner_id,))
             ids = db.execute(owned, (self.owner_id,)).fetchall()

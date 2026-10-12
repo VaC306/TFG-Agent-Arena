@@ -158,6 +158,13 @@ o si no se verificó la identidad del modelo. No mezcla cuentas ni elige un gana
 Vaciar el historial también vacía esta biblioteca; las bases aisladas de benchmarks
 no forman parte del historial de una cuenta.
 
+La pestaña **Campañas** fija el diseño de una comparación terminada y conserva
+cada intento por separado. Desde Resultados puedes crearla y repetir datos,
+prompts, parámetros y condiciones sin sobrescribir resultados. La evolución
+advierte cambios de código/equipo; las campañas reales fijan la identidad del
+modelo y servidor antes de enviar entradas. Incluye exportación CSV, Markdown
+y JSON. Consulta [uso, garantías y límites de las campañas](docs/campanas.md).
+
 Resultados distingue aciertos, respuestas incorrectas, formato inválido y errores
 de ejecución. Muestra casos con referencia, respuestas evaluadas, ejecuciones
 programadas y mediciones de tiempo. Las respuestas y referencias se ven lado a lado.
@@ -293,6 +300,7 @@ configuración de red del host. La ejecución nativa es la ruta verificada.
 ## Documentación y estado
 
 - [Validación integral del 12 de octubre](docs/validacion-integral-2026-10-12.md): flujo aislado, métricas entre informes, recuperación y prueba pequeña con modelos reales.
+- [Campañas experimentales](docs/campanas.md): diseños fijados, evolución, recuperación de solicitudes y validación aislada.
 - [Memoria académica](docs/memoria.md): alcance, arquitectura, metodología y resultados.
 - [Decisiones](docs/decisiones.md): alternativas y justificación.
 - [Protocolo de evaluación](docs/protocolo-evaluacion.md): criterios, comparaciones justas, fases y límites de reproducibilidad. Ejemplos de datasets en `data/examples/`.
@@ -301,7 +309,7 @@ configuración de red del host. La ejecución nativa es la ruta verificada.
 - [Desarrollo, código final](experiments/simulated-dev-final-2026-10-08/summary.json): 16/16 ejecuciones simuladas correctas.
 - [Evaluación, código final](experiments/simulated-eval-2026-10-08/summary.json): 8/8 ejecuciones simuladas correctas.
 
-Validación nativa: 175 pruebas Python y 17 del frontend satisfactorias; `pip check`
+Validación nativa: 188 pruebas Python y 22 del frontend satisfactorias; `pip check`
 correctos. Angular compila en producción. Se comprobó en navegador el lanzamiento,
 actualización, cancelación, filtro, trazas y descarga CSV, además de la adaptación
 a un viewport móvil de 390 px. TestClient emite una advertencia de deprecación de

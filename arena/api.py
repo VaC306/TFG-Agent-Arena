@@ -19,6 +19,7 @@ from .json_input import load_json
 from .protocol import protocol_report
 from .model_results import latest_model_results, summarize
 from .result_report import markdown_report
+from .campaigns import CampaignRequest, AttemptRequest, create_campaign, repeat_campaign, campaign_report, campaign_csv, campaign_markdown
 import json
 
 
@@ -192,6 +193,47 @@ def create_app(db_path=None, root=None):
     def model_results(store: Store = Depends(user_store)):
         return {'entries':latest_model_results(store)}
 
+    @app.get('/campaigns')
+    def campaigns(store: Store = Depends(user_store)):
+        return store.list_campaigns()
+
+    @app.post('/campaigns',status_code=201)
+    async def new_campaign(request: Request, store: Store = Depends(user_store)):
+        body = await auth_body(request,CampaignRequest,4096)
+        try:
+            return {'id':create_campaign(store,body)}
+        except KeyError:
+            raise HTTPException(404,'Comparación inexistente')
+        except ValueError as exc:
+            raise HTTPException(409,str(exc))
+
+    @app.get('/campaigns/{campaign_id}')
+    def get_campaign(campaign_id: str, store: Store = Depends(user_store)):
+        try:
+            return campaign_report(store,campaign_id)
+        except KeyError:
+            raise HTTPException(404,'Campaña inexistente')
+
+    @app.post('/campaigns/{campaign_id}/attempts',status_code=201)
+    async def new_attempt(campaign_id: str,request: Request,store: Store = Depends(user_store)):
+        body = await auth_body(request,AttemptRequest,1024)
+        try:
+            return {'id':repeat_campaign(store,campaign_id,body.request_id)}
+        except KeyError:
+            raise HTTPException(404,'Campaña inexistente')
+        except ValueError as exc:
+            raise HTTPException(409,str(exc))
+
+    @app.get('/campaigns/{campaign_id}/export.{kind}')
+    def export_campaign(campaign_id: str,kind: Literal['json','csv','md'],store: Store = Depends(user_store)):
+        try:
+            report = campaign_report(store,campaign_id,include_evidence=kind == 'json')
+            content = json.dumps(report,ensure_ascii=False,indent=2) if kind == 'json' else campaign_csv(report) if kind == 'csv' else campaign_markdown(report)
+            return Response(content,media_type={'json':'application/json','csv':'text/csv; charset=utf-8','md':'text/markdown; charset=utf-8'}[kind],
+                            headers={'Content-Disposition':f'attachment; filename="arena-campaign.{kind}"'})
+        except KeyError:
+            raise HTTPException(404,'Campaña inexistente')
+
     @app.post("/experiments", status_code=201)
     async def create(request: Request, store: Store = Depends(user_store)):
         body = await auth_body(request, Submission, 1024)
@@ -203,7 +245,8 @@ def create_app(db_path=None, root=None):
             snapshot, runs = store.snapshot(experiment_id), store.list_runs(experiment_id)
             overviews = {b:summarize([r for r in runs if r['branch'] == b],
                 [snapshot['branch_tasks'][b]] if snapshot.get('branch_tasks') else snapshot['tasks']) for b in ('A','B')}
-            return {"snapshot": snapshot, "runs": runs, "protocol":protocol_report(snapshot, runs),'overviews':overviews}
+            return {"snapshot": snapshot, "runs": runs, "protocol":protocol_report(snapshot, runs),'overviews':overviews,
+                    'campaign':store.experiment_campaign(experiment_id)}
         except KeyError:
             raise HTTPException(404, "Experimento inexistente")
 
@@ -212,6 +255,7 @@ def create_app(db_path=None, root=None):
         try:
             snapshot, runs = store.snapshot(experiment_id), store.list_runs(experiment_id)
             data = {'experiment_id':experiment_id, 'snapshot':snapshot, 'runs':runs,
+                    'campaign':store.experiment_campaign(experiment_id),
                     'report':protocol_report(snapshot, runs),
                     'overviews':{b:summarize([r for r in runs if r['branch'] == b],
                         [snapshot['branch_tasks'][b]] if snapshot.get('branch_tasks') else snapshot['tasks']) for b in ('A','B')},
