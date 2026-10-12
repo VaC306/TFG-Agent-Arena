@@ -342,6 +342,16 @@ arena-loading { display:block; margin:10px 0; }
 .campaign-detail .result-downloads { margin-top:24px; }
 .campaign-detail .saved-config { margin:24px 0; }
 .campaign-note { margin-top:20px; }
+.campaign-analysis { padding:28px; margin:24px 0; min-width:0; }
+.campaign-analysis > .hint { margin:16px 0; }
+.campaign-analysis table { min-width:1000px; margin-top:16px; }
+.campaign-analysis td:last-child { min-width:260px; }
+.campaign-analysis .analysis-task-name { min-width:200px; max-width:280px; white-space:normal; overflow-wrap:anywhere; }
+.analysis-task-name small { display:block; font-weight:400; color:var(--muted); margin-top:8px; line-height:1.6; white-space:normal; }
+.analysis-series { padding:12px 0; border-top:1px solid var(--line); font-size:12px; line-height:1.7; }
+.analysis-note { line-height:1.7; }
+.analysis-difference { margin:20px 0; }
+@media(max-width:760px) { .campaign-analysis { padding:22px; } }
 .campaign-evolution > .hint { margin:16px 0 24px; }
 .campaign-evolution table { min-width:900px; }
 .campaign-evolution td:last-child { min-width:220px; max-width:320px; }

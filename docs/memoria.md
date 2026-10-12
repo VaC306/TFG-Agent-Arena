@@ -33,8 +33,9 @@ La interfaz Angular con TypeScript, HTML y CSS permite editar configuraciones,
 comparar uno o dos modelos, importar datasets y consultar/exportar resultados.
 Incluye cuentas locales, biblioteca de modelos y campañas con diseño fijado e
 intentos independientes. Se ha comprobado una comparación real pequeña; falta
-una evaluación amplia con casos reservados. Se proponen monitorización periódica,
-análisis por tarea e incertidumbre y shadow testing simultáneo. No se implementan Kubernetes,
+una evaluación amplia con casos reservados. Incluye análisis por tarea e
+incertidumbre exploratoria con controles de evidencia. Se proponen monitorización
+periódica y shadow testing simultáneo. No se implementan Kubernetes,
 OpenStack, entrenamiento de modelos ni acceso al razonamiento interno.
 
 ## 3. Estado del arte y herramientas relacionadas
@@ -339,7 +340,8 @@ La evidencia disponible respalda el funcionamiento de la plataforma bajo pruebas
 controladas, sin permitir todavía conclusiones sobre rendimiento de modelos.
 
 La siguiente prioridad es ampliar la evaluación con casos reservados y revisados,
-añadir análisis por tarea e incertidumbre y definir una política de calentamiento
+usar el [análisis por tarea e incertidumbre](analisis-por-tarea.md) sobre una campaña
+real homogénea y definir una política de calentamiento
 para estudiar latencias. Las campañas facilitan repetir diseños conservando la
 evidencia. Quedan pendientes muestreo periódico y estado del worker. El modo simultáneo deberá etiquetar competencia por recursos y conservar
 la independencia de ramas. PENDIENTE: acordar planificación de los dos autores y

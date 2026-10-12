@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, input, output, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, input, output, signal } from '@angular/core';
 import { DatePipe, DecimalPipe, JsonPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ArenaService, CampaignDetail, CampaignSummary } from './arena.service';
@@ -27,6 +27,20 @@ export class CampaignsComponent {
   error = signal('');
   listError = signal('');
   notice = signal('');
+  taskFilter = signal('all');
+  visibleTasks = computed(() => (this.detail()?.analysis?.tasks ?? []).filter(task => {
+    const branches = [task.branches.A,task.branches.B];
+    return this.taskFilter() === 'variable' ? branches.some(b => b.quality_stability === 'variable')
+      : this.taskFilter() === 'changed' ? branches.some(b => b.between_attempt_changes > 0)
+      : this.taskFilter() === 'errors' ? branches.some(b => b.summary.execution_errors > 0)
+      : this.taskFilter() === 'coverage' ? branches.some(b => b.reference_evaluable && b.coverage !== 1) : true;
+  }));
+  stabilityLabel(value:string) {
+    return ({insufficient:'Evidencia insuficiente',variable:'Calidad variable',always_correct:'Evaluadas siempre correctas',always_incorrect:'Evaluadas siempre incorrectas'} as Record<string,string>)[value] ?? value;
+  }
+  outcomeLabel(value:string) {
+    return ({correct:'Correcta',incorrect:'Incorrecta',invalid_format:'Formato inválido',execution_error:'Error de ejecución',unscored:'Sin evaluar',pending:'Pendiente'} as Record<string,string>)[value] ?? value;
+  }
   constructor() {
     const timer = setInterval(() => {
       if (this.detail()?.pending && !this.loading() && !this.busy()) void this.refresh();
@@ -64,6 +78,7 @@ export class CampaignsComponent {
   }
   async select(id:string) {
     const version = ++this.version;
+    this.taskFilter.set('all');
     this.selectedId.set(id); this.detail.set(null); this.notice.set(''); this.error.set(''); this.loading.set(true);
     try {
       const detail = await this.api.campaign(id);

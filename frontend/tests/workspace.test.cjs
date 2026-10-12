@@ -31,6 +31,26 @@ async function workspace(api={}) {
   return {app,...f};
 }
 const responseDetail = name => ({snapshot:{config:{name}},runs:[],name});
+test('task filters distinguish correctness variation, coverage, errors and changes',()=>{
+  const f=fixture('campaigns.component.ts',{}), component=new f.exports.CampaignsComponent();
+  const branch=(extra={})=>({reference_evaluable:true,quality_stability:'always_correct',coverage:1,between_attempt_changes:0,summary:{execution_errors:0},...extra});
+  const task=(id,extra)=>({task_id:id,branches:{A:branch(extra),B:branch()}});
+  component.detail.set({analysis:{tasks:[task('stable',{}),task('variable',{quality_stability:'variable'}),task('errors',{summary:{execution_errors:1},coverage:.5}),task('changed',{between_attempt_changes:1}),task('unreferenced',{reference_evaluable:false,coverage:null})]}});
+  assert.equal(component.visibleTasks().length,5);
+  for(const [filter,expected] of [['variable','variable'],['errors','errors'],['coverage','errors'],['changed','changed']]) {
+    component.taskFilter.set(filter); assert.deepEqual(Array.from(component.visibleTasks(),t=>t.task_id),[expected]);
+  }
+  component.detail.set(null); assert.equal(component.visibleTasks().length,0);
+});
+test('changing campaign resets task filter and cannot retain previous analysis',async()=>{
+  const response=deferred(), f=fixture('campaigns.component.ts',{campaign:()=>response.promise});
+  const component=new f.exports.CampaignsComponent();
+  component.detail.set({analysis:{tasks:[{}]}});component.taskFilter.set('errors');
+  const selecting=component.select('new');
+  assert.equal(component.taskFilter(),'all');assert.equal(component.visibleTasks().length,0);
+  response.resolve({id:'new',attempts:[],analysis:{tasks:[]}}); await selecting;
+  assert.equal(component.detail().id,'new');assert.equal(component.loading(),false);
+});
 test('new selection wins over late detail, failed requests release loading',async()=>{
   const old=deferred(),fresh=deferred();
   const {app}=await workspace({detail:id=>id==='old'?old.promise:fresh.promise});

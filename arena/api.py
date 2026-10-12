@@ -19,7 +19,7 @@ from .json_input import load_json
 from .protocol import protocol_report
 from .model_results import latest_model_results, summarize
 from .result_report import markdown_report
-from .campaigns import CampaignRequest, AttemptRequest, create_campaign, repeat_campaign, campaign_report, campaign_csv, campaign_markdown
+from .campaigns import CampaignRequest, AttemptRequest, create_campaign, repeat_campaign, campaign_report, campaign_csv, campaign_markdown, task_analysis_csv
 import json
 
 
@@ -231,6 +231,14 @@ def create_app(db_path=None, root=None):
             content = json.dumps(report,ensure_ascii=False,indent=2) if kind == 'json' else campaign_csv(report) if kind == 'csv' else campaign_markdown(report)
             return Response(content,media_type={'json':'application/json','csv':'text/csv; charset=utf-8','md':'text/markdown; charset=utf-8'}[kind],
                             headers={'Content-Disposition':f'attachment; filename="arena-campaign.{kind}"'})
+        except KeyError:
+            raise HTTPException(404,'Campaña inexistente')
+
+    @app.get('/campaigns/{campaign_id}/analysis.csv')
+    def export_task_analysis(campaign_id: str,store: Store = Depends(user_store)):
+        try:
+            return Response(task_analysis_csv(campaign_report(store,campaign_id)),media_type='text/csv; charset=utf-8',
+                            headers={'Content-Disposition':'attachment; filename="arena-task-analysis.csv"'})
         except KeyError:
             raise HTTPException(404,'Campaña inexistente')
 

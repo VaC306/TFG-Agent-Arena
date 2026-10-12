@@ -164,6 +164,10 @@ prompts, parámetros y condiciones sin sobrescribir resultados. La evolución
 advierte cambios de código/equipo; las campañas reales fijan la identidad del
 modelo y servidor antes de enviar entradas. Incluye exportación CSV, Markdown
 y JSON. Consulta [uso, garantías y límites de las campañas](docs/campanas.md).
+El [análisis por tarea y estabilidad](docs/analisis-por-tarea.md) separa calidad,
+cobertura y errores, permite filtrar casos y exporta series. Las diferencias
+emparejadas e intervalos exploratorios exigen evidencia compatible suficiente;
+los motivos de indisponibilidad se muestran sin declarar ganadores.
 
 Resultados distingue aciertos, respuestas incorrectas, formato inválido y errores
 de ejecución. Muestra casos con referencia, respuestas evaluadas, ejecuciones
@@ -301,6 +305,7 @@ configuración de red del host. La ejecución nativa es la ruta verificada.
 
 - [Validación integral del 12 de octubre](docs/validacion-integral-2026-10-12.md): flujo aislado, métricas entre informes, recuperación y prueba pequeña con modelos reales.
 - [Campañas experimentales](docs/campanas.md): diseños fijados, evolución, recuperación de solicitudes y validación aislada.
+- [Análisis por tarea](docs/analisis-por-tarea.md): estabilidad, diferencias, política de incertidumbre y validación.
 - [Memoria académica](docs/memoria.md): alcance, arquitectura, metodología y resultados.
 - [Decisiones](docs/decisiones.md): alternativas y justificación.
 - [Protocolo de evaluación](docs/protocolo-evaluacion.md): criterios, comparaciones justas, fases y límites de reproducibilidad. Ejemplos de datasets en `data/examples/`.

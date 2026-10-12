@@ -55,8 +55,11 @@ registradas; no demuestra que A y B tengan instrucciones o entradas equivalentes
 Las diferencias de prompts, entradas o parámetros entre ramas se advierten.
 Una campaña puede repetir una comparación de configuraciones.
 
-No hay promedio agregado de calidad, ranking, ganador ni inferencia estadística
-entre intentos. Las repeticiones del mismo caso no son muestras independientes.
+El [análisis por tarea](analisis-por-tarea.md) agrega solo intentos terminados
+compatibles, separa calidad y cobertura y muestra cambios de estados. Incluye
+diferencias emparejadas descriptivas e incertidumbre exploratoria bajo condiciones
+conservadoras; no declara rankings ni ganadores.
+Las repeticiones del mismo caso no son muestras independientes.
 La política de calentamiento heredada se mantiene; esta versión no introduce
 warmup ni ejecución simultánea. El muestreo de recursos sigue siendo discontinuo.
 
@@ -84,6 +87,7 @@ tras recargar o navegar, revisa los intentos antes de repetir una solicitud dudo
 - `GET /campaigns/{id}`: diseño fijado y evolución de todos los intentos.
 - `POST /campaigns/{id}/attempts`: `{request_id}` con UUID; no acepta cambios de diseño.
 - `GET /campaigns/{id}/export.csv`: una fila por intento y rama.
+- `GET /campaigns/{id}/analysis.csv`: una fila por tarea y rama con series y cobertura.
 - `GET /campaigns/{id}/export.md`: diseño, modelos fijados, contadores y advertencias.
 - `GET /campaigns/{id}/export.json`: snapshot de origen, snapshots/fuentes y resultados
   de cada intento, además de los mismos resúmenes. No incluye las trazas completas;
@@ -125,5 +129,6 @@ No se volvió a ejecutar un modelo real para esta funcionalidad.
 Controles: 188 pruebas Python y 22 del frontend, compilación Angular de producción
 y `pip check`. Las pruebas de componentes sustituyen Angular/HTTP y se complementan
 con la comprobación manual de navegador. No equivalen a una auditoría completa
-de accesibilidad. Siguientes mejoras: análisis por tarea e incertidumbre, campañas
-con anotaciones de condiciones externas y estado del worker.
+de accesibilidad. La verificación posterior del análisis por tarea está documentada
+en [su metodología y resultados](analisis-por-tarea.md). Siguientes mejoras:
+campañas con anotaciones de condiciones externas y estado del worker.

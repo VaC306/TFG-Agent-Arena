@@ -8,6 +8,7 @@ from .contracts import Contract, Experiment, Task
 from .model_results import fingerprint, summarize
 from .scheduler import schedule
 from .result_report import code_block
+from .task_analysis import campaign_analysis, task_analysis_csv, SOURCES as ANALYSIS_SOURCES
 
 
 class CampaignRequest(Contract):
@@ -120,7 +121,8 @@ def campaign_report(store,campaign_id, include_evidence=False):
     campaign['expected_models'] = data['expected_models']
     campaign['case_count'] = len(snapshot['tasks'])
     campaign['pending'] = sum(s['pending'] for a in campaign['attempts'] for s in a['overviews'].values())
-    campaign['note'] = ('Cada intento conserva sus propias métricas. No se agregan intentos ni se declara un ganador. '
+    campaign['analysis'] = campaign_analysis(snapshot,campaign['attempts'],evidence)
+    campaign['note'] = ('Cada intento conserva sus propias métricas. No se mezcla evidencia incompatible ni se declara un ganador. '
                         'Las repeticiones de un caso no son observaciones independientes. '
                         'Código y equipo pueden cambiar; las diferencias se indican. Semilla fija no garantiza respuestas idénticas.')
     if snapshot['config']['adapter'] == 'simulated':
@@ -135,6 +137,7 @@ def campaign_report(store,campaign_id, include_evidence=False):
     if include_evidence:
         campaign['baseline_snapshot'] = snapshot
         campaign['evidence'] = evidence
+        campaign['analysis_sources'] = ANALYSIS_SOURCES
     return campaign
 
 
@@ -164,5 +167,15 @@ def campaign_markdown(report):
         for branch,s in attempt['overviews'].items():
             lines += [f"### Variante {branch}",f"Aciertos: {s['correct']}/{s['planned_evaluable']} casos con referencia evaluable." if s['planned_evaluable'] else 'Sin casos con referencia evaluable.',
                       code_block(json.dumps(s,ensure_ascii=False,indent=2))]
-    lines += ['El JSON de la campaña conserva las fuentes, entradas y resultados de cada intento. Las trazas se consultan en cada comparación.']
+    analysis = report['analysis']
+    lines += ['## Análisis por tarea y estabilidad',analysis['note'],
+              '### Intentos incluidos',code_block(json.dumps(analysis['included_attempts'],ensure_ascii=False,indent=2)),
+              '### Intentos excluidos',code_block(json.dumps(analysis['excluded_attempts'],ensure_ascii=False,indent=2))]
+    for task in analysis['tasks']:
+        lines += ['### Tarea',code_block(task['task_id'])]
+        for branch,values in task['branches'].items():
+            lines += [f'#### Variante {branch}',code_block(json.dumps(values,ensure_ascii=False,indent=2))]
+    lines += ['## Diferencias emparejadas e incertidumbre',analysis['paired']['note'],
+              code_block(json.dumps(analysis['paired'],ensure_ascii=False,indent=2)),
+              'El JSON de la campaña conserva las fuentes, entradas y resultados de cada intento. Las trazas se consultan en cada comparación.']
     return '\n\n'.join(lines)+'\n'
