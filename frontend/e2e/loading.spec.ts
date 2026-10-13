@@ -32,6 +32,7 @@ test('salir de biblioteca durante carga y volver tras error libera indicadores',
   });
   await page.getByRole('button',{name:'Modelos',exact:true}).click(); await observed;
   await expect(page.getByRole('heading',{name:'Tus modelos, de un vistazo.'})).toBeFocused();
+  if (await page.locator('.secondary-menu').isVisible()) await page.locator('.secondary-menu > summary').click();
   await page.getByRole('button',{name:'Guía',exact:true}).click();
   const delivered=page.waitForResponse(response=>response.url().endsWith('/api/model-results'));
   release(); await drained; await delivered; await page.unroute('**/api/model-results');
