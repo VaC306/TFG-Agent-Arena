@@ -64,16 +64,21 @@ def parse_dataset(filename: str, content: str):
     else:
         raise ValueError('Selecciona un archivo .csv o .jsonl en UTF-8')
     cases = []
+    seen = {}
     for number, row in rows:
         if not isinstance(row, dict) or None in row or any(value is None for key, value in row.items() if key != 'expected_answer'):
             raise ValueError(f'Línea {number}: se esperaba un caso con columnas completas')
         if row.get('expected_answer') == '':
             row['expected_answer'] = None
         try:
-            cases.append(DatasetCase.model_validate(row))
+            case = DatasetCase.model_validate(row)
         except ValidationError as exc:
             error = exc.errors(include_input=False)[0]
             raise ValueError(f'Línea {number}, {" / ".join(map(str, error["loc"]))}: {error["msg"]}') from exc
+        if case.id in seen:
+            raise ValueError(f'ID duplicado «{case.id}»: filas {seen[case.id]} y {number} (líneas del archivo)')
+        seen[case.id] = number
+        cases.append(case)
     return validate_cases(cases)
 
 

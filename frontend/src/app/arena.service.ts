@@ -12,7 +12,7 @@ export interface ProtocolReport {
   version:string; evaluator_version:string; comparison_scope:string; inputs_shared:boolean; prompts_equal:boolean;
   evaluations:string[]; warnings:string[];
   models:Record<string,{digest:string|null; server_version:string|null; quantization:string|null; verified:boolean}>;
-  branches:Record<string,{evaluated:number; correct:number; execution_errors:number; mean_answer_s:number|null}>;
+  branches:Record<string,{evaluated:number; correct:number; execution_errors:number; cancelled:number; mean_answer_s:number|null}>;
 }
 export interface Config {
   name: string; adapter: PresetId; split: string; repetitions: number;
@@ -37,7 +37,7 @@ export interface Run {
   id: string; task_id: string; branch: 'A' | 'B'; repetition: number;
   status: Status; result: Result | null;
 }
-export interface ResultSummary { total:number; finished:number; evaluated:number; planned_evaluable:number; correct:number; incorrect:number; invalid_format:number; execution_errors:number; unscored:number; pending:number; mean_answer_s:number|null; timed_answers:number }
+export interface ResultSummary { total:number; finished:number; evaluated:number; planned_evaluable:number; correct:number; incorrect:number; invalid_format:number; execution_errors:number; cancelled:number; unscored:number; pending:number; mean_answer_s:number|null; timed_answers:number }
 export interface ModelResult { external_deviation?:boolean; annotations?:OperatorAnnotation[]; comparison_conditions?:Record<string,unknown>; id:string; model:string; adapter:PresetId; digest:string|null; verified:boolean; kind:string; experiment_id:string; experiment_name:string; branch:string; updated_at:number; split:string; repetitions:number; summary:ResultSummary; cohort_key:string; conditions:{system_prompt:string; temperature:number; seed:number; num_ctx:number; limits:{max_output_tokens:number; timeout_s:number}; server_version:string|null; quantization:string|null; data_sha256:string; evaluator_versions:string[];warmup_policy?:string;resource_sample_interval_s?:number|null} }
 export interface SavedTask { id: string; input: string; expected_answer?: string | null; evaluation?:EvaluationMode; criteria?:{total_cents:number; order_ids:string[]}; attachments?: {name: string; size: number; sha256: string}[] }
 export interface ExperimentDetail { campaign?:{id:string;sequence:number}|null; snapshot: { config: Config; tasks?: SavedTask[]; branch_tasks?: Record<string, SavedTask> | null; conditions?: {inputs_shared?: boolean}; data_sha256?:string; git_commit?:string }; runs: Run[]; protocol?:ProtocolReport; overviews:Record<'A'|'B',ResultSummary> }

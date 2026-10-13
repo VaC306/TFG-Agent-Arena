@@ -23,6 +23,7 @@ export class ModelLibraryComponent {
   models = computed(() => [...new Set(this.entries().filter(e => this.provider() === 'all' || e.adapter === this.provider()).map(e => e.model))].sort());
   visible = computed(() => this.entries().filter(e => (this.filter() === 'all' || e.kind === this.filter()) && (this.provider() === 'all' || e.adapter === this.provider()) && (this.model() === 'all' || e.model === this.model())));
   compared = computed(() => this.selected().flatMap(id => this.entries().filter(e => e.id === id)));
+  hiddenSelected = computed(() => this.compared().filter(e => !this.visible().some(v => v.id === e.id)).length);
   differences = computed(() => {
     const [a,b] = this.compared();
     if (!a || !b) return [];
@@ -56,9 +57,9 @@ export class ModelLibraryComponent {
   toggle(id:string) {
     this.selected.update(ids => ids.includes(id) ? ids.filter(i => i !== id) : ids.length < 2 ? [...ids,id] : ids);
   }
-  changeFilter(value:string) { this.filter.set(value); this.selected.set([]); }
-  changeProvider(value:string) { this.provider.set(value); this.selected.set([]); if (!this.models().includes(this.model())) this.model.set('all'); }
-  changeModel(value:string) { this.model.set(value); this.selected.set([]); }
+  changeFilter(value:string) { this.filter.set(value); }
+  changeProvider(value:string) { this.provider.set(value); if (!this.models().includes(this.model())) this.model.set('all'); }
+  changeModel(value:string) { this.model.set(value); }
   kindLabel(kind:string) {
     const [evaluation,modality] = kind.split(':');
     const label = ({exact_match:'Texto exacto',json_match:'JSON',none:'Respuesta abierta',order_benchmark:'Pedidos con herramientas'} as Record<string,string>)[evaluation] ?? evaluation;

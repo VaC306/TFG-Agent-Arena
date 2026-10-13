@@ -13,7 +13,7 @@ from .model_results import evaluable, fingerprint, outcome, summarize
 from .protocol import quality_value, protocol_report
 from .latency_analysis import latency_analysis
 
-VERSION = 'arena-task-analysis-v2'
+VERSION = 'arena-task-analysis-v3'
 MIN_TASKS = 10
 MIN_ATTEMPTS = 2
 RESAMPLES = 4000
@@ -145,14 +145,14 @@ def campaign_analysis(snapshot,attempts,evidence):
             'latency':latency_analysis(snapshot,included,excluded),
             'note':('Los contadores por tarea describen solo intentos terminados con condiciones compatibles. '
                     'Calidad = aciertos/respuestas evaluadas; cobertura = evaluadas/casos con referencia evaluable. '
-                    'Los errores quedan separados. Estabilidad de calidad no significa respuestas idénticas. '
+                    'Los errores y las cancelaciones quedan separados. Estabilidad de calidad no significa respuestas idénticas. '
                     'Cambios entre intentos compara los estados de cada repetición entre intentos consecutivos incluidos.')}
 
 
 def task_analysis_csv(report):
     fields = ['campaign_id','analysis_version','design_sha256','task_id','branch','present','reference_evaluable','input_preview',
               'included_attempts','excluded_attempts','total','finished','planned_evaluable','evaluated','correct','incorrect',
-              'invalid_format','execution_errors','unscored','pending','mean_answer_s','timed_answers',
+              'invalid_format','execution_errors','cancelled','unscored','pending','mean_answer_s','timed_answers',
               'quality_rate','coverage','correct_reference_rate','quality_stability','between_attempt_changes','between_attempt_comparisons','series']
     output = io.StringIO(newline='')
     writer = csv.DictWriter(output,fieldnames=fields)

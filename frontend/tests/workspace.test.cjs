@@ -11,18 +11,20 @@ function deferred() {
   const promise = new Promise((a,b) => {resolve=a; reject=b;});
   return {promise,resolve,reject};
 }
-function fixture(filename, api) {
+function fixture(filename, api, options={}) {
   const destroy = [];
   const signal = value => Object.assign(() => value, {set:next => {value=next;}, update:fn => {value=fn(value);}});
   class ArenaService {} class AuthService {} class DestroyRef {}
-  const core = {Component:() => target => target, Output:() => () => {}, EventEmitter:class {emit(){}}, signal, input:signal, computed:fn => fn, output:() => ({emit(){}}), DestroyRef,
-    inject:token => token === ArenaService ? api : token === AuthService ? {user:signal({id:'test'})} : {onDestroy:fn=>destroy.push(fn)}};
+  const core = {Component:() => target => target, Output:() => () => {}, HostListener:() => () => {}, EventEmitter:class {emit(){}}, signal, input:signal, computed:fn => fn, output:() => ({emit(){}}), DestroyRef,
+    inject:token => token === ArenaService ? api : token === AuthService ? auth : {onDestroy:fn=>destroy.push(fn),begin:()=>()=>{}}};
+  const auth = {user:signal(options.user ?? {id:'test'}),savePreferences:async()=>{}};
+  const storage = options.storage ?? {getItem:()=>null,setItem(){},removeItem(){}};
   const module = {exports:{}};
   const source = fs.readFileSync(path.resolve(__dirname,'../src/app/',filename),'utf8');
   vm.runInNewContext(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,experimentalDecorators:true}}).outputText,
-    {module,exports:module.exports, require:name => name === '@angular/core' ? core : name === './arena.service' ? {ArenaService,defaultSettings:()=>({}),terminal:r=>!['queued','running'].includes(r.status)} : name === './auth.service' ? {AuthService,accountError:error=>error.message} : name === './validation' ? {modelIdentity:m=>m,textError:()=>''} : {},
-      document:{title:'',getElementById:()=>null,activeElement:null}, HTMLElement:class {},crypto:require('node:crypto'), requestAnimationFrame:fn=>fn(),setInterval:()=>1,clearInterval(){},setTimeout:()=>1,clearTimeout(){}});
-  return {exports:module.exports,destroy:()=>destroy.forEach(fn=>fn())};
+    {module,exports:module.exports, require:name => name === '@angular/core' ? core : name === './arena.service' ? {ArenaService,defaultSettings:()=>({}),terminal:r=>!['queued','running'].includes(r.status)} : name === './auth.service' ? {AuthService,accountError:error=>error.message} : name === './validation' ? {modelIdentity:m=>m,textError:()=>'',filenameError:()=>''} : {},
+      window:{location:{hash:''},history:{pushState(){},replaceState(){}}}, URLSearchParams, queueMicrotask, TextDecoder, localStorage:storage, document:{querySelector:()=>null,title:'',getElementById:()=>null,activeElement:null}, HTMLElement:class {},crypto:require('node:crypto'), requestAnimationFrame:fn=>fn(),setInterval:()=>1,clearInterval(){},setTimeout:()=>1,clearTimeout(){}});
+  return {exports:module.exports,auth,destroy:()=>destroy.forEach(fn=>fn())};
 }
 async function workspace(api={}) {
   const f = fixture('app.component.ts',{presets:async()=>[],experiments:async()=>[],...api});
@@ -197,4 +199,36 @@ test('campaign creation finishing after navigation does not override the new vie
   app.selectedId.set('source');app.detail.set(responseDetail('source'));app.campaignName.set('Valid campaign');app.navigate('results');
   const creating=app.createCampaign();app.navigate('profile');response.resolve({id:'campaign'});await creating;
   assert.equal(app.view(),'profile');assert.equal(app.campaignBusy(),false);
+});
+
+
+test('draft storage failure is visible and never claims a successful save',async()=>{
+  const f=fixture('composer.component.ts',{prompts:async()=>[]},{storage:{getItem:()=>null,setItem(){throw new Error('quota');},removeItem(){}}});
+  const composer=new f.exports.ComposerComponent();composer.inputA.text='Keep this input';composer.queueSave();
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.match(composer.draftNotice(),/No se pudo guardar/);assert.equal(composer.inputA.text,'Keep this input');
+});
+
+test('account identity scopes draft writes and rejects a foreign owner',async()=>{
+  let key,stored;
+  const storage={getItem:()=>null,setItem:(k,value)=>{key=k;stored=value;},removeItem(){}};
+  const f=fixture('composer.component.ts',{prompts:async()=>[]},{storage});
+  const composer=new f.exports.ComposerComponent();composer.inputA.text='Private A';composer.queueSave();
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(key,'arena.composer.v1.test');assert.equal(JSON.parse(stored).inputs.inputA.text,'Private A');
+  const foreign=fixture('composer.component.ts',{prompts:async()=>[]},{user:{id:'other'},storage:{...storage,getItem:()=>stored}});
+  const other=new foreign.exports.ComposerComponent();assert.equal(other.pendingDraft(),null);assert.equal(other.inputA.text,'');
+  f.auth.user.set({id:'other'});composer.inputA.text='Late A';composer.queueSave();
+  await new Promise(resolve=>setImmediate(resolve));assert.equal(JSON.parse(stored).inputs.inputA.text,'Private A');
+});
+
+test('discard invalidates an in-flight normalized dataset without recreating its draft',async()=>{
+  const response=deferred();let calls=0;
+  const f=fixture('composer.component.ts',{prompts:async()=>[],validateDataset:()=>{calls++;return response.promise;}});
+  const composer=new f.exports.ComposerComponent();
+  const input={files:[{name:'private.csv',size:16,arrayBuffer:async()=>new TextEncoder().encode('id,input\na,hola').buffer}],value:'private.csv'};
+  const importing=composer.importDataset({target:input});
+  await new Promise(resolve=>setImmediate(resolve));assert.equal(calls,1);
+  composer.discardDraft();response.resolve({cases:[{id:'a',input:'hola',expected_answer:null}],count:1,scored:0});await importing;
+  assert.equal(composer.dataset(),null);assert.equal(composer.datasetBusy(),false);assert.match(composer.draftNotice(),/descartado/);
 });

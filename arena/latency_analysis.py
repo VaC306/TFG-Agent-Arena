@@ -19,7 +19,7 @@ def finite(value):
 
 def task_time(run):
     result = run.get('result') or {}
-    return result.get('task_s') if outcome(run) not in ('execution_error','pending') and 'answer' in result and finite(result.get('task_s')) and finite(result.get('agent_s')) and result['task_s']<=result['agent_s'] else None
+    return result.get('task_s') if outcome(run) not in ('execution_error','cancelled','pending') and 'answer' in result and finite(result.get('task_s')) and finite(result.get('agent_s')) and result['task_s']<=result['agent_s'] else None
 
 
 def latency_analysis(snapshot,included,excluded):

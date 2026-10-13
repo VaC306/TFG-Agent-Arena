@@ -1,17 +1,17 @@
-<a class="skip-link" href="#main">Ir al contenido</a>
+<a class="skip-link" href="#main" (click)="focusMain($event)">Ir al contenido</a>
 <div class="shell">
   <header class="topbar">
-    <a class="brand" href="#main" (click)="navigate('compose')" aria-label="Agent Arena, inicio"><arena-brand-mark />Agent Arena</a>
+    <a class="brand" href="#/compose" (click)="$event.preventDefault(); navigate('compose')" aria-label="Agent Arena, inicio"><arena-brand-mark />Agent Arena</a>
     <nav class="workspace-nav" aria-label="Secciones"><button [class.current]="view() === 'compose'" [attr.aria-current]="view() === 'compose' ? 'page' : null" (click)="navigate('compose')">Comparar</button><button [class.current]="view() === 'results'" [attr.aria-current]="view() === 'results' ? 'page' : null" (click)="navigate('results')">Resultados</button><button [class.current]="view() === 'models'" [attr.aria-current]="view() === 'models' ? 'page' : null" (click)="navigate('models')">Modelos</button><button [class.current]="view() === 'campaigns'" [attr.aria-current]="view() === 'campaigns' ? 'page' : null" (click)="campaignId.set(''); navigate('campaigns')">Campañas</button><button [class.current]="view() === 'guide'" [attr.aria-current]="view() === 'guide' ? 'page' : null" (click)="navigate('guide')">Guía</button><button [class.current]="view() === 'contact'" [attr.aria-current]="view() === 'contact' ? 'page' : null" (click)="navigate('contact')">Contacto</button></nav>
-    <details class="history-menu" #historyMenu (keydown.escape)="historyMenu.open = false; historySummary.focus()"><summary #historySummary>Historial <span class="count">{{ experiments().length }}</span></summary>
+    <details class="history-menu" #historyMenu (keydown.escape)="$event.stopPropagation(); historyMenu.open = false; historySummary.focus()"><summary #historySummary>Historial <span class="count">{{ experiments().length }}</span></summary>
     <div class="history-popover">
     <div class="history-heading">Tus experimentos <span>Últimos 50</span></div>
     <nav aria-label="Historial de comparaciones">
       @for (experiment of experiments(); track experiment.id) {
-        <button class="history-item" [class.selected]="selectedId() === experiment.id" [attr.aria-current]="selectedId() === experiment.id ? 'true' : null" (click)="select(experiment.id); navigate('results'); historyMenu.open = false">
+        <button class="history-item" [class.selected]="selectedId() === experiment.id" [attr.aria-current]="selectedId() === experiment.id ? 'true' : null" (click)="openModelResult(experiment.id); historyMenu.open = false">
           <span class="history-title">{{ experiment.name }}</span>
           <span>{{ experiment.created_at * 1000 | date:'dd/MM · HH:mm' }} <span class="history-mode">{{ experiment.adapter === 'simulated' ? 'Simulado' : 'Ollama' }}</span></span>
-          <span class="history-progress">{{ experiment.completed }}/{{ experiment.total }} completadas</span>
+          <span class="history-progress">{{ experiment.completed }}/{{ experiment.total }} finalizadas</span>
         </button>
       } @empty { <p class="sidebar-empty">Tus comparaciones aparecerán aquí.</p> }
     </nav>
@@ -22,8 +22,8 @@
   </header>
 
   <main id="main" tabindex="-1">
-    @if (error()) { <div class="alert error" role="alert">{{ error() }}</div> }
-    @if (notice() && view() === 'results') { <div class="alert" role="status">{{ notice() }}</div> }
+    @if (error()) { <div class="alert error" role="alert">{{ error() }} @if (selectedId() && !detail() && !loading()) { <button class="text-button" (click)="select(selectedId())">Reintentar comparación</button><button class="text-button" (click)="clearSelection()">Volver a Comparar</button> }</div> }
+    @if (notice()) { <div class="alert" role="status">{{ notice() }}</div> }
     @if (view() === 'profile') { <arena-profile (closed)="navigate('compose')" (historyCleared)="historyCleared()" /> }
     @if (view() === 'guide') { <arena-guide (start)="navigate('compose')" /> }
     @if (view() === 'models') { <arena-model-library (opened)="openModelResult($event)" /> }
@@ -103,7 +103,7 @@
         @if (experiment.snapshot.config.adapter === 'simulated') { <p class="hint">Simulación de plataforma: tokens y tiempo de generación sintéticos. El tiempo medio mide la ejecución del simulador. Estos resultados no miden la calidad ni la velocidad de un modelo real.</p> }
         <div class="comparison-grid">
           @for (summary of summaries(); track summary.branch) {
-            <article class="agent-card panel"><div class="agent-title"><span class="branch" [class.branch-b]="summary.branch === 'B'">{{ summary.branch }}</span><h3>Agente {{ summary.branch }}</h3><span class="hint">{{ summary.finished }}/{{ summary.total }} finalizadas</span></div><p class="hint model-name">{{ experiment.snapshot.config.agents[summary.branch].model }}</p><div class="agent-stats"><div><p class="metric-label">Aciertos / casos con referencia</p><strong>{{ summary.planned_evaluable ? summary.correct + '/' + summary.planned_evaluable : '—' }}</strong><small>{{ summary.evaluated }} respuestas evaluadas · {{ summary.unscored }} sin evaluar</small></div><div><p class="metric-label">Tiempo total medio</p><strong>{{ summary.mean_answer_s === null ? '—' : (summary.mean_answer_s | number:'1.2-2') }} <span class="unit">{{ summary.mean_answer_s === null ? '' : 's' }}</span></strong><small>{{ summary.timed_answers }} respuestas sin error</small></div></div><div class="result-breakdown"><span>{{ summary.incorrect }} incorrectas</span><span>{{ summary.invalid_format }} formatos inválidos</span><span>{{ summary.execution_errors }} errores de ejecución</span>@if (summary.pending) { <span>{{ summary.pending }} pendientes</span> }</div><p class="hint">{{ summary.total }} ejecuciones programadas. Los errores no se cuentan como respuestas evaluadas.</p></article>
+            <article class="agent-card panel"><div class="agent-title"><span class="branch" [class.branch-b]="summary.branch === 'B'">{{ summary.branch }}</span><h3>Agente {{ summary.branch }}</h3><span class="hint">{{ summary.finished }}/{{ summary.total }} finalizadas</span></div><p class="hint model-name">{{ experiment.snapshot.config.agents[summary.branch].model }}</p><div class="agent-stats"><div><p class="metric-label">Aciertos / casos con referencia</p><strong>{{ summary.planned_evaluable ? summary.correct + '/' + summary.planned_evaluable : '—' }}</strong><small>{{ summary.evaluated }} respuestas evaluadas · {{ summary.unscored }} sin evaluar</small></div><div><p class="metric-label">Tiempo total medio</p><strong>{{ summary.mean_answer_s === null ? '—' : (summary.mean_answer_s | number:'1.2-2') }} <span class="unit">{{ summary.mean_answer_s === null ? '' : 's' }}</span></strong><small>{{ summary.timed_answers }} respuestas sin error</small></div></div><div class="result-breakdown"><span>{{ summary.incorrect }} incorrectas</span><span>{{ summary.invalid_format }} formatos inválidos</span><span>{{ summary.execution_errors }} errores de ejecución</span><span>{{ summary.cancelled }} canceladas</span>@if (summary.pending) { <span>{{ summary.pending }} pendientes</span> }</div><p class="hint">{{ summary.total }} ejecuciones programadas. Los errores y las cancelaciones no se cuentan como respuestas evaluadas.</p></article>
           }
         </div>
         <div class="metric-note"><arena-info helpId="metrics-help" title="Cómo interpretar los resultados" label="Entender las métricas"><h3>Evaluación</h3><p>Porcentaje de respuestas que cumplen el criterio entre las respuestas evaluadas. Los errores de ejecución, cancelaciones y casos sin referencia se muestran aparte; no reciben puntuación de calidad. Completar una consulta libre no implica una respuesta correcta.</p><h3>Tiempo total medio</h3><p>Media del tiempo del agente solo en respuestas sin error de ejecución. Incluye preparación y puede incluir carga del modelo; no es latencia pura de generación. A y B se ejecutan secuencialmente.</p><h3>Tokens</h3><p>E / S representa entrada y salida. Un asterisco indica contadores parciales. En el simulador, los tokens son sintéticos.</p></arena-info></div>
@@ -118,7 +118,7 @@
         <div class="answer-grid">
           @for (branch of ['A', 'B']; track branch) {
             @if (answers(branch === 'A' ? 'A' : 'B').length) { <article class="panel answer-card"><h3>Respuestas {{ branch }}</h3>
-              @for (run of answers(branch === 'A' ? 'A' : 'B'); track run.id) { <details><summary>{{ run.task_id }} · Repetición {{ run.repetition + 1 }} · {{ runLabel(run) }}</summary><div class="answer-reference"><div><h4>Respuesta recibida</h4><pre>{{ run.result?.answer ?? 'No hay respuesta final.' }}</pre></div><div><h4>Referencia</h4><pre>{{ referenceFor(run) ?? 'Sin referencia: no se evalúa la calidad automáticamente.' }}</pre></div></div>@if (run.result?.error) { <p class="alert error">{{ run.result?.error }}</p> } @if (run.result?.reason) { <p class="hint">{{ run.result?.reason }}</p> }</details> }
+              @for (run of answers(branch === 'A' ? 'A' : 'B'); track run.id) { <details><summary>{{ run.task_id }} · Repetición {{ run.repetition + 1 }} · {{ runLabel(run) }}</summary><div class="answer-reference"><div><h4>Respuesta recibida</h4><pre>{{ run.result?.answer ?? 'No hay respuesta final.' }}</pre></div><div><h4>Referencia</h4><pre>{{ referenceFor(run) ?? 'Sin referencia: no se evalúa la calidad automáticamente.' }}</pre></div></div>@if (run.result?.error) { <p class="alert error">{{ traceFailure(run.result!.error!) }}</p> } @if (run.result?.reason) { <p class="hint">{{ run.result?.reason }}</p> }</details> }
             </article> }
           }
         </div>
@@ -134,12 +134,12 @@
 
     @if (selectedRun(); as run) {
       <section class="panel trace-panel" aria-labelledby="trace-title"><div class="section-header"><div><p class="eyebrow">TRAZA DE EJECUCIÓN / {{ run.branch }}</p><h2 id="trace-title" tabindex="-1">{{ run.task_id }}</h2><p class="hint">Repetición {{ run.repetition + 1 }} · {{ runLabel(run) }}</p></div><button class="secondary" (click)="closeTrace(true)">Cerrar traza</button></div>
-        @if (run.result?.error) { <p class="alert error">{{ run.result?.error }}</p> }
+        @if (run.result?.error) { <p class="alert error">{{ traceFailure(run.result!.error!) }}</p> }
         @if (run.result?.reason) { <p class="hint">Evaluación: {{ run.result?.reason }}</p> }
         @if (run.result?.answer) { <h3>Respuesta final</h3><pre>{{ run.result?.answer }}</pre> }
         @if (traceError()) { <div role="alert" class="alert error">{{ traceError() }} <button class="text-button" (click)="showTrace(run)">Reintentar</button></div> }
         @if (traceLoading()) { <arena-loading label="Cargando eventos…" /> }
-        <div class="events">@for (event of events(); track event.seq) { <details><summary><span class="event-kind">{{ event.kind }}</span><time>{{ event.at * 1000 | date:'HH:mm:ss.SSS' }}</time></summary><pre>{{ event.payload | json }}</pre></details> } @empty { @if (!traceLoading() && !traceError()) { <p class="hint">Todavía no hay eventos para esta ejecución.</p> } }</div>
+        <div class="events">@for (event of events(); track event.seq) { <details><summary><span class="event-kind">{{ eventLabel(event.kind) }}</span><time>{{ event.at * 1000 | date:'HH:mm:ss.SSS' }}</time></summary><p class="hint">Registro {{ event.seq }} · {{ eventSummary(event) }}</p><details><summary>JSON técnico · {{ event.kind }}</summary><pre>{{ event.payload | json }}</pre></details></details> } @empty { @if (!traceLoading() && !traceError()) { <p class="hint">Todavía no hay eventos para esta ejecución.</p> } }</div>
       </section>
     }
     </div>

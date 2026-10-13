@@ -28,6 +28,8 @@ export async function register(page:Page) {
 
 export async function compare(page:Page, name:string, input='saludo', timeout=10) {
   await page.getByRole('button',{name:'Comparar',exact:true}).click();
+  const recover=page.getByRole('button',{name:'Recuperar borrador'});
+  if (await recover.isVisible()) await recover.click();
   await page.getByLabel('Nombre',{exact:true}).fill(name);
   // The test server supplies ControlledAdapter for the Ollama contract. No model is loaded.
   await page.getByLabel('Ejecución',{exact:true}).selectOption('ollama');

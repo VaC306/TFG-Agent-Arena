@@ -54,11 +54,13 @@ export class InputEditorComponent {
   @Input() invalid = false;
   @Input() invalidReference = false;
   @Output() readingChange = new EventEmitter<boolean>();
+  @Output() changed = new EventEmitter<void>();
   reading = signal(false);
   error = signal('');
 
   async addFiles(event: Event) {
     const input = event.target as HTMLInputElement;
+    const value = this.value;
     const files = Array.from(input.files ?? []);
     this.error.set('');
     this.reading.set(true);
@@ -109,10 +111,10 @@ export class InputEditorComponent {
       if ([...this.value.files, ...prepared].filter(f => !f.image).reduce((n,f) => n + [...f.preview].length,0) > 20000) {
         throw new Error('El texto de todos los adjuntos supera 20.000 caracteres.');
       }
-      if (!this.destroyed) this.value.files = [...this.value.files, ...prepared];
+      if (!this.destroyed && this.value === value) { this.value.files = [...this.value.files, ...prepared]; this.changed.emit(); }
     } catch (error) { this.error.set(error instanceof TypeError ? 'No se pudo leer el archivo. Los textos deben usar UTF-8.' : error instanceof Error ? error.message : 'No se pudieron preparar los adjuntos.'); }
     finally { endLoading(); this.endReading = undefined; input.value = ''; this.reading.set(false); if (!this.destroyed) this.readingChange.emit(false); }
   }
 
-  remove(name: string) { this.value.files = this.value.files.filter(file => file.name !== name); }
+  remove(name: string) { this.value.files = this.value.files.filter(file => file.name !== name); this.changed.emit(); }
 }

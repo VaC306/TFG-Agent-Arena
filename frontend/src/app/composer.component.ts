@@ -9,6 +9,31 @@ import { textError, filenameError, modelIdentity } from './validation';
 import { LoadingIndicatorComponent } from './loading-indicator.component';
 import { LoadingService } from './loading.service';
 
+type DraftSlot = 'inputA' | 'inputB' | 'shared';
+interface ComposerDraft {
+  version: 1; owner: string; config: Preferences;
+  inputs: Record<DraftSlot, Pick<InputData,'text'|'expected_answer'>>;
+  dataset: DatasetPreview | null; datasetName: string;
+  missingFiles: Record<DraftSlot,string[]>;
+  submissionPending?: boolean;
+}
+
+function validDraft(value: unknown, owner: string | undefined): value is ComposerDraft {
+  if (!value || typeof value !== 'object') return false;
+  const d = value as ComposerDraft;
+  const c = d.config;
+  return d.version === 1 && !!owner && d.owner === owner && !!c &&
+    ['simulated','ollama'].includes(c.adapter) && ['same_model','different_models'].includes(c.mode) && ['manual','dataset'].includes(c.source) &&
+    [c.name,c.modelA,c.modelB,c.promptA?.template,c.promptA?.text,c.promptB?.template,c.promptB?.text].every(v => typeof v === 'string') &&
+    typeof c.repetitions === 'number' && !!c.settings && typeof c.settings === 'object' &&
+    !!d.inputs && !!d.missingFiles && (['inputA','inputB','shared'] as const).every(slot =>
+      typeof d.inputs[slot]?.text === 'string' && typeof d.inputs[slot]?.expected_answer === 'string' &&
+      Array.isArray(d.missingFiles[slot]) && d.missingFiles[slot].every(name => typeof name === 'string')) &&
+    typeof d.datasetName === 'string' && (d.dataset === null || !!d.dataset && Array.isArray(d.dataset.cases) &&
+      typeof d.dataset.count === 'number' && typeof d.dataset.scored === 'number' && d.dataset.cases.every(row =>
+        typeof row.id === 'string' && typeof row.input === 'string' && (row.expected_answer === null || typeof row.expected_answer === 'string')));
+}
+
 @Component({
   selector: 'arena-composer', standalone: true, imports: [FormsModule, InputEditorComponent, InfoDialogComponent,LoadingIndicatorComponent],
   templateUrl: './composer.component.html',
@@ -19,6 +44,13 @@ export class ComposerComponent {
   private activity = inject(LoadingService);
   private saveTimer?: ReturnType<typeof setTimeout>;
   private ownerId = this.auth.user()?.id;
+  private destroyed = false;
+  private datasetVersion = 0;
+  private draftKey = `arena.composer.v1.${this.ownerId}`;
+  pendingDraft = signal<ComposerDraft | null>(null);
+  draftNotice = signal('');
+  submissionPending = signal(false);
+  missingFiles = signal<Record<string,string[]>>({});
   preferencesNotice = signal('');
   @Output() created = new EventEmitter<string>();
   mode: 'same_model' | 'different_models' = 'same_model';
@@ -55,6 +87,7 @@ export class ComposerComponent {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
+    const version = ++this.datasetVersion;
     this.dataset.set(null);
     this.datasetName.set('');
     this.datasetError.set('');
@@ -67,12 +100,14 @@ export class ComposerComponent {
       if (file.size > 1024 * 1024) throw new Error('El dataset supera 1 MiB.');
       const content = new TextDecoder('utf-8', {fatal:true}).decode(await file.arrayBuffer());
       const result = await this.api.validateDataset(file.name, content);
+      if (this.destroyed || version !== this.datasetVersion) return;
       this.dataset.set(result);
       this.datasetName.set(file.name);
     } catch (error) {
+      if (this.destroyed || version !== this.datasetVersion) return;
       const detail = error instanceof HttpErrorResponse ? error.error?.detail : null;
-      this.datasetError.set(typeof detail === 'string' ? detail : error instanceof HttpErrorResponse ? 'No se pudo validar el dataset. Comprueba la API y la estructura del archivo.' : error instanceof Error ? error.message : 'No se pudo leer el archivo UTF-8.');
-    } finally { endLoading(); this.datasetBusy.set(false); input.value = ''; }
+      this.datasetError.set(file.name + ': ' + (typeof detail === 'string' ? detail : error instanceof HttpErrorResponse ? 'No se pudo validar el dataset. Comprueba la API y la estructura del archivo.' : error instanceof Error ? error.message : 'No se pudo leer el archivo UTF-8.'));
+    } finally { endLoading(); if (!this.destroyed && version === this.datasetVersion) { this.datasetBusy.set(false); this.queueSave(); } input.value = ''; }
   }
 
   constructor() {
@@ -85,14 +120,78 @@ export class ComposerComponent {
       this.modelA = saved.modelA; this.modelB = saved.modelB;
       this.promptA = {...saved.promptA}; this.promptB = {...saved.promptB};
     }
+    try {
+      const raw = localStorage.getItem(this.draftKey);
+      if (raw) {
+        const draft = JSON.parse(raw);
+        if (validDraft(draft, this.ownerId)) this.pendingDraft.set(draft);
+        else this.draftNotice.set('El borrador guardado no es compatible. Puedes descartarlo.');
+      }
+    } catch { this.draftNotice.set('No se pudo leer el borrador local. Puedes descartarlo.'); }
     void this.loadTemplates();
     if (this.adapter === 'ollama') void this.loadModels();
     inject(DestroyRef).onDestroy(() => {
-      if (this.saveTimer) { clearTimeout(this.saveTimer); void this.savePreferences(); }
+      this.destroyed = true;
+      if (this.saveTimer) clearTimeout(this.saveTimer);
     });
   }
 
+  private config(): Preferences {
+    return {name:this.name, adapter:this.adapter, mode:this.mode, source:this.source,
+      repetitions:this.repetitions, modelA:this.modelA, modelB:this.modelB,
+      promptA:{...this.promptA}, promptB:{...this.promptB}, evaluation:this.evaluation, settings:{...this.settings}, split:this.split};
+  }
+
+  recoverDraft() {
+    const draft = this.pendingDraft();
+    if (!draft || draft.owner !== this.ownerId) return;
+    ++this.datasetVersion;
+    const config = draft.config;
+    this.name = config.name; this.adapter = config.adapter; this.mode = config.mode; this.source = config.source;
+    this.repetitions = config.repetitions; this.modelA = config.modelA; this.modelB = config.modelB;
+    this.promptA = {...config.promptA}; this.promptB = {...config.promptB};
+    this.evaluation = config.evaluation ?? 'exact_match'; this.settings = {...defaultSettings(),...config.settings}; this.split = config.split ?? 'dev';
+    for (const slot of ['inputA','inputB','shared'] as const) {
+      this[slot] = {text:draft.inputs[slot].text, expected_answer:draft.inputs[slot].expected_answer, files:[]};
+    }
+    this.dataset.set(draft.dataset); this.datasetName.set(draft.datasetName);
+    this.missingFiles.set(draft.missingFiles);
+    this.submissionPending.set(draft.submissionPending === true);
+    this.pendingDraft.set(null); this.datasetBusy.set(false); this.datasetError.set('');
+    this.draftNotice.set('Borrador recuperado: texto, referencias, configuración y dataset normalizado.');
+    if (this.adapter === 'ollama') void this.loadModels();
+  }
+
+  discardDraft() {
+    try { localStorage.removeItem(this.draftKey); }
+    catch { this.draftNotice.set('No se pudo descartar el borrador local.'); return; }
+    ++this.datasetVersion;
+    this.pendingDraft.set(null); this.missingFiles.set({});
+    this.submissionPending.set(false);
+    this.inputA = {text:'',files:[],expected_answer:''}; this.inputB = {text:'',files:[],expected_answer:''}; this.shared = {text:'',files:[],expected_answer:''};
+    this.dataset.set(null); this.datasetName.set(''); this.datasetError.set(''); this.datasetBusy.set(false);
+    this.error.set(''); this.invalidField.set('');
+    this.draftNotice.set('Borrador descartado. Se mantienen las preferencias del formulario.');
+  }
+
+  missingAttachments() {
+    return Object.entries(this.missingFiles()).flatMap(([slot,names]) => names.filter(name => !this[slot as 'inputA'|'inputB'|'shared'].files.some(file => file.name === name)).map(name => ({slot,name})));
+  }
+  omitAttachment(slot:string, name:string) {
+    this.missingFiles.update(files => ({...files,[slot]:(files[slot] ?? []).filter(n => n !== name)})); this.queueSave();
+  }
+  private saveDraft() {
+    if (this.destroyed || !this.ownerId || this.auth.user()?.id !== this.ownerId || this.pendingDraft()) return;
+    const inputs = Object.fromEntries((['inputA','inputB','shared'] as const).map(slot => [slot,{text:this[slot].text,expected_answer:this[slot].expected_answer}]));
+    const missingFiles = Object.fromEntries((['inputA','inputB','shared'] as const).map(slot => [slot,[...new Set([...(this.missingFiles()[slot] ?? []),...this[slot].files.map(f => f.name)])]]));
+    try {
+      localStorage.setItem(this.draftKey, JSON.stringify({version:1,owner:this.ownerId,config:this.config(),inputs,dataset:this.dataset(),datasetName:this.datasetName(),missingFiles,submissionPending:this.submissionPending()}));
+      this.draftNotice.set('Borrador guardado en este navegador: texto, referencias, configuración y dataset normalizado. Los adjuntos requieren reselección tras recargar.');
+    } catch { this.draftNotice.set('No se pudo guardar el borrador local. Conserva una copia antes de recargar.'); }
+  }
+
   queueSave() {
+    queueMicrotask(() => this.saveDraft());
     if (this.invalidField()) this.error.set('');
     this.invalidField.set('');
     if (this.saveTimer) clearTimeout(this.saveTimer);
@@ -121,6 +220,7 @@ export class ComposerComponent {
   async loadTemplates() {
     try {
       this.templates.set(await this.api.prompts());
+      if (this.destroyed) return;
       if (!this.promptA.text) this.setTemplate('A');
       if (!this.promptB.text) this.setTemplate('B');
       this.error.set('');
@@ -133,16 +233,17 @@ export class ComposerComponent {
     this.modelNotice.set('Consultando modelos instalados…');
     try {
       const result = await this.api.models();
+      if (this.destroyed) return;
       this.models.set(result.models.map(model => model.name));
       if (this.adapter === 'ollama' && result.available) {
-        if (!this.models().includes(this.modelA)) this.modelA = this.models()[0] ?? '';
-        this.syncModelB();
+        if (!this.modelA) this.modelA = this.models()[0] ?? '';
+        if (!this.modelB) this.syncModelB();
       }
       this.modelNotice.set(result.available ? (result.models.length ? `${result.models.length} modelos instalados.` : 'No hay modelos instalados. Instala uno en Ollama y actualiza la lista.') : 'Ollama no está disponible. Inícialo y actualiza la lista.');
     } catch {
       this.models.set([]);
       this.modelNotice.set('No se pudo consultar Ollama. Comprueba la conexión y actualiza la lista.');
-    } finally { this.modelsBusy.set(false); this.queueSave(); }
+    } finally { this.modelsBusy.set(false); }
   }
 
   availableModels() { return this.adapter === 'simulated' ? ['simulated-a', 'simulated-b'] : this.models(); }
@@ -171,6 +272,9 @@ export class ComposerComponent {
   }
 
   async submit() {
+    if (this.pendingDraft()) { this.error.set('Recupera o descarta el borrador antes de ejecutar.'); return; }
+    const activeSlots = this.source === 'dataset' ? [] : this.mode === 'same_model' ? ['inputA','inputB'] : ['shared'];
+    if (this.missingAttachments().some(file => activeSlots.includes(file.slot))) { this.error.set('Reselecciona los adjuntos pendientes o indica que quieres omitirlos antes de ejecutar.'); return; }
     if (this.busy() || this.modelsBusy() || !this.validModels() || this.datasetBusy() || this.readingA || this.readingB || this.readingShared || (this.source === 'dataset' && !this.dataset())) return;
     const fields: [string, string, number, boolean][] = [
       ['comparison-name', this.name, 120, true], ['prompt-a', this.promptA.text, 6000, true], ['prompt-b', this.promptB.text, 6000, true],
@@ -235,7 +339,13 @@ export class ComposerComponent {
       },
       ...(this.source === 'dataset' ? {dataset:this.dataset()!.cases} : this.mode === 'same_model' ? {branch_inputs:{A:this.pack(this.inputA), B:this.pack(this.inputB)}} : {shared_input:this.pack(this.shared)}),
     };
-    try { this.created.emit((await this.api.compare(body)).id); }
+    this.submissionPending.set(true); this.saveDraft();
+    try {
+      const result = await this.api.compare(body);
+      if (!this.destroyed && this.auth.user()?.id === this.ownerId) {
+        this.submissionPending.set(false); this.saveDraft(); this.created.emit(result.id);
+      }
+    }
     catch (error) {
       const detail = error instanceof HttpErrorResponse ? error.error?.detail : null;
       this.error.set(typeof detail === 'string' ? detail : Array.isArray(detail) ? 'Hay datos no válidos. Revisa los campos, los formatos de archivo y los límites indicados.' :

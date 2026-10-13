@@ -83,7 +83,7 @@ def test_comparison_quality_matches_answers_through_api_worker_and_csv(tmp_path,
         assert {key:detail['protocol']['branches'][branch][key] for key in overview} == overview
         # Open and scored cases occupy different library cards; reconstruct totals.
         cards = [e['summary'] for e in entries if e['branch'] == branch]
-        for key in ('total','evaluated','planned_evaluable','correct','incorrect','invalid_format','execution_errors','unscored','pending','timed_answers'):
+        for key in ('total','evaluated','planned_evaluable','correct','incorrect','invalid_format','execution_errors','cancelled','unscored','pending','timed_answers'):
             assert sum(card[key] for card in cards) == overview[key]
         selected = [row for row in rows if row['branch'] == branch]
         assert sum(row['outcome'] == 'execution_error' for row in selected) == overview['execution_errors']
@@ -113,8 +113,10 @@ def test_login_import_cancel_pending_and_exports_use_same_counts(tmp_path):
     assert client.get('/model-results').json()['entries'] == []
     rows = list(csv.DictReader(io.StringIO(client.get('/experiments/'+eid+'/metrics.csv').text)))
     assert sum(r['outcome'] == 'pending' for r in rows) == len(runs)-1
-    assert sum(r['outcome'] == 'execution_error' for r in rows) == 1
-    assert sum(s['execution_errors'] for s in detail['overviews'].values()) == 1
+    assert sum(r['outcome'] == 'execution_error' for r in rows) == 0
+    assert sum(r['outcome'] == 'cancelled' for r in rows) == 1
+    assert sum(s['execution_errors'] for s in detail['overviews'].values()) == 0
+    assert sum(s['cancelled'] for s in detail['overviews'].values()) == 1
     assert sum(s['pending'] for s in detail['overviews'].values()) == len(runs)-1
     assert all(s['mean_answer_s'] is None for s in detail['overviews'].values())
     assert 'informe es parcial' in client.get('/experiments/'+eid+'/report.md').text

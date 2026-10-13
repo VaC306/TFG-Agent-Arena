@@ -164,7 +164,7 @@ def campaign_report(store,campaign_id, include_evidence=False):
 def campaign_csv(report):
     output = io.StringIO(newline='')
     fields = ['campaign_id','design_sha256','attempt','experiment_id','branch','complete','compatible','warnings','annotations','measurements',
-              'total','finished','planned_evaluable','evaluated','correct','incorrect','invalid_format','execution_errors',
+              'total','finished','planned_evaluable','evaluated','correct','incorrect','invalid_format','execution_errors','cancelled',
               'unscored','pending','mean_answer_s','timed_answers']
     writer = csv.DictWriter(output,fieldnames=fields)
     writer.writeheader()

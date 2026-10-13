@@ -4,10 +4,17 @@
     <h3>Un modelo</h3><p>Prueba dos prompts y entradas independientes con el mismo modelo. Si cambias también los datos, las diferencias no se pueden atribuir solo al prompt.</p>
     <h3>Dos modelos</h3><p>Ambos reciben la misma entrada y archivos. Puedes elegir instrucciones distintas para cada uno.</p>
     <h3>Repeticiones y evaluación</h3><p>Cada caso se ejecuta en A y B tantas veces como indiques. Elige texto exacto para respuestas concretas o JSON equivalente para extracción de datos. En respuestas abiertas, elige sin evaluación automática y revisa su calidad tú mismo.</p>
-    <p>Las preferencias se guardan en tu perfil. Las entradas y los archivos se guardan al ejecutar la comparación.</p>
+    <p>El borrador se guarda en este navegador para tu cuenta. Recupera texto, referencias, configuración y dataset normalizado. Los adjuntos deben reseleccionarse tras recargar. Las comparaciones ejecutadas conservan su propia copia.</p>
   </arena-info>
+  <div class="draft-status">
+    @if (pendingDraft()) { <p class="hint" role="status">Hay un borrador de tu cuenta en este navegador. Recupera texto, referencias, configuración y dataset normalizado antes de continuar.</p><button type="button" class="secondary" (click)="recoverDraft()">Recuperar borrador</button> }
+    <p class="hint" role="status">{{ draftNotice() }}</p>
+    @if (submissionPending() || pendingDraft()?.submissionPending) { <p class="hint" role="status">Hay un envío pendiente de confirmar. Revisa el historial antes de repetir; recuperar el borrador no vuelve a enviarlo.</p> }
+    @if (pendingDraft() || draftNotice()) { <button type="button" class="text-button" (click)="discardDraft()" [disabled]="busy()">Descartar borrador</button> }
+    @for (file of missingAttachments(); track file.slot + file.name) { <p class="hint">Reselecciona {{ file.name }} en {{ file.slot === 'inputA' ? 'Entrada A' : file.slot === 'inputB' ? 'Entrada B' : 'Entrada compartida' }}. <button type="button" class="text-button" (click)="omitAttachment(file.slot,file.name)">Omitir {{ file.name }}</button></p> }
+  </div>
   <form #form="ngForm" (ngSubmit)="submit()" (input)="queueSave()" (change)="queueSave()">
-    <fieldset [disabled]="busy()">
+    <fieldset [disabled]="busy() || !!pendingDraft()">
       <legend class="sr-only">Configuración de la comparación</legend>
       <div class="mode-switch" role="group" aria-label="Tipo de comparación">
         <button type="button" [class.active]="mode === 'same_model'" [attr.aria-pressed]="mode === 'same_model'" (click)="mode = 'same_model'; queueSave()">Un modelo <small>Dos configuraciones de prompt</small></button>
@@ -45,16 +52,16 @@
       @if (source === 'dataset') {
         <section class="dataset-import" aria-labelledby="dataset-title">
           <div class="section-header"><div><h3 id="dataset-title">Tus casos de prueba</h3><p class="hint">CSV o JSONL en UTF-8 · hasta 100 casos · 1 MiB</p></div><a class="secondary" href="/api/datasets/template.csv" download="dataset-ejemplo.csv">Descargar plantilla</a></div>
-          <arena-info helpId="dataset-help" title="Prepara tu dataset" label="Ver formato y ejemplo">
+          <arena-info #datasetHelp helpId="dataset-help" title="Prepara tu dataset" label="Ver formato y ejemplo">
             <p>Usa CSV separado por comas o JSONL con un objeto por línea, codificado en UTF-8. Se admiten hasta 100 casos de texto y 1 MiB por archivo.</p>
             <ul><li><code>id</code>: identificador único de cada caso.</li><li><code>input</code>: entrada de texto, hasta 6.000 caracteres.</li><li><code>expected_answer</code>: referencia opcional, hasta 6.000 caracteres.</li></ul>
             <pre>id,input,expected_answer
 saludo,Responde con la palabra hola,hola</pre>
             <p>La referencia no se envía al modelo. Se usa con la evaluación que elijas arriba. Descarga la plantilla para empezar.</p>
           </arena-info>
-          <label for="dataset-file">Seleccionar dataset</label><input id="dataset-file" type="file" accept=".csv,.jsonl" [disabled]="datasetBusy()" (change)="importDataset($event)">
+          <label for="dataset-file">Seleccionar dataset</label><input id="dataset-file" type="file" accept=".csv,.jsonl" [disabled]="datasetBusy()" [attr.aria-invalid]="datasetError() ? 'true' : null" [attr.aria-describedby]="datasetError() ? 'dataset-error' : null" (change)="importDataset($event)">
           @if (datasetBusy()) { <arena-loading label="Validando estructura y casos…" /> }
-          @if (datasetError()) { <p class="alert error" role="alert">{{ datasetError() }}</p> }
+          @if (datasetError()) { <p id="dataset-error" class="alert error" role="alert">{{ datasetError() }} <a href="#" (click)="$event.preventDefault(); datasetHelp.open()">Ver formato y ejemplo</a></p> }
           @if (dataset(); as preview) {
             <p class="dataset-summary" role="status"><strong>{{ datasetName() }}</strong> · {{ preview.count }} casos · {{ preview.scored }} con referencia · {{ preview.count * repetitions * 2 }} ejecuciones</p>
             <p class="hint">Se aplicará la evaluación elegida a todos los casos. Para JSON equivalente, cada referencia debe contener JSON válido. Los casos sin referencia quedan sin puntuar.</p>
@@ -73,7 +80,7 @@ saludo,Responde con la palabra hola,hola</pre>
           <select id="template-a" name="templateA" [(ngModel)]="promptA.template" (change)="setTemplate('A')">@for (template of templates(); track template.id) { <option [value]="template.id">{{ template.name }}</option> }</select>
           <details class="prompt-settings"><summary>Editar instrucciones A</summary><label for="prompt-a">Prompt de sistema A</label>
           <textarea id="prompt-a" name="promptA" [(ngModel)]="promptA.text" (input)="promptA.template = 'custom'" [attr.aria-invalid]="invalidField() === 'prompt-a' ? 'true' : null" [attr.aria-describedby]="invalidField() === 'prompt-a' ? 'composer-error' : null" rows="4" maxlength="6000" required></textarea></details>
-          @if (source === 'manual' && mode === 'same_model') { <arena-input-editor slot="a" title="Entrada A" [value]="inputA" [invalid]="invalidField() === 'a-input'" [invalidReference]="invalidField() === 'a-reference'" (readingChange)="readingA = $event" /> }
+          @if (source === 'manual' && mode === 'same_model') { <arena-input-editor slot="a" title="Entrada A" [value]="inputA" [invalid]="invalidField() === 'a-input'" [invalidReference]="invalidField() === 'a-reference'" (readingChange)="readingA = $event" (changed)="queueSave()" /> }
         </section>
         <section class="branch-editor" aria-label="Configuración B">
           <h3><span class="branch branch-b">B</span> Agente B</h3>
@@ -83,13 +90,13 @@ saludo,Responde con la palabra hola,hola</pre>
           <select id="template-b" name="templateB" [(ngModel)]="promptB.template" (change)="setTemplate('B')">@for (template of templates(); track template.id) { <option [value]="template.id">{{ template.name }}</option> }</select>
           <details class="prompt-settings"><summary>Editar instrucciones B</summary><label for="prompt-b">Prompt de sistema B</label>
           <textarea id="prompt-b" name="promptB" [(ngModel)]="promptB.text" (input)="promptB.template = 'custom'" [attr.aria-invalid]="invalidField() === 'prompt-b' ? 'true' : null" [attr.aria-describedby]="invalidField() === 'prompt-b' ? 'composer-error' : null" rows="4" maxlength="6000" required></textarea></details>
-          @if (source === 'manual' && mode === 'same_model') { <arena-input-editor slot="b" title="Entrada B" [value]="inputB" [invalid]="invalidField() === 'b-input'" [invalidReference]="invalidField() === 'b-reference'" (readingChange)="readingB = $event" /> }
+          @if (source === 'manual' && mode === 'same_model') { <arena-input-editor slot="b" title="Entrada B" [value]="inputB" [invalid]="invalidField() === 'b-input'" [invalidReference]="invalidField() === 'b-reference'" (readingChange)="readingB = $event" (changed)="queueSave()" /> }
         </section>
       </div>
-      @if (source === 'manual' && mode === 'different_models') { <div class="shared-input"><span class="tag">COMPARTIDO POR A Y B</span><arena-input-editor slot="shared" title="Entrada compartida" [value]="shared" [invalid]="invalidField() === 'shared-input'" [invalidReference]="invalidField() === 'shared-reference'" (readingChange)="readingShared = $event" /></div> }
+      @if (source === 'manual' && mode === 'different_models') { <div class="shared-input"><span class="tag">COMPARTIDO POR A Y B</span><arena-input-editor slot="shared" title="Entrada compartida" [value]="shared" [invalid]="invalidField() === 'shared-input'" [invalidReference]="invalidField() === 'shared-reference'" (readingChange)="readingShared = $event" (changed)="queueSave()" /></div> }
       <div class="composer-footer"><p class="hint">Sin referencia, la calidad queda sin evaluar.<br>Tu configuración se conserva con cada comparación.</p><button type="submit" class="primary" [disabled]="busy() || modelsBusy() || !validModels() || datasetBusy() || (source === 'dataset' && !dataset()) || readingA || readingB || readingShared || !templates().length">@if (busy()) { <span class="loading-spinner" aria-hidden="true"></span> } {{ busy() ? 'Guardando…' : 'Ejecutar comparación' }} @if (!busy()) { <span aria-hidden="true">↗</span> }</button></div>
     </fieldset>
   </form>
-  <p class="hint preferences-status" role="status">{{ preferencesNotice() || 'Modelos, prompts y parámetros se guardan en tu perfil. Los archivos y entradas se guardan al ejecutar.' }}</p>
+  <p class="hint preferences-status" role="status">{{ preferencesNotice() || 'Modelos, prompts y parámetros se guardan en tu perfil. El borrador de esta cuenta se conserva en este navegador.' }}</p>
   @if (error()) { <div id="composer-error" class="alert error" role="alert">{{ error() }} @if (!templates().length) { <button class="text-button" (click)="loadTemplates()">Reintentar plantillas</button> }</div> }
 </section>

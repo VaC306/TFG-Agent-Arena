@@ -14,6 +14,11 @@ test('cancelación real conserva trazas y libera el worker', async ({page}) => {
   for (const run of result.runs) {
     expect(run.status).toBe('cancelled'); expect(run.result?.quality_evaluated ?? false).toBe(false);
   }
+  for (const branch of ['A','B']) {
+    expect(result.overviews[branch]).toMatchObject({finished:1,cancelled:1,execution_errors:0,evaluated:0,timed_answers:0});
+  }
+  await expect(page.locator('.agent-card .result-breakdown').filter({hasText:'1 canceladas'})).toHaveCount(2);
+  await expect(page.locator('.agent-card .result-breakdown').filter({hasText:'0 errores de ejecución'})).toHaveCount(2);
   await page.getByRole('button',{name:/Ver traza de case, rama/}).first().click();
   await expect(page.getByRole('heading',{name:'case',exact:true})).toBeFocused();
   await page.getByRole('button',{name:'Cerrar traza',exact:true}).click();

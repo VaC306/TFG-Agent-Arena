@@ -83,7 +83,7 @@ def protocol_report(snapshot, runs):
         selected = [r for r in runs if r['branch'] == branch]
         branch_tasks = [snapshot['branch_tasks'][branch]] if snapshot.get('branch_tasks') else snapshot['tasks']
         branches[branch] = summarize(selected, branch_tasks) | {
-            'answers':sum('answer' in (r.get('result') or {}) and outcome(r) not in ('execution_error','pending') for r in selected)}
+            'answers':sum('answer' in (r.get('result') or {}) and outcome(r) not in ('execution_error','cancelled','pending') for r in selected)}
     return {'version':snapshot.get('protocol', {}).get('version', 'legacy'),
             'evaluator_version':snapshot.get('protocol', {}).get('evaluator_version', 'legacy'),
             'comparison_scope':('repeatability' if models_equal else 'models') if shared and prompts_equal and parameters_equal else 'configurations',

@@ -138,8 +138,23 @@ def test_summary_excludes_cancelled_answers_and_nonfinite_measurements():
         ('succeeded',{'answer':'ok','success':True,'agent_s':float('nan')}),
         ('completed',{'answer':'ok','success':None,'agent_s':-1})]]
     summary = summarize(runs,[{'id':'case','evaluation':'none'}])
-    assert summary['execution_errors'] == 4
+    assert summary['execution_errors'] == 3 and summary['cancelled'] == 1
+    assert summary['finished'] == len(runs) and summary['evaluated'] == 1
     assert summary['mean_answer_s'] is None and summary['timed_answers'] == 0
+
+
+@pytest.mark.parametrize('result', [None, {'error':'Cancelled before execution'},
+    {'answer':'late','success':True,'agent_s':100,'task_s':90}])
+def test_cancellation_is_separate_even_with_partial_or_late_result(result):
+    from arena.protocol import quality_value
+    from arena.latency_analysis import task_time
+    run = {'task_id':'case','status':'cancelled','result':result}
+    summary = summarize([run],[{'id':'case','expected_answer':'late'}])
+    assert outcome(run) == 'cancelled'
+    assert summary['cancelled'] == summary['finished'] == summary['planned_evaluable'] == 1
+    assert summary['execution_errors'] == summary['evaluated'] == summary['unscored'] == summary['pending'] == 0
+    assert summary['mean_answer_s'] is None and summary['timed_answers'] == 0
+    assert quality_value(run) is None and task_time(run) is None
 
 
 def test_snapshot_sources_preserve_crlf_and_verify_their_hashes(tmp_path,monkeypatch):

@@ -44,6 +44,22 @@ def case(analysis,tid,branch='A'):
     return next(t for t in analysis['tasks'] if t['task_id'] == tid)['branches'][branch]
 
 
+def test_cancellation_changes_are_distinct_from_errors_without_scoring_or_timing():
+    snapshot,reports,evidence = fixture(count=1,adapter='simulated')
+    first = next(r for r in evidence[0]['runs'] if r['branch'] == 'A')
+    second = next(r for r in evidence[1]['runs'] if r['branch'] == 'A')
+    first.update(status='cancelled',result={'answer':'late','success':True,'agent_s':100,'error':'Cancelled'})
+    second.update(status='timeout',result={'error':'timeout','agent_s':80})
+    values = case(campaign_analysis(snapshot,reports,evidence),'task-0')
+    assert values['summary']['cancelled'] == values['summary']['execution_errors'] == 1
+    assert values['summary']['finished'] == 2 and values['summary']['evaluated'] == 0
+    assert values['coverage'] == 0 and values['quality_rate'] is None
+    assert values['summary']['timed_answers'] == 0 and values['summary']['mean_answer_s'] is None
+    assert values['series'][0]['outcomes'] == ['cancelled']
+    assert values['series'][1]['outcomes'] == ['execution_error']
+    assert values['between_attempt_changes'] == 1
+
+
 def test_quality_coverage_errors_format_and_between_attempt_changes_are_distinct():
     snapshot,reports,evidence = fixture(count=3,adapter='simulated')
     def set_run(attempt,tid,branch,status,result):

@@ -19,25 +19,29 @@ export class AuthService {
   ready = signal(false);
   hasUsers = signal(true);
   initError = signal('');
+  sessionEpoch = 0;
 
   async initialize() {
+    const epoch = ++this.sessionEpoch;
     this.initError.set('');
     try {
       const result = await firstValueFrom(this.http.get<{user: User | null; has_users: boolean}>('/api/auth/session').pipe(timeout(15000)));
-      this.user.set(result.user); this.hasUsers.set(result.has_users);
+      if (epoch === this.sessionEpoch) { this.user.set(result.user); this.hasUsers.set(result.has_users); }
     } catch { this.initError.set('No se pudo conectar con la API. Comprueba que esté iniciada.'); }
     finally { this.ready.set(true); }
   }
 
   async authenticate(register: boolean, username: string, password: string, display_name: string) {
+    const epoch = ++this.sessionEpoch;
     const result = await firstValueFrom(this.http.post<{user: User}>('/api/auth/' + (register ? 'register' : 'login'),
       {username, password, ...(register ? {display_name} : {})}).pipe(timeout(15000)));
-    this.user.set(result.user); this.hasUsers.set(true);
+    if (epoch === this.sessionEpoch) { this.user.set(result.user); this.hasUsers.set(true); }
   }
 
   async logout() {
+    const epoch = ++this.sessionEpoch;
     await firstValueFrom(this.http.post('/api/auth/logout', {}).pipe(timeout(15000)));
-    this.user.set(null);
+    if (epoch === this.sessionEpoch) this.user.set(null);
   }
 
   async savePreferences(preferences: Preferences) {
@@ -57,8 +61,9 @@ export class AuthService {
 export const sessionInterceptor: HttpInterceptorFn = (request, next) => {
   const auth = inject(AuthService);
   if (!request.url.startsWith('/api/')) return next(request);
+  const epoch = auth.sessionEpoch;
   return next(request.clone({setHeaders:{'X-Arena-Request':'1'}})).pipe(tap({error: error => {
-    if (error instanceof HttpErrorResponse && error.status === 401) auth.user.set(null);
+    if (error instanceof HttpErrorResponse && error.status === 401 && epoch === auth.sessionEpoch) auth.user.set(null);
   }}));
 };
 

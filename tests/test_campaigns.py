@@ -73,7 +73,7 @@ def test_campaign_roundtrip_frozen_inputs_worker_exports_and_history(tmp_path,mo
     assert len(rows) == 4
     for row in rows:
         overview = detail['attempts'][int(row['attempt'])-1]['overviews'][row['branch']]
-        for metric in ('correct','pending','unscored','execution_errors','evaluated','planned_evaluable'):
+        for metric in ('correct','pending','unscored','execution_errors','cancelled','evaluated','planned_evaluable'):
             assert int(row[metric]) == overview[metric]
     report = client.get('/campaigns/'+cid+'/export.md').text
     assert 'Sin casos con referencia evaluable' in report and '## Intento 2' in report
@@ -223,3 +223,43 @@ def test_export_reads_runs_once_for_consistent_summary_and_evidence(tmp_path):
     report = campaign_report(store,cid,include_evidence=True)
     assert reads == [eid]
     assert sum(s['finished'] for s in report['attempts'][0]['overviews'].values()) == len(report['evidence'][0]['runs'])
+
+
+def test_cancelled_results_are_consistent_in_campaign_library_and_exports(tmp_path):
+    path = tmp_path/'cancelled.sqlite'
+    client = TestClient(create_app(path,ROOT))
+    register_client(client)
+    data = request_data('different_models')
+    data['shared_input']['expected_answer'] = '42'
+    eid = client.post('/comparisons',json=data).json()['id']
+    store = Store(path)
+    for run in store.list_runs(eid):
+        store.cancel(run['id'])
+    detail = client.get('/experiments/'+eid).json()
+    for branch in ('A','B'):
+        summary = detail['overviews'][branch]
+        assert summary['cancelled'] == summary['finished'] == summary['planned_evaluable'] == 1
+        assert summary['execution_errors'] == summary['evaluated'] == summary['timed_answers'] == 0
+        assert detail['protocol']['branches'][branch]['answers'] == 0
+    entries = client.get('/model-results').json()['entries']
+    assert len(entries) == 2
+    assert all(e['summary']['cancelled'] == 1 and e['summary']['execution_errors'] == 0 for e in entries)
+    rows = list(csv.DictReader(io.StringIO(client.get('/experiments/'+eid+'/metrics.csv').text)))
+    assert all(r['status'] == r['outcome'] == 'cancelled' and r['quality_evaluated'] == 'False' for r in rows)
+    markdown = client.get('/experiments/'+eid+'/report.md').text
+    assert markdown.count('Errores de ejecución: 0. Canceladas: 1.') == 2
+    assert markdown.count('Repetición 1 · Cancelada') == 2
+    response = client.post('/campaigns',json={'name':'Cancellation audit','experiment_id':eid})
+    assert response.status_code == 201, response.text
+    cid = response.json()['id']
+    report = client.get('/campaigns/'+cid+'/export.json').json()
+    for values in report['analysis']['tasks'][0]['branches'].values():
+        assert values['summary']['cancelled'] == 1 and values['summary']['execution_errors'] == 0
+        assert values['series'][0]['outcomes'] == ['cancelled']
+        assert values['coverage'] == 0 and values['quality_rate'] is None
+    for endpoint in ('export.csv','analysis.csv'):
+        rows = list(csv.DictReader(io.StringIO(client.get('/campaigns/'+cid+'/'+endpoint).text)))
+        assert len(rows) == 2
+        assert all(r['cancelled'] == '1' and r['execution_errors'] == '0' for r in rows)
+    markdown = client.get('/campaigns/'+cid+'/export.md').text
+    assert '"cancelled": 1' in markdown and '"execution_errors": 0' in markdown

@@ -21,7 +21,8 @@ test('registro, teclado, modal, sesión y recarga', async ({page}) => {
   await page.getByLabel('Contraseña',{exact:true}).fill('Fixture-password-42');
   await expect(page.getByLabel('Usuario',{exact:true})).toHaveValue(username);
   await page.getByLabel('Contraseña',{exact:true}).press('Enter');
-  await expect(page.getByRole('heading',{name:'Una nueva comparación'})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Perfil',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Comparar',exact:true}).click();
   await page.reload();
   await expect(page.getByRole('heading',{name:'Una nueva comparación'})).toBeVisible();
   await idle(page);
@@ -66,7 +67,8 @@ test('dataset, comparación, métricas, biblioteca, campaña e informes coherent
   const library=page.locator('.model-library');
   await library.getByRole('combobox',{name:/^Ejecución/}).selectOption('simulated');
   await expect(page.locator('.library-card')).toHaveCount(0);
-  await expect(page.getByRole('status').filter({hasText:'0/2 seleccionados'})).toBeVisible();
+  await expect(page.getByRole('status').filter({hasText:'1/2 seleccionados'})).toBeVisible();
+  await expect(page.getByRole('status').filter({hasText:'1 seleccionados fuera del filtro'})).toBeVisible();
   await library.getByRole('combobox',{name:/^Ejecución/}).selectOption('ollama');
   await page.getByRole('button',{name:'Ver respuestas y referencia'}).click();
   await expect(page.getByRole('heading',{name:'Comparación de fixture',exact:true})).toBeVisible();

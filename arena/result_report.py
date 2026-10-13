@@ -18,7 +18,7 @@ def markdown_report(snapshot,runs):
              f"Adaptador: {config['adapter']} · Fase: {config['split']} · Repeticiones: {config['repetitions']}\n",
              'Aciertos sobre casos con referencia incluye los fallos y errores de esos casos en el denominador. La calidad entre respuestas evaluadas excluye errores de ejecución.\n']
     labels = {'correct':'Correcta','incorrect':'Respuesta incorrecta','invalid_format':'Formato inválido',
-              'execution_error':'Error de ejecución','unscored':'Sin evaluar','pending':'Pendiente'}
+              'execution_error':'Error de ejecución','cancelled':'Cancelada','unscored':'Sin evaluar','pending':'Pendiente'}
     lines += ['## Tiempos por ejecución y recursos observados',
               'El tiempo total incluye preparación, calentamiento si se solicitó y muestreo. El tiempo de tarea incluye inferencia, herramientas y evaluación. Worker RSS/CPU no mide el servidor Ollama; RAM/GPU del host incluye otros procesos. Máximos observados no son picos garantizados.']
     for run in runs:
@@ -35,7 +35,7 @@ def markdown_report(snapshot,runs):
                   f"Aciertos: {accuracy}. "
                   f"Respuestas evaluadas: {summary['evaluated']}. Ejecuciones programadas: {summary['total']}.\n",
                   f"Incorrectas: {summary['incorrect']}. Formatos inválidos: {summary['invalid_format']}. "
-                  f"Errores de ejecución: {summary['execution_errors']}. Sin evaluar: {summary['unscored']}. Pendientes: {summary['pending']}.\n",
+                  f"Errores de ejecución: {summary['execution_errors']}. Canceladas: {summary['cancelled']}. Sin evaluar: {summary['unscored']}. Pendientes: {summary['pending']}.\n",
                   f"Tiempo medio de respuestas sin error: {timing} ({summary['timed_answers']} mediciones).\n",
                   '### Configuración guardada\n',code_block(json.dumps(config['agents'][branch],ensure_ascii=False,indent=2))]
         by_id = {t['id']:t for t in tasks}

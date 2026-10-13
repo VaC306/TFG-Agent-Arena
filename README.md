@@ -19,6 +19,8 @@ Reproducibilidad no significa garantizar respuestas idénticas en cualquier máq
 
 - Comparaciones A/B de modelos o configuraciones de prompt.
 - Entradas, adjuntos y datasets CSV/JSONL con evaluación automática.
+- Borradores por cuenta recuperables en el mismo navegador; los adjuntos requieren
+  reselección tras recargar. Sección y comparación seleccionada en la URL.
 - Resultados, biblioteca de modelos y campañas con diseño fijado.
 - Análisis por tarea, cobertura, errores y estabilidad; incertidumbre exploratoria
   solo cuando la evidencia cumple las condiciones del método.
@@ -37,7 +39,23 @@ py -3.11 -m venv .venv
 npm.cmd --prefix frontend ci
 ```
 
-Mantén estas tres terminales abiertas, todas desde la raíz del repositorio:
+En Windows puedes iniciar API, worker e interfaz y abrir la aplicación con un comando:
+
+```powershell
+.\scripts\dev.ps1
+```
+
+Para instalar las dependencias y arrancar por primera vez, usa
+`.\scripts\dev.ps1 -Setup` (Python y Node deben estar instalados). El lanzador usa
+`runtime/dev/arena.sqlite`, una base de desarrollo separada; crea tu cuenta local
+en ella. Mantén la terminal abierta y pulsa `Ctrl+C` para detener sus servicios.
+No descarga modelos ni necesita Ollama para usar el simulador.
+
+Si los puertos están ocupados, usa por ejemplo
+`.\scripts\dev.ps1 -ApiPort 8010 -UiPort 4210`. Los logs quedan en
+`runtime/dev/sessions/`. [Opciones del lanzador](docs/operacion-local.md#lanzador-de-desarrollo-en-windows).
+
+También puedes mantener estas tres terminales abiertas, todas desde la raíz del repositorio:
 
 ```powershell
 # Terminal 1: API

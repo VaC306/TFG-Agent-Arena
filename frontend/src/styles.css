@@ -69,6 +69,11 @@ main { width: min(1120px, calc(100% - 96px)); margin: auto; }
 .primary:hover { background: #42423e; }
 .secondary { color: #30302c; background: transparent; border: 1px solid #cecec7; }
 .secondary:hover { background: #ebebe6; }
+.draft-status { margin: 16px 0; }
+.draft-status p, .library-selection button { overflow-wrap: anywhere; }
+.library-selection { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+.library-selection .secondary { white-space: normal; max-width: 100%; text-align: left; }
+.library-selection p { flex-basis: 100%; }
 .panel { background: transparent; border: 0; border-radius: 0; box-shadow: none; }
 .hint { color: var(--muted); font-size: 12px; line-height: 1.7; }
 select { padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: #292927; }
@@ -258,6 +263,10 @@ button, a, select, input, textarea { transition: background-color 160ms ease, bo
 button, summary, .primary, .secondary, select { min-height: 44px; }
 summary { padding-top: 12px; padding-bottom: 12px; }
 .profile-button { width: 44px; height: 44px; flex-shrink: 0; }
+@media (min-width: 761px) and (max-width: 1024px) {
+  .topbar { flex-wrap: wrap; gap: 16px; }
+  .workspace-nav { order: 4; width: 100%; flex-wrap: wrap; }
+}
 input, select, textarea, .auth-form input, .profile-form input, .secondary { border-color: #85857c; }
 input::placeholder, textarea::placeholder { color: #696960; opacity: 1; }
 :focus-visible { outline: 3px solid #484c80; outline-offset: 3px; }

@@ -102,3 +102,15 @@ def test_dataset_api(tmp_path):
     assert len(detail['runs']) == 8
     jsonl = '\n'.join(json.dumps(case, ensure_ascii=False) for case in data['dataset'])
     assert len(parse_dataset('mine.jsonl', jsonl)) == 2
+
+
+@pytest.mark.parametrize('filename,content,lines', [
+    ('duplicado.csv', 'id,input\na,uno\na,dos', '2 y 3'),
+    ('multilinea.csv', 'id,input\na,"uno\ny dos"\na,tres', '3 y 4'),
+    ('duplicado.jsonl', '{"id":"a","input":"uno"}\n\n{"id":"a","input":"dos"}', '1 y 3'),
+])
+def test_duplicate_id_reports_source_lines(filename, content, lines):
+    with pytest.raises(ValueError) as error:
+        parse_dataset(filename, content)
+    assert 'ID duplicado «a»' in str(error.value)
+    assert f'filas {lines}' in str(error.value)

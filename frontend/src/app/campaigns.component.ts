@@ -43,6 +43,7 @@ export class CampaignsComponent {
     return this.taskFilter() === 'variable' ? branches.some(b => b.quality_stability === 'variable')
       : this.taskFilter() === 'changed' ? branches.some(b => b.between_attempt_changes > 0)
       : this.taskFilter() === 'errors' ? branches.some(b => b.summary.execution_errors > 0)
+      : this.taskFilter() === 'cancelled' ? branches.some(b => b.summary.cancelled > 0)
       : this.taskFilter() === 'coverage' ? branches.some(b => b.reference_evaluable && b.coverage !== 1) : true;
   }));
   planFinished = computed(() => !!this.detail()?.design?.config.latency_study && this.detail()!.attempts.length >= (this.detail()!.design.config.planned_attempts ?? 2));
@@ -50,7 +51,7 @@ export class CampaignsComponent {
     return ({insufficient:'Evidencia insuficiente',variable:'Calidad variable',always_correct:'Evaluadas siempre correctas',always_incorrect:'Evaluadas siempre incorrectas'} as Record<string,string>)[value] ?? value;
   }
   outcomeLabel(value:string) {
-    return ({correct:'Correcta',incorrect:'Incorrecta',invalid_format:'Formato inválido',execution_error:'Error de ejecución',unscored:'Sin evaluar',pending:'Pendiente'} as Record<string,string>)[value] ?? value;
+    return ({correct:'Correcta',incorrect:'Incorrecta',invalid_format:'Formato inválido',execution_error:'Error de ejecución',cancelled:'Cancelada',unscored:'Sin evaluar',pending:'Pendiente'} as Record<string,string>)[value] ?? value;
   }
   constructor() {
     const timer = setInterval(() => {
@@ -140,7 +141,10 @@ export class CampaignsComponent {
       this.annotationRequests.delete(key);
       if (this.destroyed || version !== this.version) return;
       this.acceptDetail(updated);
-      this.noteText = ''; this.noteNotice.set('Anotación guardada. Las diferencias declaradas excluyen el intento del análisis compatible.');
+      this.noteText = '';
+      this.noteNotice.set(payload.kind === 'deviation'
+        ? 'Diferencia de condiciones guardada. Este intento queda excluido del análisis compatible.'
+        : 'Observación guardada. Esta anotación no cambia la compatibilidad del intento.');
     } catch(error) {
       if (!this.destroyed && version === this.version) this.noteError.set(accountError(error)+' Reintenta el mismo contenido; se conserva la clave para evitar duplicados.');
     } finally { if (!this.destroyed) this.savingNote.set(false); }

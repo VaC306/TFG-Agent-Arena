@@ -5,13 +5,15 @@ import math
 from .protocol import quality_value
 from .resources import measurement_records
 
-TERMINAL_ERRORS = {'timeout','limit','cancelled','interrupted'}
+TERMINAL_ERRORS = {'timeout','limit','interrupted'}
 
 
 def outcome(run):
     result = run.get('result') or {}
     if run['status'] in ('queued','running'):
         return 'pending'
+    if run['status'] == 'cancelled':
+        return 'cancelled'
     if result.get('error') or run['status'] in TERMINAL_ERRORS or run['status'] == 'failed' and 'answer' not in result:
         return 'execution_error'
     quality = quality_value(run)
@@ -27,18 +29,18 @@ def evaluable(task):
 
 
 def summarize(runs, tasks):
-    counts = {key:0 for key in ('correct','incorrect','invalid_format','execution_error','unscored','pending')}
+    counts = {key:0 for key in ('correct','incorrect','invalid_format','execution_error','cancelled','unscored','pending')}
     for run in runs:
         counts[outcome(run)] += 1
     times = [(r.get('result') or {}).get('agent_s') for r in runs
-             if outcome(r) not in ('execution_error','pending') and 'answer' in (r.get('result') or {})]
+             if outcome(r) not in ('execution_error','cancelled','pending') and 'answer' in (r.get('result') or {})]
     times = [t for t in times if type(t) in (float,int) and math.isfinite(t) and t >= 0]
     by_id = {task['id']:task for task in tasks}
     return {'total':len(runs),'finished':len(runs)-counts['pending'],
             'evaluated':counts['correct']+counts['incorrect']+counts['invalid_format'],
             'planned_evaluable':sum(evaluable(by_id[r['task_id']]) for r in runs),
             'correct':counts['correct'],'incorrect':counts['incorrect'],'invalid_format':counts['invalid_format'],
-            'execution_errors':counts['execution_error'],'unscored':counts['unscored'],'pending':counts['pending'],
+            'execution_errors':counts['execution_error'],'cancelled':counts['cancelled'],'unscored':counts['unscored'],'pending':counts['pending'],
             'mean_answer_s':sum(times)/len(times) if times else None,'timed_answers':len(times)}
 
 
