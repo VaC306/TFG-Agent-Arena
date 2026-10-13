@@ -67,9 +67,14 @@ La API se documenta en [Swagger](http://127.0.0.1:8000/docs).
 .\.venv\Scripts\python.exe -m pytest -q
 npm.cmd --prefix frontend test
 npm.cmd --prefix frontend run build
+npm.cmd --prefix frontend run e2e:install
+npm.cmd --prefix frontend run e2e
 ```
 
-Las pruebas usan bases aisladas. La simulación valida la plataforma; las
+Para repetir: `npm.cmd --prefix frontend run e2e:repeat` y
+`.\.venv\Scripts\python.exe scripts/check_reliability.py`.
+[Cobertura E2E y límites](docs/pruebas-e2e.md).
+Las pruebas usan bases y puertos aislados. La simulación valida la plataforma; las
 conclusiones sobre modelos requieren experimentos reales y casos revisados.
 
 ## Documentación

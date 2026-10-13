@@ -2,22 +2,19 @@ import asyncio
 from .adapters import Ollama, Simulated
 from .contracts import Experiment, Task
 from .runner import execute
+from .async_cleanup import drain
 
 
-async def work(store, once=False):
+async def work(store, once=False,*,heartbeat_wait=asyncio.sleep):
     import uuid
     worker_id = str(uuid.uuid4())
     state = ['idle']
     store.worker_signal(worker_id,'idle')
     async def signal():
         while True:
-            await asyncio.sleep(2)
+            await heartbeat_wait(2)
             writing = asyncio.create_task(asyncio.to_thread(store.worker_signal,worker_id,state[0]))
-            try:
-                await asyncio.shield(writing)
-            except asyncio.CancelledError:
-                await writing  # Finish the in-flight write before recording stopped.
-                raise
+            await drain(writing)  # Finish writes before recording stopped, including repeated interrupts.
     heartbeat = asyncio.create_task(signal())
     try:
         while True:
@@ -44,7 +41,7 @@ async def work(store, once=False):
     finally:
         heartbeat.cancel()
         try:
-            await heartbeat
+            await drain(heartbeat)
         except asyncio.CancelledError:
             pass
         finally:

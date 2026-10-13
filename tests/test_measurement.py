@@ -14,21 +14,22 @@ from arena.store import Store
 from arena.worker import work
 from conftest import register_client
 from test_comparisons import request_data
+from controlled_time import Clock,Ticks,checkpoint
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class Controlled:
     def __init__(self,mode='ok'):
-        self.calls=[];self.mode=mode
+        self.calls=[];self.mode=mode;self.entered=asyncio.Event()
     async def metadata(self,model):
         return {'adapter':'controlled','model':{'digest':'a'*64},'version':{'version':'test'},'show':{}}
     async def chat(self,messages,config,remaining):
-        self.calls.append((messages,config.tools_enabled,remaining))
+        self.calls.append((messages,config.tools_enabled,remaining));self.entered.set()
         if remaining == 1 and self.mode != 'ok':
             if self.mode == 'error': raise RuntimeError('Warmup offline')
-            await asyncio.sleep(10)
-        await asyncio.sleep(.03)
+            if self.mode == 'timeout': raise TimeoutError('Controlled timeout')
+            await asyncio.Event().wait()
         return {'message':{'role':'assistant','content':'yes'},'done':True,'done_reason':'length' if remaining==1 else 'stop',
                 'prompt_eval_count':7 if remaining==1 else 11,'eval_count':1 if remaining==1 else 2,'eval_duration':1_000_000}
 
@@ -48,12 +49,36 @@ def test_warmup_neutral_counters_separate_and_periodic_lifecycle(tmp_path,monkey
         count[0]+=1
         return {'at':count[0],'worker_rss_bytes':90 if count[0]==3 else 10,'ram_available_bytes':100,'worker_cpu_s':count[0]/10,'gpu':None,'unavailable':['NVML unavailable']}
     monkeypatch.setattr('arena.runner.sample',sample)
-    adapter=Controlled()
+    adapter=None
+    clock,ticks=Clock(),Ticks()
+    monkeypatch.setattr('arena.runner.ResourceMonitor',lambda *args:ResourceMonitor(*args,wait=ticks,clock=clock))
+    sampled={'warmup':asyncio.Event(),'task':asyncio.Event()}
+    entered={'warmup':asyncio.Event(),'task':asyncio.Event()}
+    release={'warmup':asyncio.Event(),'task':asyncio.Event()}
+    original=store.event
     async def check():
-        status=await execute(run,task,{},config,adapter,store,{'warmup':'per_run','resource_sample_interval_s':.01})
+        loop=asyncio.get_running_loop()
+        def event(run_id,kind,payload):
+            original(run_id,kind,payload)
+            if kind=='resources' and payload['phase'] in sampled:
+                loop.call_soon_threadsafe(sampled[payload['phase']].set)
+        monkeypatch.setattr(store,'event',event)
+        class Gated(Controlled):
+            async def chat(self,messages,config,remaining):
+                phase='warmup' if remaining==1 else 'task'
+                entered[phase].set()
+                await release[phase].wait()
+                return await super().chat(messages,config,remaining)
+        nonlocal adapter
+        adapter=Gated()
+        pending=asyncio.create_task(execute(run,task,{},config,adapter,store,{'warmup':'per_run','resource_sample_interval_s':1}))
+        for phase in ('warmup','task'):
+            await checkpoint(entered[phase]);clock.advance(1);ticks.release()
+            await checkpoint(sampled[phase]);release[phase].set()
+        status=await asyncio.wait_for(pending,5)
         assert status=='succeeded'
         events=store.events(run['id']);n=len(events)
-        await asyncio.sleep(.03)
+        ticks.release();await asyncio.sleep(0)
         assert len(store.events(run['id']))==n  # No sampler writes survive finishing.
         result=store.list_runs(run['experiment_id'])[0]['result']
         assert result['output_tokens']==2 and result['input_tokens']==11 and result['calls']==1
@@ -73,22 +98,19 @@ def test_warmup_neutral_counters_separate_and_periodic_lifecycle(tmp_path,monkey
 @pytest.mark.parametrize('mode,status',[('error','failed'),('timeout','timeout'),('cancel','cancelled'),('interrupt','interrupted')])
 def test_warmup_failure_never_sends_actual_input_and_releases_sampler(tmp_path,monkeypatch,mode,status):
     store,run,task,config=run_fixture(tmp_path)
-    config.limits.timeout_s=.05
+    config.limits.timeout_s=120
     adapter=Controlled(mode)
     async def check():
         pending=asyncio.create_task(execute(run,task,{},config,adapter,store,{'warmup':'per_run','resource_sample_interval_s':.01}))
         if mode in ('cancel','interrupt'):
-            for _ in range(100):
-                if adapter.calls:break
-                await asyncio.sleep(.001)
-            assert adapter.calls
+            await checkpoint(adapter.entered)
             if mode=='cancel':store.cancel(run['id'])
             else:pending.cancel()
         assert await pending==status
         result=store.list_runs(run['experiment_id'])[0]['result']
         assert result['task_s'] is None and result['output_tokens']==0 and result['calls']==0
         assert result['warmup']['status']=='failed' and result['failure_phase']=='warmup'
-        n=len(store.events(run['id']));await asyncio.sleep(.02)
+        n=len(store.events(run['id']));await asyncio.sleep(0)
         assert len(store.events(run['id']))==n
     asyncio.run(check())
     assert len(adapter.calls)==1

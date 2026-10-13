@@ -105,8 +105,10 @@ def test_paired_end_to_end_and_metrics(store, tmp_path):
 
 
 class Slow(Simulated):
+    def __init__(self):self.entered=asyncio.Event()
     async def chat(self, *args):
-        await asyncio.sleep(10)
+        self.entered.set()
+        await asyncio.Event().wait()
 
 
 class Broken(Simulated):
@@ -131,23 +133,27 @@ def test_limits_and_failures(store, limits, adapter, status, error):
         assert not result['usage_complete'] and result['server_tps'] is None
 
 
-def test_cancel_during_inference(store):
+def test_cancel_during_inference(store,monkeypatch):
+    monkeypatch.setattr('arena.runner.sample',lambda:{'at':1,'unavailable':['Controlled sensor']})
     enqueue(store)
     run = store.claim()
     async def scenario():
-        pending = asyncio.create_task(execute(run,TASKS[0],ENV,AgentConfig(model='mock',system_prompt='test'),Slow(),store))
-        await asyncio.sleep(0.02)
+        adapter=Slow()
+        pending = asyncio.create_task(execute(run,TASKS[0],ENV,AgentConfig(model='mock',system_prompt='test'),adapter,store))
+        await asyncio.wait_for(adapter.entered.wait(),5)
         store.cancel(run['id'])
         return await pending
     assert asyncio.run(scenario()) == 'cancelled'
 
 
-def test_interrupt_during_inference(store):
+def test_interrupt_during_inference(store,monkeypatch):
+    monkeypatch.setattr('arena.runner.sample',lambda:{'at':1,'unavailable':['Controlled sensor']})
     enqueue(store)
     run = store.claim()
     async def scenario():
-        pending = asyncio.create_task(execute(run,TASKS[0],ENV,AgentConfig(model='mock',system_prompt='test'),Slow(),store))
-        await asyncio.sleep(0.02)
+        adapter=Slow()
+        pending = asyncio.create_task(execute(run,TASKS[0],ENV,AgentConfig(model='mock',system_prompt='test'),adapter,store))
+        await asyncio.wait_for(adapter.entered.wait(),5)
         pending.cancel()
         return await pending
     assert asyncio.run(scenario()) == 'interrupted'

@@ -179,9 +179,24 @@ async def execute(run, task, environment, config, adapter, store, measurement=No
     if task_started is not None:
         metrics['task_s'] = time.perf_counter()-task_started
     monitor.phase = 'finished'
-    await monitor.stop()
+    closing = asyncio.create_task(monitor.stop())
+    try:
+        await asyncio.shield(closing)
+    except asyncio.CancelledError:
+        # Interruption can arrive after the answer, while a capture is being drained.
+        # Persist a terminal state instead of leaking a running execution.
+        status,metrics['error'] = 'interrupted','Worker interrupted during measurement cleanup'
+        while not closing.done():
+            try:
+                await asyncio.shield(closing)
+            except asyncio.CancelledError:
+                continue
+        await closing
+        metrics['failure_phase'] = 'measurement_cleanup'
+    if 'error' in metrics:
+        metrics['quality_evaluated'] = False
     metrics['resources'] = monitor.summary()
-    metrics['failure_phase'] = ('task' if task_started is not None else 'warmup' if metrics['warmup']['status'] == 'failed' else 'preparation') if 'error' in metrics else None
+    metrics['failure_phase'] = metrics.get('failure_phase') or (('task' if task_started is not None else 'warmup' if metrics['warmup']['status'] == 'failed' else 'preparation') if 'error' in metrics else None)
     metrics["agent_s"] = time.perf_counter() - started
     metrics["server_tps"] = metrics["output_tokens"] / metrics["server_eval_s"] if metrics["server_eval_s"] and metrics["usage_complete"] else None
     metrics["agent_output_tps"] = metrics["output_tokens"] / metrics["agent_s"] if metrics["usage_complete"] else None

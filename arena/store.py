@@ -8,9 +8,10 @@ from .contracts import Event
 
 
 class Store:
-    def __init__(self, path, owner_id=None):
+    def __init__(self, path, owner_id=None,*,clock=None):
         self.path = str(path)
         self.owner_id = owner_id
+        self.clock = clock or time.time
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as db:
             db.executescript("""
@@ -46,10 +47,14 @@ class Store:
 
     @contextmanager
     def connect(self):
-        with sqlite3.connect(self.path, timeout=30) as db:
-            db.row_factory = sqlite3.Row
-            db.execute("PRAGMA foreign_keys=ON")
-            yield db
+        db = sqlite3.connect(self.path, timeout=30)
+        try:
+            with db:
+                db.row_factory = sqlite3.Row
+                db.execute("PRAGMA foreign_keys=ON")
+                yield db
+        finally:
+            db.close()  # sqlite's transaction context does not close the connection.
 
     def create(self, experiment_id, snapshot, runs, campaign=None):
         with self.connect() as db:
@@ -157,10 +162,10 @@ class Store:
     def worker_signal(self, worker_id, state):
         with self.connect() as db:
             db.execute('INSERT INTO worker_signals VALUES (?,?,?) ON CONFLICT(id) DO UPDATE SET updated_at=excluded.updated_at,state=excluded.state',
-                       (worker_id,time.time(),state))
+                       (worker_id,self.clock(),state))
 
     def worker_status(self):
-        now = time.time()
+        now = self.clock()
         with self.connect() as db:
             signals = db.execute('SELECT updated_at,state FROM worker_signals').fetchall()
             live = [s for s in signals if s['state'] != 'stopped' and 0 <= now-s['updated_at'] <= 15]
@@ -337,7 +342,7 @@ class Store:
                 return row["status"]
             if row["cancel_requested"]:
                 status = "cancelled"
-                result.update(success=False if result.get('success') is not None else None, error="Cancelled")
+                result.update(success=False if result.get('success') is not None else None, error="Cancelled",quality_evaluated=False)
             run.update(status=status, finished_at=time.time(), result=result)
             db.execute("UPDATE runs SET status=?,data=? WHERE id=?", (status, json.dumps(run), run["id"]))
             db.execute("INSERT INTO events(run_id,kind,at,payload) VALUES (?,?,?,?)",

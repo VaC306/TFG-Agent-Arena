@@ -12,6 +12,7 @@ from arena.store import Store
 from arena.worker import work
 from conftest import register_client
 from test_campaigns import source
+from controlled_time import Clock,Ticks,checkpoint
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -116,12 +117,19 @@ def test_worker_heartbeats_during_run_and_stops_on_cancellation(tmp_path,monkeyp
         entered.set()
         await asyncio.Event().wait()
     monkeypatch.setattr('arena.worker.execute',blocked)
-    store = Store(path)
+    clock,ticks=Clock(Store(path).worker_status()['last_signal_at']+1),Ticks()
+    initial=clock()
+    store = Store(path,clock=clock)
     async def check():
-        task = asyncio.create_task(work(store))
-        await asyncio.wait_for(entered.wait(),5)
+        observed=asyncio.Event();loop=asyncio.get_running_loop();original=store.worker_signal
+        def signal(worker_id,state):
+            original(worker_id,state)
+            if state=='busy' and clock()>initial:loop.call_soon_threadsafe(observed.set)
+        monkeypatch.setattr(store,'worker_signal',signal)
+        task = asyncio.create_task(work(store,heartbeat_wait=ticks))
+        await checkpoint(entered)
         first = store.worker_status()['last_signal_at']
-        await asyncio.sleep(2.1)
+        clock.advance(2);ticks.release();await checkpoint(observed)
         status = store.worker_status()
         assert status['active_workers'] == status['busy_workers'] == 1
         assert status['last_signal_at'] > first

@@ -47,51 +47,64 @@ def provenance():
 
 class ResourceMonitor:
     """One sampler per run; never leave writes behind after finishing the run."""
-    def __init__(self,store,run_id,interval,sampler=sample):
+    def __init__(self,store,run_id,interval,sampler=sample,*,wait=asyncio.sleep,clock=time.perf_counter):
         self.store,self.run_id,self.interval,self.sampler = store,run_id,interval,sampler
-        self.started = time.perf_counter()
+        self.wait,self.clock = wait,clock
+        self.started = self.clock()
         self.phase = 'preparation'
         self.samples = []
         self.overhead_s = 0.
         self.task = None
+        self.errors = set()
+        self.closed = False
 
     def capture(self):
-        started = time.perf_counter()
+        started = self.clock()
         phase = self.phase
         try:
             value = self.sampler()
+            if not isinstance(value,dict):
+                raise TypeError('Invalid sensor payload')
         except Exception as exc:
             value = {'at':time.time(),'scope':'host_and_worker','unavailable':[f'Sampler: {type(exc).__name__}']}
-        value = value | {'elapsed_s':time.perf_counter()-self.started,'phase':phase}
-        self.store.event(self.run_id,'resources',value)
-        self.samples.append(value)
-        self.overhead_s += time.perf_counter()-started
+        value = value | {'elapsed_s':self.clock()-self.started,'phase':phase}
+        try:
+            self.store.event(self.run_id,'resources',value)
+        except Exception as exc:
+            self.errors.add(f'Trace persistence: {type(exc).__name__}')
+        else:
+            self.samples.append(value)  # Counts describe persisted, exportable samples.
+        finally:
+            self.overhead_s += self.clock()-started
 
     async def capture_async(self):
+        from .async_cleanup import drain
         writing = asyncio.create_task(asyncio.to_thread(self.capture))
-        try:
-            await asyncio.shield(writing)
-        except asyncio.CancelledError:
-            await writing
-            raise
+        await drain(writing)
 
     async def start(self):
         await self.capture_async()
         async def periodic():
             while True:
-                await asyncio.sleep(self.interval)
+                await self.wait(self.interval)
                 await self.capture_async()
         if self.interval is not None:
             self.task = asyncio.create_task(periodic())
 
     async def stop(self):
+        from .async_cleanup import drain
+        if self.closed:
+            return
         if self.task:
             self.task.cancel()
             try:
-                await self.task
+                await drain(self.task)
             except asyncio.CancelledError:
                 pass
-        await self.capture_async()
+        try:
+            await self.capture_async()
+        finally:
+            self.closed = True
 
     def summary(self):
         def numbers(field):
@@ -111,7 +124,7 @@ class ResourceMonitor:
                 'peak_worker_rss_bytes':max(rss) if rss else None,'min_host_ram_available_bytes':min(ram) if ram else None,
                 'worker_cpu_delta_s':max(0,cpu[-1]-cpu[0]) if len(cpu)>1 else None,
                 'peak_host_gpu_used_bytes':gpu or None,
-                'unavailable':sorted({v for s in self.samples for v in s.get('unavailable',[])}),
+                'unavailable':sorted(self.errors | {v for s in self.samples for v in s.get('unavailable',[])}),
                 'note':'Observed samples, not guaranteed peaks. Host GPU/RAM includes other processes; worker RSS/CPU excludes the Ollama server. Sampling includes preparation and warmup and may affect timing.'}
 
 
