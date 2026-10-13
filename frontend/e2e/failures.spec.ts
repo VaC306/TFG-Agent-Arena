@@ -5,6 +5,7 @@ test('cancelación real conserva trazas y libera el worker', async ({page}) => {
   const id=await compare(page,'Cancelación','[block]');
   await expect.poll(async()=> (await detail(page,id)).runs.some((r:any)=>r.status==='running')).toBe(true);
   await page.getByRole('button',{name:'↻ Actualizar',exact:true}).click();
+  await page.getByText('Tabla de ejecuciones y métricas técnicas',{exact:true}).click();
   const running=page.getByRole('row').filter({has:page.locator('[data-status="running"]')});
   await running.getByRole('button',{name:'Cancelar',exact:true}).click();
   await expect(page.getByRole('row').filter({has:page.locator('[data-status="cancelled"]')})).toHaveCount(1);

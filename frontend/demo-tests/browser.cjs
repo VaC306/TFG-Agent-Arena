@@ -86,8 +86,10 @@ const server = http.createServer((req,res) => {
       expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await page.getByRole('button',{name:'Campañas',exact:true}).click();
       await expect(page.locator('main')).toContainText('No hay campañas');
+      if (await page.locator('.secondary-menu').isVisible()) await page.locator('.secondary-menu > summary').click();
       await page.getByRole('button',{name:'Contacto',exact:true}).click();
       await expect(page.locator('main')).not.toContainText('@ucm.es');
+      if (await page.locator('.secondary-menu').isVisible()) await page.locator('.secondary-menu > summary').click();
       await page.getByRole('button',{name:'Guía',exact:true}).click();
       await expect(page.getByRole('heading',{name:'Explora sin ejecutar.'})).toBeVisible();
       await expect(page.getByRole('button',{name:'Crear una comparación'})).toHaveCount(0);

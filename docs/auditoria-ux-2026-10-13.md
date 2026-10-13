@@ -72,11 +72,11 @@ Estimaciones orientativas de implementación y verificación para una persona fa
 | P1 | UX-02 | Navegación y comparación en URL: volver y recuperar contexto | 2–4 días | Recarga abre sección/ID correctos; Atrás/Adelante funcionan; ID inválido tiene salida clara; no aparece información de otra cuenta. | Corregido; ver tercera iteración |
 | P1 | UX-09 | Cabecera adaptable: acceso a todas las acciones | 0,5–1 día | A 390, 768, 887 y 1024 px no hay overflow global causado por cabecera; perfil/historial operables con teclado. | Corregido y verificado en navegador |
 | P2 | UX-08, UX-14 | Mensajes específicos de dataset y anotación: corregir con certeza | 0,5–1 día | Duplicado indica ID/filas; confirmación distingue observación/diferencia; error conserva foco y contexto útil. | UX-14 y UX-08 corregidos; ver tercera iteración |
-| P2 | UX-04 | Comparación de prompts con datos compartidos por defecto | 2–3 días | Entrada única para dos prompts; modo independiente explícito; resumen de variables que cambian; no pierde borrador al alternar. | Pendiente |
-| P2 | UX-05, UX-06 | Resultados/campañas con información progresiva | 2–4 días | Primer bloque muestra estado y respuestas/métricas relevantes; detalles metodológicos accesibles sin repetición; acciones de campaña no retrasan lectura del resultado. | Pendiente |
+| P2 | UX-04 | Comparación de prompts con datos compartidos por defecto | 2–3 días | Entrada única para dos prompts; modo independiente explícito; resumen de variables que cambian; no pierde borrador al alternar. | Corregido; ver cuarta iteración |
+| P2 | UX-05, UX-06 | Resultados/campañas con información progresiva | 2–4 días | Primer bloque muestra estado y respuestas/métricas relevantes; detalles metodológicos accesibles sin repetición; acciones de campaña no retrasan lectura del resultado. | Corregidos; ver cuarta iteración |
 | P2 | UX-07 | Selección de biblioteca persistente frente a filtros | 1 día | Cambiar filtro conserva selección; chips permiten quitar fichas ocultas; límite de dos y compatibilidad siguen claros. | Corregido; ver tercera iteración |
 | P2 | UX-11 | Traza legible y salida por teclado | 1–2 días | Escape cierra y devuelve foco; resumen en español; eventos técnicos quedan disponibles; controles tienen nombres accesibles. | Corregido; ver tercera iteración |
-| P3 | UX-10, UX-12, UX-13 | Inicio compacto, ejemplo visible y estado de worker contextual | 1–3 días | Ejemplo simulado descubrible antes de rellenar formulario; distingue simulador/modelo; worker visible junto a ejecución; móvil mantiene acceso a acciones principales. | Pendiente |
+| P3 | UX-10, UX-12, UX-13 | Inicio compacto, ejemplo visible y estado de worker contextual | 1–3 días | Ejemplo simulado descubrible antes de rellenar formulario; distingue simulador/modelo; worker visible junto a ejecución; móvil mantiene acceso a acciones principales. | Corregidos; ver cuarta iteración |
 
 ## Las tres primeras mejoras recomendadas
 
@@ -222,3 +222,43 @@ Verificación sobre una base ficticia explícita, `runtime/arena-e2e-launcher-35
 - Ctrl+C desde una terminal interactiva (PTY): se ejecutó la limpieza, el último worker registró `stopped` y los puertos quedaron libres. La terminación forzada del árbol desde una terminal sin PTY no permite asegurar limpieza; no equivale a la prueba de Ctrl+C interactivo.
 
 La instalación `-Setup` no se repitió sobre dependencias ya instaladas ni se descargaron modelos. Se verificó la interfaz mediante el navegador integrado con `-NoBrowser`; no se comprobó visualmente el navegador predeterminado de Windows. Las bases ficticias se conservan, los servicios propios quedan detenidos y la base real continúa intacta.
+
+### Cuarta iteración: cierre de las mejoras obligatorias
+
+Continuación del 13 de octubre de 2026. UX-01 a UX-14 quedan corregidos y verificados según los recorridos documentados. Los estados anteriores de este registro describen sus respectivas iteraciones. Se conservan el lanzador local, la demo estática y las garantías de cancelación, borradores, sesión y navegación. No se fija pregunta experimental, dominio, ranking ni metodología.
+
+**UX-04:** comparar prompts de un mismo modelo usa una entrada manual compartida por defecto. «Entradas independientes» es una opción explícita; ambas entradas y la compartida se conservan al alternar modos y recuperar el borrador. Se muestra qué cambia: prompt, modelo o datos/referencias. La API acepta entrada compartida o ramas independientes, nunca ambas a la vez. Los borradores antiguos sin esta preferencia recuperan el comportamiento independiente, incluso tras cambiar de modo. No se reescriben comparaciones ejecutadas.
+
+**UX-05:** resumen y respuestas visibles A/B por tarea y repetición preceden a las acciones de campaña. Referencias, métricas y trazas permanecen disponibles por caso; los casos pendientes conservan cancelación accesible. Campaña y tabla técnica son desplegables secundarios. La tabla conserva la apertura elegida por el usuario al terminar la ejecución, evitando ocultar el control al que debe regresar el foco de la traza.
+
+**UX-06:** campañas presenta intentos, pendientes, incluidos y excluidos antes del detalle. «Intentos», «Por tarea» y «Método y condiciones» son secciones nativas operables con teclado. Anotaciones, advertencias y método completo siguen disponibles en desplegables. En simulación se ofrece una razón breve. No cambia el cálculo de compatibilidad, calidad, latencias, cancelaciones ni exportaciones.
+
+**UX-10:** en móvil Guía y Contacto pasan a «Más», la introducción ocupa menos espacio y se mantienen las acciones principales, historial y perfil. Escape cierra «Más» y devuelve el foco al resumen. **UX-12:** «Probar ejemplo simulado» aparece al principio y conserva el borrador preparado. El ejemplo se identifica como «Simulador · preset de pedidos»; resultados distingue motor de ejecución y modelo configurado y aclara que el modelo declarado no se ejecutó. **UX-13:** Comparar y el progreso de Resultados muestran señal compacta del worker y comprobación manual. Los contadores son de la cola de la cuenta, no solo de la comparación. La ayuda aclara que una señal reciente no garantiza Ollama ni recupera ejecuciones automáticamente. Las conexiones futuras de Perfil quedan plegadas. La demo no monta estos controles ni consulta la API.
+
+#### Criterios de aceptación comprobados
+
+| Mejora | Recorrido y resultado |
+| --- | --- |
+| UX-04 | Entrada compartida inicial → independientes A/B → alternar modos → recarga y recuperación → ejecutar compartida: textos conservados, snapshot compartido sin ramas alternativas y comparación anterior idéntica. Borrador antiguo sin preferencia: recuperación independiente. Prueba backend con adjunto y referencia privada: mismos datos para ambos prompts, referencia nunca enviada al modelo. |
+| UX-05 | Respuestas visibles antes de la acción de campaña en escritorio/móvil; tabla técnica cerrada inicialmente; traza con Enter y Escape devuelve foco. Cancelación durante ejecución operable y separada de errores. |
+| UX-06 | Crear campaña desde acción secundaria → abrir secciones con Enter → guardar observación: confirmación correcta y compatibilidad conservada. Método y advertencias accesibles. |
+| UX-10/12 | Viewports 390, 768, 887 y 1024 sin overflow; Guía accesible desde «Más», navegación y retorno. Ejemplo conserva borrador, distingue qwen configurado del simulador y no consulta modelos reales. Escape devuelve foco a «Más». |
+| UX-13 | Señal activa y respuesta controlada sin señal reciente; explicación y comprobación accesibles. Conexiones futuras plegadas; demo aislada de API. |
+
+#### Pruebas y evidencias
+
+- Backend: **261 pruebas aprobadas**. Permanece el aviso de deprecación Starlette/AnyIO ya registrado.
+- Frontend: **34 pruebas aprobadas**, compilación local y TypeScript de E2E correctos.
+- Navegador: **42 pruebas E2E aprobadas**, 21 en Chromium escritorio y 21 en móvil emulado. Incluye cuenta/sesión, borradores, recarga, selección, peticiones demoradas, errores, cancelación y ocho pruebas nuevas de esta iteración. Un fallo inicial del arnés móvil al buscar Guía fuera de «Más» se corrigió y se repitió la suite completa.
+- Demo estática: compilación correcta y recorridos de escritorio/móvil, filtro de rama, descargas, recarga, datos ausentes, reintento y recuperación de carga parcial; aislamiento de la API verificado.
+- Navegador integrado adicional: API y worker en **50148**, frontend en **50149**, SQLite nueva en `runtime/arena-e2e-ux-fourth-7b2225c9e9fb4a4796df17242edab0a0/arena.sqlite`. Cuenta, entradas y campaña ficticias. Recuperación con teclado, comparación compartida, traza y creación de campaña comprobadas. A 390 × 844 el documento mide 382 px; Escape desde «Más» devuelve el foco. Viewport restablecido y pestaña temporal cerrada.
+
+Capturas en `runtime/ux-review-evidence/`: `respuestas-por-caso-{chromium,mobile}.png`, `campana-progresiva-{chromium,mobile}.png`, `inicio-compacto-{chromium,mobile}.png` e `inicio-compacto-manual.png`. El directorio sigue excluido de Git; solo contiene datos ficticios.
+
+![Inicio compacto comprobado manualmente](../runtime/ux-review-evidence/inicio-compacto-manual.png)
+
+#### Límites y cierre
+
+UX-15 continúa como propuesta opcional, junto con las hipótesis y funciones nuevas. No se verificaron lector de pantalla, dispositivo táctil físico ni inferencia real: simulador y adaptadores controlados prueban el circuito, no rendimiento científico. El estado obsoleto del worker se probó con respuesta controlada. No se abrió ni modificó `runtime/arena.sqlite`, no se borró historial real ni se descargaron modelos.
+
+Durante la revisión se observaron commits de otra sesión (`309bc57` y `1f8ea42`); se conservaron. Tras completar las pruebas el usuario autorizó expresamente commit y push de lo pendiente. Este cierre incluye registro, pruebas de aceptación y últimos ajustes de recuperación, foco y presentación.

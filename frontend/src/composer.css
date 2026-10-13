@@ -84,3 +84,6 @@
   .mode-switch { gap: 16px; }
   .mode-switch button { flex: 1; }
 }
+
+.composer label.library-check { display:flex; align-items:center; gap:10px; }
+.composer .library-check input[type=checkbox] { width:18px; height:18px; flex:0 0 18px; margin:0; padding:0; accent-color:#54594a; }

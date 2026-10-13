@@ -26,7 +26,12 @@ disponibles en la entrada manual; el dataset no interpreta rutas de archivos ni 
 
 Cada caso se ejecuta en A y B con exactamente la misma entrada. Puedes usar un único modelo
 con dos prompts, o dos modelos distintos. No se pueden combinar un dataset y entradas manuales
-en el mismo envío. El modo manual de un solo modelo conserva las entradas A/B independientes.
+en el mismo envío. El modo manual de un solo modelo comparte texto, referencia y
+adjuntos por defecto, para comparar prompts con los mismos datos. «Entradas
+independientes» permite preparar datos A/B distintos; alternar conserva ambos
+borradores de entrada. La API admite `shared_input` o `branch_inputs` completos
+para un solo modelo, nunca ambos. Los diseños ejecutados anteriormente conservan
+sus entradas independientes y no se reinterpretan.
 Total de ejecuciones: casos × repeticiones × 2 (máximo 2.000).
 
 La referencia nunca se envía al modelo. La evaluación es coincidencia exacta de texto después

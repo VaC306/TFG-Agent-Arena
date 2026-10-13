@@ -3,7 +3,7 @@ import { ArenaService, WorkerStatus } from './arena.service';
 
 @Component({selector:'arena-worker-status',standalone:true,template:`
   <div class="worker-status-compact">
-    <p class="hint" role="status">{{ error() || (state() ? state()!.state === 'active' ? 'Worker disponible · ' + state()!.queued + ' en cola · ' + state()!.running + ' en ejecución' : 'Sin señal reciente del worker. Las ejecuciones pueden quedar en cola.' : 'Comprobando worker…') }}</p>
+    <p class="hint" role="status">{{ error() || (state() ? state()!.state === 'active' ? 'Worker disponible · Cola de tu cuenta: ' + state()!.queued + ' en cola · ' + state()!.running + ' en ejecución' : 'Sin señal reciente del worker. Las ejecuciones pueden quedar en cola.' : 'Comprobando worker…') }}</p>
     <button type="button" class="text-button" (click)="refresh()" [disabled]="busy">Comprobar worker</button>
     <details><summary>Qué indica esta señal</summary><p class="hint">Corresponde a esta base de datos y a la cola de tu cuenta. No garantiza que Ollama responda. Si no hay señal reciente, revisa la terminal del worker; no se recuperan ejecuciones automáticamente.</p></details>
   </div>

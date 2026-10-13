@@ -25,6 +25,7 @@ function validDraft(value: unknown, owner: string | undefined): value is Compose
   const c = d.config;
   return d.version === 1 && !!owner && d.owner === owner && !!c &&
     ['simulated','ollama'].includes(c.adapter) && ['same_model','different_models'].includes(c.mode) && ['manual','dataset'].includes(c.source) &&
+    (c.independentInputs === undefined || typeof c.independentInputs === 'boolean') &&
     [c.name,c.modelA,c.modelB,c.promptA?.template,c.promptA?.text,c.promptB?.template,c.promptB?.text].every(v => typeof v === 'string') &&
     typeof c.repetitions === 'number' && !!c.settings && typeof c.settings === 'object' &&
     !!d.inputs && !!d.missingFiles && (['inputA','inputB','shared'] as const).every(slot =>
@@ -161,7 +162,7 @@ export class ComposerComponent {
     const config = draft.config;
     this.name = config.name; this.adapter = config.adapter; this.mode = config.mode; this.source = config.source;
     // Earlier drafts used independent manual inputs. Recover that choice without reinterpreting their data.
-    this.independentInputs = config.independentInputs ?? (config.mode === 'same_model' && config.source === 'manual');
+    this.independentInputs = config.independentInputs ?? true;
     this.repetitions = config.repetitions; this.modelA = config.modelA; this.modelB = config.modelB;
     this.promptA = {...config.promptA}; this.promptB = {...config.promptB};
     this.evaluation = config.evaluation ?? 'exact_match'; this.settings = {...defaultSettings(),...config.settings}; this.split = config.split ?? 'dev';

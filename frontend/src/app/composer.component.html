@@ -49,7 +49,7 @@
         </div>
         <p class="hint">Orden A/B aleatorio con semilla fija, ejecución secuencial. Los recursos se muestrean cada segundo; los máximos observados no son picos garantizados. La semilla ayuda a repetir las condiciones, pero no garantiza respuestas idénticas. El contexto debe ser compatible con el modelo y la memoria disponible.</p>
       </details>
-      <p class="hint mode-explanation">{{ source === 'dataset' ? 'Cada caso del dataset se ejecuta con ambos agentes. A y B reciben exactamente la misma entrada.' : usesIndependentInputs() ? 'Cada rama tiene sus propios datos; esta prueba no aísla el efecto del prompt.' : 'A y B pueden usar modelos y prompts distintos, pero reciben exactamente los mismos archivos y entrada.' }}</p>
+      <p class="hint mode-explanation">{{ source === 'dataset' ? 'Cada caso del dataset se ejecuta con ambos agentes. A y B reciben exactamente la misma entrada.' : usesIndependentInputs() ? 'Cada rama tiene sus propios datos; esta prueba no aísla el efecto del prompt.' : mode === 'same_model' ? 'El mismo modelo recibe en A y B el mismo texto, referencia y archivos. Puedes cambiar los prompts.' : 'A y B pueden usar modelos y prompts distintos, pero reciben exactamente los mismos archivos y entrada.' }}</p>
       @if (source === 'dataset') {
         <section class="dataset-import" aria-labelledby="dataset-title">
           <div class="section-header"><div><h3 id="dataset-title">Tus casos de prueba</h3><p class="hint">CSV o JSONL en UTF-8 · hasta 100 casos · 1 MiB</p></div><a class="secondary" href="/api/datasets/template.csv" download="dataset-ejemplo.csv">Descargar plantilla</a></div>
