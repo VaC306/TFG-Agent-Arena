@@ -1,0 +1,9 @@
+task_id,branch,repetition,status,success,format_ok,agent_s,input_tokens,output_tokens,tool_calls,error,answer
+dev-file-total,B,0,failed,False,True,3.299372300003597,270,8,0,,"{""total"": 50}"
+dev-file-total,A,0,failed,False,True,2.9226329999946756,270,12,0,,"{
+  ""total"": 110
+}"
+dev-file-lookup,B,0,failed,False,True,3.98109029999614,137,10,0,,"{
+  ""B"": 5
+}"
+dev-file-lookup,A,0,succeeded,True,True,2.931598200004373,137,7,0,,"{""precio"": 5}"

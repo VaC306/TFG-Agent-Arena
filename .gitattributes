@@ -2,3 +2,6 @@
 /benchmarks/** -text whitespace=cr-at-eol
 # Downloaded evidence is immutable and its manifest covers the original bytes.
 /experiments/local-flow-2026-10-12/** -text whitespace=cr-at-eol
+# Replay provenance and generated demo assets are byte-sensitive on every OS.
+/experiments/simulated-dev-final-2026-10-08/** -text whitespace=cr-at-eol
+/frontend/demo-assets/** -text whitespace=cr-at-eol

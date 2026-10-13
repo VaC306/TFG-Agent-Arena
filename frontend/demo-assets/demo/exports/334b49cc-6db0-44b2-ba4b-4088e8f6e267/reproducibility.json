@@ -1,0 +1,274 @@
+{
+  "snapshot": {
+    "config": {
+      "name": "arena-benchmarks-v1 json dev",
+      "adapter": "ollama",
+      "split": "dev",
+      "repetitions": 1,
+      "comparison": "different_models",
+      "agents": {
+        "A": {
+          "model": "qwen2.5:3b",
+          "system_prompt": "Extrae la información solicitada y devuelve únicamente JSON válido, sin Markdown ni explicaciones. Respeta los tipos pedidos, usa null para datos ausentes y no inventes valores.",
+          "temperature": 0.0,
+          "seed": 42,
+          "num_ctx": 4096,
+          "limits": {
+            "max_output_tokens": 1024,
+            "timeout_s": 90.0
+          }
+        },
+        "B": {
+          "model": "qwen2.5:7b",
+          "system_prompt": "Extrae la información solicitada y devuelve únicamente JSON válido, sin Markdown ni explicaciones. Respeta los tipos pedidos, usa null para datos ausentes y no inventes valores.",
+          "temperature": 0.0,
+          "seed": 42,
+          "num_ctx": 4096,
+          "limits": {
+            "max_output_tokens": 1024,
+            "timeout_s": 90.0
+          }
+        }
+      }
+    },
+    "tasks": [
+      {
+        "id": "producto",
+        "input": "Extrae nombre y precio de este texto: Producto: Cuaderno; precio: 3.5 euros. Devuelve solo JSON con las claves nombre y precio, sin moneda.",
+        "expected_answer": "{\"nombre\":\"Cuaderno\",\"precio\":3.5}",
+        "evaluation": "json_match"
+      },
+      {
+        "id": "activo",
+        "input": "Extrae el estado activo como booleano de: cuenta activa: sí. Devuelve solo JSON con clave activo.",
+        "expected_answer": "{\"activo\":true}",
+        "evaluation": "json_match"
+      },
+      {
+        "id": "ausente",
+        "input": "Extrae nombre y telefono: Nombre: Ana. No hay teléfono indicado. Devuelve solo JSON; los datos ausentes deben ser null.",
+        "expected_answer": "{\"nombre\":\"Ana\",\"telefono\":null}",
+        "evaluation": "json_match"
+      }
+    ],
+    "conditions": {
+      "inputs_shared": true
+    },
+    "data_sha256": "c54808396b4079847431941edf41ee987ed44f2fd3bf7b3d24f3bd16e55cdca5"
+  },
+  "runs": [
+    {
+      "id": "5cbec9e6-8326-4447-bf4a-e408f54fe9db",
+      "task_id": "producto",
+      "branch": "B",
+      "repetition": 0,
+      "status": "succeeded",
+      "result": {
+        "success": true,
+        "format_ok": true,
+        "agent_s": 3.8348896999959834,
+        "queue_s": 0.006522178649902344,
+        "input_tokens": 91,
+        "output_tokens": 21,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 53.744177714080976,
+        "answer": "{\n  \"nombre\": \"Cuaderno\",\n  \"precio\": 3.5\n}",
+        "reason": "JSON equivalente a la referencia"
+      }
+    },
+    {
+      "id": "1cda2b1c-d28c-4668-b063-c948c9481eff",
+      "task_id": "producto",
+      "branch": "A",
+      "repetition": 0,
+      "status": "succeeded",
+      "result": {
+        "success": true,
+        "format_ok": true,
+        "agent_s": 2.7461231000052067,
+        "queue_s": 3.861666440963745,
+        "input_tokens": 91,
+        "output_tokens": 21,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 106.96658058403753,
+        "answer": "{\n  \"nombre\": \"Cuaderno\",\n  \"precio\": 3.5\n}",
+        "reason": "JSON equivalente a la referencia"
+      }
+    },
+    {
+      "id": "abf3144a-2543-40d1-93a2-29207c6ae0fc",
+      "task_id": "activo",
+      "branch": "B",
+      "repetition": 0,
+      "status": "succeeded",
+      "result": {
+        "success": true,
+        "format_ok": true,
+        "agent_s": 3.1805679999961285,
+        "queue_s": 6.626115560531616,
+        "input_tokens": 78,
+        "output_tokens": 9,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 55.26049181837718,
+        "answer": "{\n  \"activo\": true\n}",
+        "reason": "JSON equivalente a la referencia"
+      }
+    },
+    {
+      "id": "e80bde47-14f7-4b5b-9464-717f7e70239e",
+      "task_id": "activo",
+      "branch": "A",
+      "repetition": 0,
+      "status": "succeeded",
+      "result": {
+        "success": true,
+        "format_ok": true,
+        "agent_s": 3.1810058999981266,
+        "queue_s": 9.82461929321289,
+        "input_tokens": 78,
+        "output_tokens": 9,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 107.47166927384976,
+        "answer": "{\n  \"activo\": true\n}",
+        "reason": "JSON equivalente a la referencia"
+      }
+    },
+    {
+      "id": "54aa8b5f-671a-4d0d-adbf-470ff391ae4b",
+      "task_id": "ausente",
+      "branch": "A",
+      "repetition": 0,
+      "status": "succeeded",
+      "result": {
+        "success": true,
+        "format_ok": true,
+        "agent_s": 3.091345699998783,
+        "queue_s": 13.024338960647583,
+        "input_tokens": 81,
+        "output_tokens": 12,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 91.26169290440338,
+        "answer": "{\"nombre\": \"Ana\", \"telefono\": null}",
+        "reason": "JSON equivalente a la referencia"
+      }
+    },
+    {
+      "id": "e504530e-b632-41e7-9ecf-26b04cde9a14",
+      "task_id": "ausente",
+      "branch": "B",
+      "repetition": 0,
+      "status": "succeeded",
+      "result": {
+        "success": true,
+        "format_ok": true,
+        "agent_s": 3.843180299998494,
+        "queue_s": 16.14213752746582,
+        "input_tokens": 81,
+        "output_tokens": 16,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 54.41418033539541,
+        "answer": "{\n  \"nombre\": \"Ana\",\n  \"telefono\": null\n}",
+        "reason": "JSON equivalente a la referencia"
+      }
+    }
+  ],
+  "protocol": {
+    "version": "arena-protocol-v1",
+    "evaluator_version": "arena-evaluation-v2",
+    "comparison_scope": "models",
+    "inputs_shared": true,
+    "prompts_equal": true,
+    "evaluations": [
+      "json_match"
+    ],
+    "warnings": [
+      "Había cambios sin commit al guardar. Para identificar el código, usa también las fuentes y hashes del informe.",
+      "Sin calentamiento previo. El tiempo del agente incluye consulta de metadatos y puede incluir carga del modelo.",
+      "Política de memoria del modelo (keep_alive): 0. No se garantiza un inicio en frío si otro programa lo tiene cargado.",
+      "Semilla fija no garantiza respuestas idénticas. La carga de otros programas no está aislada.",
+      "Resultados guardados del 12/10/2026. Muestras pequeñas y exploratorias; sin ranking ni conclusión de superioridad. A/B secuenciales, sin aislamiento del host; tiempo total puede incluir carga y preparación. Semilla fija no garantiza determinismo. No se publican fuentes, entornos, adjuntos binarios ni trazas completas del worker."
+    ],
+    "branches": {
+      "A": {
+        "total": 3,
+        "answers": 3,
+        "evaluated": 3,
+        "correct": 3,
+        "execution_errors": 0,
+        "mean_answer_s": 3.006158233334039
+      },
+      "B": {
+        "total": 3,
+        "answers": 3,
+        "evaluated": 3,
+        "correct": 3,
+        "execution_errors": 0,
+        "mean_answer_s": 3.6195459999968684
+      }
+    },
+    "models": {
+      "B": {
+        "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+        "server_version": "0.40.3",
+        "quantization": "Q4_K_M",
+        "verified": true
+      },
+      "A": {
+        "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+        "server_version": "0.40.3",
+        "quantization": "Q4_K_M",
+        "verified": true
+      }
+    }
+  },
+  "overviews": {
+    "A": {
+      "total": 3,
+      "finished": 3,
+      "evaluated": 3,
+      "planned_evaluable": 3,
+      "correct": 3,
+      "incorrect": 0,
+      "invalid_format": 0,
+      "execution_errors": 0,
+      "cancelled": 0,
+      "unscored": 0,
+      "pending": 0,
+      "mean_answer_s": 3.006158233334039,
+      "timed_answers": 3
+    },
+    "B": {
+      "total": 3,
+      "finished": 3,
+      "evaluated": 3,
+      "planned_evaluable": 3,
+      "correct": 3,
+      "incorrect": 0,
+      "invalid_format": 0,
+      "execution_errors": 0,
+      "cancelled": 0,
+      "unscored": 0,
+      "pending": 0,
+      "mean_answer_s": 3.6195459999968684,
+      "timed_answers": 3
+    }
+  },
+  "selection": {
+    "source": "benchmarks/v1/results/2026-10-12/dev/json.json",
+    "sha256": "9ad501229be8347733299a511dc9c7cffb5a0aa368e7da4360a25968d450b690",
+    "note": "Resultados guardados del 12/10/2026. Muestras pequeñas y exploratorias; sin ranking ni conclusión de superioridad. A/B secuenciales, sin aislamiento del host; tiempo total puede incluir carga y preparación. Semilla fija no garantiza determinismo. No se publican fuentes, entornos, adjuntos binarios ni trazas completas del worker.",
+    "summary_policy": "Recomputed with current backend outcome semantics; cancellations separated from execution errors."
+  }
+}

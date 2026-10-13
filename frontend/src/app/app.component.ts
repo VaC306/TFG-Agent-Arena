@@ -1,3 +1,8 @@
+import { DEMO_MODE } from './runtime-mode';
+import { WorkerStatusComponent } from './worker-status.component';
+import { DemoOverviewComponent } from './demo-overview.component';
+import { DemoGuideComponent } from './demo-guide.component';
+import { ContactComponent } from './contact.component';
 import { Component, computed, DestroyRef, HostListener, inject, signal } from '@angular/core';
 import { DatePipe, DecimalPipe, JsonPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -16,10 +21,12 @@ import { ArenaService, ArenaEvent, ExperimentDetail, ExperimentSummary, Preset, 
 
 @Component({
   selector: 'arena-workspace', standalone: true,
-  imports: [DatePipe, DecimalPipe, JsonPipe, FormsModule, ComposerComponent, ProfileComponent, InfoDialogComponent, GuideComponent, BrandMarkComponent, ModelLibraryComponent, CampaignsComponent, LoadingIndicatorComponent],
+  imports: [WorkerStatusComponent, DemoOverviewComponent, DemoGuideComponent, ContactComponent, DatePipe, DecimalPipe, JsonPipe, FormsModule, ComposerComponent, ProfileComponent, InfoDialogComponent, GuideComponent, BrandMarkComponent, ModelLibraryComponent, CampaignsComponent, LoadingIndicatorComponent],
   templateUrl: './app.component.html',
 })
 export class AppComponent {
+  demo = DEMO_MODE;
+  download(file:string) { return this.demo ? `demo/exports/${encodeURIComponent(this.selectedId())}/${file}` : `/api/experiments/${encodeURIComponent(this.selectedId())}/${file}`; }
   auth = inject(AuthService);
   view = signal<'compose' | 'results' | 'profile' | 'guide' | 'contact' | 'models' | 'campaigns'>('compose');
   campaignId = signal('');
@@ -44,7 +51,7 @@ export class AppComponent {
   private readRoute() {
     const [path,query = ''] = window.location.hash.replace(/^#\/?/, '').split('?');
     const views = ['compose','results','profile','guide','contact','models','campaigns'] as const;
-    const view = views.find(v => v === path) ?? 'compose';
+    const view = views.find(v => v === path && !(this.demo && v === 'profile')) ?? 'compose';
     const params = new URLSearchParams(query);
     return {view, id:params.get('comparison') ?? '', campaign:params.get('campaign') ?? ''};
   }
@@ -97,6 +104,15 @@ export class AppComponent {
   completed = computed(() => this.detail()?.runs.filter(terminal).length ?? 0);
   pending = computed(() => this.detail()?.runs.some(r => !terminal(r)) ?? false);
   visibleRuns = computed(() => this.detail()?.runs.filter(r => this.branchFilter() === 'all' || r.branch === this.branchFilter()) ?? []);
+  resultCases = computed(() => {
+    const cases = new Map<string,{key:string;task:string;repetition:number;runs:Partial<Record<'A'|'B',Run>>}>();
+    for (const run of this.detail()?.runs ?? []) {
+      const key = JSON.stringify([run.task_id,run.repetition]);
+      const item = cases.get(key) ?? {key,task:run.task_id,repetition:run.repetition,runs:{}};
+      item.runs[run.branch] = run; cases.set(key,item);
+    }
+    return [...cases.values()];
+  });
   summaries = computed(() => (['A', 'B'] as const).map(branch => {
     return {branch,...(this.detail()?.overviews?.[branch] ?? {total:0,finished:0,evaluated:0,planned_evaluable:0,correct:0,incorrect:0,invalid_format:0,execution_errors:0,cancelled:0,unscored:0,pending:0,mean_answer_s:null,timed_answers:0})};
   }));
@@ -135,7 +151,7 @@ export class AppComponent {
         if (this.selectedId()) await this.select(this.selectedId(), false);
         else if (experiments.length) { await this.select(experiments[0].id, false); if (!this.destroyed) this.writeRoute(true); }
       }
-    } catch { if (version === this.initializationVersion) this.error.set('No se puede conectar con la API. Comprueba que esté en marcha y pulsa Actualizar.'); }
+    } catch { if (version === this.initializationVersion) this.error.set(this.demo ? 'No se pudieron cargar los resultados guardados. Pulsa Actualizar para reintentar.' : 'No se puede conectar con la API. Comprueba que esté en marcha y pulsa Actualizar.'); }
     finally { if (version === this.initializationVersion && selection === this.selectionVersion) this.loading.set(false); }
   }
 
@@ -197,6 +213,7 @@ export class AppComponent {
     } catch { this.error.set('No se pudo confirmar la creación. Actualiza el historial antes de repetir para evitar duplicados.'); }
     finally { this.creating.set(false); }
   }
+  async simulatedExample() { this.preset = 'simulated'; await this.create(); }
 
   async customCreated(id: string) {
     if (this.destroyed) return;

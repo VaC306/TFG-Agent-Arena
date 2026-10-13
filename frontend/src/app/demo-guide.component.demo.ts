@@ -1,0 +1,14 @@
+import { Component, output } from '@angular/core';
+@Component({selector:'arena-demo-guide',standalone:true,styleUrl:'./demo-guide.component.css',template:`
+  <article class="demo-guide" aria-labelledby="guide-title">
+    <header class="demo-guide-intro"><p class="eyebrow">Guía / Resultados guardados</p><h1 id="guide-title" tabindex="-1">Explora sin ejecutar.</h1><p class="subheading">Todo lo que ves procede de una selección de evidencia existente.</p></header>
+    <ol class="demo-guide-steps" aria-label="Cómo explorar la demo">
+      <li><span class="demo-guide-number" aria-hidden="true">01</span><section aria-labelledby="demo-guide-1"><h2 id="demo-guide-1">Empieza por el recorrido</h2><p>En <strong>Comparar</strong> encontrarás cinco casos comentados. Abre su evidencia para consultar las dos ramas, respuesta, referencia y condiciones. Puedes volver al recorrido desde la navegación.</p></section></li>
+      <li><span class="demo-guide-number" aria-hidden="true">02</span><section aria-labelledby="demo-guide-2"><h2 id="demo-guide-2">Cambia el punto de vista</h2><p><strong>Resumen</strong> separa suites, modelos y fases. <strong>Modelos</strong> permite seleccionar dos fichas; las diferencias de condiciones permanecen visibles. No se calcula un ganador.</p></section></li>
+      <li><span class="demo-guide-number" aria-hidden="true">03</span><section aria-labelledby="demo-guide-3"><h2 id="demo-guide-3">Mira qué pasó entre mensajes</h2><p><strong>Diagnósticos</strong> muestra llamadas y continuaciones reales sobre fixtures sintéticos.</p><p><strong>Reproducción</strong> permite recorrer eventos guardados de un simulador: los controles solo cambian el paso visible.</p></section></li>
+      <li><span class="demo-guide-number" aria-hidden="true">04</span><section aria-labelledby="demo-guide-4"><h2 id="demo-guide-4">Consulta los datos</h2><p><strong>Datos</strong> muestra tareas, referencias y archivos sintéticos revisados. Las descargas incluyen la selección y su procedencia; no incluyen bases de datos, credenciales o snapshots completos.</p></section></li>
+      <li><span class="demo-guide-number" aria-hidden="true">05</span><section aria-labelledby="demo-guide-5"><h2 id="demo-guide-5">Conserva los límites</h2><p>Calidad se calcula sobre respuestas evaluadas. Errores, formatos inválidos y cancelaciones se muestran aparte.</p><p>Tiempos y tokens del simulador no miden un modelo real; las muestras reales tampoco permiten generalizar.</p></section></li>
+    </ol>
+    <footer class="demo-guide-finish"><p class="alert">Esta demo no crea comparaciones, ejecuta modelos, modifica cuentas ni guarda preferencias. Estas funciones pertenecen a la aplicación con backend.</p><button class="primary" (click)="start.emit()">Abrir recorrido de demo →</button></footer>
+  </article>`})
+export class DemoGuideComponent { start = output<void>(); }

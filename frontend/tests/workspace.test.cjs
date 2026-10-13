@@ -15,7 +15,7 @@ function fixture(filename, api, options={}) {
   const destroy = [];
   const signal = value => Object.assign(() => value, {set:next => {value=next;}, update:fn => {value=fn(value);}});
   class ArenaService {} class AuthService {} class DestroyRef {}
-  const core = {Component:() => target => target, Output:() => () => {}, HostListener:() => () => {}, EventEmitter:class {emit(){}}, signal, input:signal, computed:fn => fn, output:() => ({emit(){}}), DestroyRef,
+  const core = {Component:() => target => target, Input:() => () => {}, Output:() => () => {}, HostListener:() => () => {}, EventEmitter:class {emit(){}}, signal, input:signal, computed:fn => fn, output:() => ({emit(){}}), DestroyRef,
     inject:token => token === ArenaService ? api : token === AuthService ? auth : {onDestroy:fn=>destroy.push(fn),begin:()=>()=>{}}};
   const auth = {user:signal(options.user ?? {id:'test'}),savePreferences:async()=>{}};
   const storage = options.storage ?? {getItem:()=>null,setItem(){},removeItem(){}};

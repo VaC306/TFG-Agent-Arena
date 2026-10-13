@@ -1,0 +1,13 @@
+task_id,branch,repetition,status,success,format_ok,agent_s,input_tokens,output_tokens,tool_calls,error,answer
+eval-sum,B,0,succeeded,True,,4.359756999998353,69,3,0,,65
+eval-sum,A,0,succeeded,True,,3.011290700000245,69,3,0,,65
+eval-time,B,0,succeeded,True,,3.6353764000014053,90,6,0,,09:20
+eval-time,A,0,succeeded,True,,3.237317400002212,90,6,0,,09:20
+eval-code,A,0,succeeded,True,,3.080489400002989,75,5,0,,ZX-81
+eval-code,B,0,succeeded,True,,3.358989599997585,75,5,0,,ZX-81
+eval-count,B,0,succeeded,True,,3.97017539999797,81,3,0,,24
+eval-count,A,0,succeeded,True,,2.6421895000021323,81,3,0,,24
+eval-date,B,0,succeeded,True,,10.313203600002453,101,11,0,,2026-05-18
+eval-date,A,0,succeeded,True,,4.449165800004266,101,11,0,,2026-05-18
+eval-name,B,0,succeeded,True,,3.5660433000011835,80,2,0,,Leo
+eval-name,A,0,succeeded,True,,3.018300999996427,80,2,0,,Leo

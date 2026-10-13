@@ -1,0 +1,10 @@
+{
+  "project_id": "appgprj_6ace5571d39881918b359f97c6c3e514",
+  "version_id": "appgprj_6ace5571d39881918b359f97c6c3e514~appgver_73dd6a98049081919ea13b07cd239b9f",
+  "deployment_id": "appgdep_6ace80a467108191b3b05351c58462ea",
+  "url": "https://agent-arena-demo-tfg.blush-cocoa-5254.chatgpt.site",
+  "access": "owner-only",
+  "source_commit": "7a022237c22463a038c58db430362ad68a77708a",
+  "checkout": "frontend/dist/sites-publication",
+  "archive": "frontend/dist/arena-demo-sites.tar.gz"
+}

@@ -1,0 +1,91 @@
+{
+  "suites": [
+    {
+      "experiment_id": "f9376f27-eeb5-416e-a3a7-eca838fdff56",
+      "suite": "text",
+      "split": "dev"
+    },
+    {
+      "experiment_id": "334b49cc-6db0-44b2-ba4b-4088e8f6e267",
+      "suite": "json",
+      "split": "dev"
+    },
+    {
+      "experiment_id": "a7670eab-7458-4cc4-8b1e-1a05b76dcdbe",
+      "suite": "orders",
+      "split": "dev"
+    },
+    {
+      "experiment_id": "a47709dd-62e8-4614-8e73-33310080b70e",
+      "suite": "attachments",
+      "split": "dev"
+    },
+    {
+      "experiment_id": "e7c59b68-e20a-4d7c-bc72-b54f9eee3d54",
+      "suite": "text",
+      "split": "eval"
+    },
+    {
+      "experiment_id": "efebdf52-65ed-4726-8611-576654ddaca6",
+      "suite": "json",
+      "split": "eval"
+    },
+    {
+      "experiment_id": "cf74b8be-968b-4540-8906-ee1969d0b28a",
+      "suite": "orders",
+      "split": "eval"
+    },
+    {
+      "experiment_id": "5f4b1955-24dd-48a6-bcb5-a0fd593054e4",
+      "suite": "attachments",
+      "split": "eval"
+    }
+  ],
+  "cases": [
+    {
+      "experiment_id": "f9376f27-eeb5-416e-a3a7-eca838fdff56",
+      "run_id": "42a2c748-4d9a-4569-a56f-395d7b34311a",
+      "task_id": "capital",
+      "branch": "A",
+      "title": "Una respuesta correcta",
+      "question": "¿Qué significa un acierto?",
+      "explanation": "La respuesta coincide con la referencia y el criterio registrado. Solo describe este caso."
+    },
+    {
+      "experiment_id": "eb7bbb1d-f303-4916-a8e8-36d82605af11",
+      "run_id": "c3ecdd32-acda-4a58-bec7-c408d316a4a2",
+      "task_id": "capital",
+      "branch": "A",
+      "title": "Paris frente a París",
+      "question": "¿Qué cambia una tilde?",
+      "explanation": "Texto exacto conserva acentos. Paris no coincide con París. Este fallo no demuestra peor razonamiento."
+    },
+    {
+      "experiment_id": "a7670eab-7458-4cc4-8b1e-1a05b76dcdbe",
+      "run_id": "dd30dbfc-6c91-479d-8184-6f1bcb268800",
+      "task_id": "dev-partial-return",
+      "branch": "A",
+      "title": "Una respuesta que rompe el formato",
+      "question": "¿Completar significa acertar?",
+      "explanation": "La ejecución devuelve texto, pero no cumple el JSON exigido. Un fallo de formato se distingue de un error de ejecución."
+    },
+    {
+      "experiment_id": "a7670eab-7458-4cc4-8b1e-1a05b76dcdbe",
+      "run_id": "9762e416-a777-4eb1-823a-66c07dd15a43",
+      "task_id": "dev-partial-return",
+      "branch": "B",
+      "title": "Calidad y cobertura",
+      "question": "¿Un 100 % puede ocultar errores?",
+      "explanation": "B tiene 1/1 respuestas evaluadas correctas, pero 1/4 ejecuciones programadas correctas y tres errores. Consulta ambos denominadores."
+    },
+    {
+      "experiment_id": "0f74e176-f89d-4e9b-b79f-27346e9a2b74",
+      "run_id": "a818cc88-fc70-473d-aa6b-f779114bb537",
+      "task_id": "capital",
+      "branch": "B",
+      "title": "Una cancelación guardada",
+      "question": "¿Cómo se conserva lo que no terminó?",
+      "explanation": "Esta cancelación pertenece al simulador. Se conserva como cancelada, sin convertirla en una respuesta incorrecta ni una prueba de calidad de un modelo real."
+    }
+  ]
+}

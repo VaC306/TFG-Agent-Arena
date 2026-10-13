@@ -29,6 +29,11 @@ Reproducibilidad no significa garantizar respuestas idénticas en cualquier máq
 
 ## Inicio rápido
 
+Para consultar evidencia sin API, worker ni Ollama, usa la
+[demo estática preparada para Sites](docs/demo-sites.md). Incluye compilación
+Angular independiente, datos revisados y pasos de publicación privada pendientes
+de autorización.
+
 Requisitos: **Python 3.11** y **Node.js 22.12 o posterior de la rama 22**.
 Ejecuta desde la raíz de tu copia del repositorio. Los ejemplos usan PowerShell.
 

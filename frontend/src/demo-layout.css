@@ -1,0 +1,21 @@
+/* Included only by the Angular demo configuration. */
+.demo-mode .demo-banner { margin: 18px 0 0; max-width: 90ch; line-height: 1.8; }
+.demo-mode main > section.panel { max-width: 880px; padding: 56px 0 24px; }
+.demo-mode main > section.panel .eyebrow { margin-bottom: 18px; }
+.demo-mode main > section.panel h1 { margin-bottom: 28px; }
+.demo-mode main > section.panel h2 { margin: 34px 0 18px; line-height: 1.35; }
+.demo-mode main > section.panel p { max-width: 74ch; line-height: 1.85; }
+.demo-mode main > section.panel p + p { margin-top: 18px; }
+.demo-mode main > section.panel ol { margin: 24px 0; padding-left: 24px; line-height: 1.85; }
+.demo-mode main > section.panel li + li { margin-top: 12px; }
+.demo-mode main > section.panel .alert { margin-top: 26px; }
+.demo-mode main > section.panel button { margin-top: 24px; }
+.demo-mode arena-contact .contact-view { max-width: 880px; padding: 56px 0 24px; }
+.demo-mode arena-contact .contact-view .eyebrow { margin-bottom: 18px; }
+.demo-mode arena-contact .contact-view h1 { margin-bottom: 28px; }
+.demo-mode arena-contact .contact-view p { line-height: 1.85; max-width: 74ch; }
+.demo-mode arena-contact .contact-view p + p { margin-top: 18px; }
+@media (max-width:600px) {
+  .demo-mode .demo-banner { margin-top: 14px; }
+  .demo-mode main > section.panel, .demo-mode arena-contact .contact-view { padding-top: 36px; }
+}

@@ -1,0 +1,614 @@
+{
+  "source": "experiments/simulated-dev-final-2026-10-08",
+  "run_id": "2fa36a58-f3ae-4bd0-84f5-dcd5a31b4234",
+  "branch": "B",
+  "task": {
+    "id": "dev-partial-return",
+    "input": "cliente=C1 mes=2026-01. Calcula el gasto en pedidos delivered de ese mes, excluyendo unidades devueltas. Incluye solo IDs con unidades no devueltas. Devuelve JSON exacto con total_cents (entero) y order_ids (lista).",
+    "criteria": {
+      "total_cents": 3500,
+      "order_ids": [
+        "O1",
+        "O2"
+      ],
+      "allowed_tools": [
+        "search_orders",
+        "order_lines",
+        "calculate"
+      ]
+    }
+  },
+  "system_prompt": "Eres un auditor de pedidos. Comprueba cliente, mes, estado delivered y devoluciones. Consulta pedidos en orden inverso. Verifica el importe con calculate. Devuelve únicamente el JSON pedido.",
+  "events": [
+    {
+      "seq": 305,
+      "kind": "input",
+      "at": 1791458469.3431509,
+      "payload": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Eres un auditor de pedidos. Comprueba cliente, mes, estado delivered y devoluciones. Consulta pedidos en orden inverso. Verifica el importe con calculate. Devuelve únicamente el JSON pedido."
+          },
+          {
+            "role": "user",
+            "content": "cliente=C1 mes=2026-01. Calcula el gasto en pedidos delivered de ese mes, excluyendo unidades devueltas. Incluye solo IDs con unidades no devueltas. Devuelve JSON exacto con total_cents (entero) y order_ids (lista)."
+          }
+        ]
+      }
+    },
+    {
+      "seq": 308,
+      "kind": "inference_request",
+      "at": 1791458469.3581126,
+      "payload": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Eres un auditor de pedidos. Comprueba cliente, mes, estado delivered y devoluciones. Consulta pedidos en orden inverso. Verifica el importe con calculate. Devuelve únicamente el JSON pedido."
+          },
+          {
+            "role": "user",
+            "content": "cliente=C1 mes=2026-01. Calcula el gasto en pedidos delivered de ese mes, excluyendo unidades devueltas. Incluye solo IDs con unidades no devueltas. Devuelve JSON exacto con total_cents (entero) y order_ids (lista)."
+          }
+        ],
+        "max_output_tokens": 4096
+      }
+    },
+    {
+      "seq": 309,
+      "kind": "inference_response",
+      "at": 1791458469.3631446,
+      "payload": {
+        "response": {
+          "message": {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "function": {
+                  "name": "search_orders",
+                  "arguments": {
+                    "customer_id": "C1"
+                  }
+                }
+              }
+            ]
+          },
+          "done": true,
+          "done_reason": "stop",
+          "simulated": true
+        },
+        "duration_s": 0.00417120000020077
+      }
+    },
+    {
+      "seq": 310,
+      "kind": "tool_request",
+      "at": 1791458469.3681176,
+      "payload": {
+        "name": "search_orders",
+        "arguments": {
+          "customer_id": "C1"
+        }
+      }
+    },
+    {
+      "seq": 311,
+      "kind": "tool_result",
+      "at": 1791458469.3691447,
+      "payload": {
+        "name": "search_orders",
+        "result": [
+          {
+            "id": "O1",
+            "customer_id": "C1",
+            "date": "2026-01-03",
+            "status": "delivered"
+          },
+          {
+            "id": "O2",
+            "customer_id": "C1",
+            "date": "2026-01-25",
+            "status": "delivered"
+          },
+          {
+            "id": "O3",
+            "customer_id": "C1",
+            "date": "2026-01-15",
+            "status": "cancelled"
+          },
+          {
+            "id": "O4",
+            "customer_id": "C1",
+            "date": "2026-02-01",
+            "status": "delivered"
+          }
+        ],
+        "error": null,
+        "duration_s": 0.0008345000005647307
+      }
+    },
+    {
+      "seq": 312,
+      "kind": "inference_request",
+      "at": 1791458469.3771164,
+      "payload": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Eres un auditor de pedidos. Comprueba cliente, mes, estado delivered y devoluciones. Consulta pedidos en orden inverso. Verifica el importe con calculate. Devuelve únicamente el JSON pedido."
+          },
+          {
+            "role": "user",
+            "content": "cliente=C1 mes=2026-01. Calcula el gasto en pedidos delivered de ese mes, excluyendo unidades devueltas. Incluye solo IDs con unidades no devueltas. Devuelve JSON exacto con total_cents (entero) y order_ids (lista)."
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "function": {
+                  "name": "search_orders",
+                  "arguments": {
+                    "customer_id": "C1"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_name": "search_orders",
+            "content": "[{\"id\": \"O1\", \"customer_id\": \"C1\", \"date\": \"2026-01-03\", \"status\": \"delivered\"}, {\"id\": \"O2\", \"customer_id\": \"C1\", \"date\": \"2026-01-25\", \"status\": \"delivered\"}, {\"id\": \"O3\", \"customer_id\": \"C1\", \"date\": \"2026-01-15\", \"status\": \"cancelled\"}, {\"id\": \"O4\", \"customer_id\": \"C1\", \"date\": \"2026-02-01\", \"status\": \"delivered\"}]"
+          }
+        ],
+        "max_output_tokens": 4088
+      }
+    },
+    {
+      "seq": 313,
+      "kind": "inference_response",
+      "at": 1791458469.3822856,
+      "payload": {
+        "response": {
+          "message": {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "function": {
+                  "name": "order_lines",
+                  "arguments": {
+                    "order_id": "O2"
+                  }
+                }
+              }
+            ]
+          },
+          "done": true,
+          "done_reason": "stop",
+          "simulated": true
+        },
+        "duration_s": 0.0034393999994790647
+      }
+    },
+    {
+      "seq": 314,
+      "kind": "tool_request",
+      "at": 1791458469.387136,
+      "payload": {
+        "name": "order_lines",
+        "arguments": {
+          "order_id": "O2"
+        }
+      }
+    },
+    {
+      "seq": 315,
+      "kind": "tool_result",
+      "at": 1791458469.387136,
+      "payload": {
+        "name": "order_lines",
+        "result": [
+          {
+            "product_id": "P3",
+            "name": "Mochila",
+            "unit_cents": 2000,
+            "quantity": 1,
+            "returned_quantity": 0
+          }
+        ],
+        "error": null,
+        "duration_s": 0.0011073000005126232
+      }
+    },
+    {
+      "seq": 316,
+      "kind": "inference_request",
+      "at": 1791458469.3951683,
+      "payload": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Eres un auditor de pedidos. Comprueba cliente, mes, estado delivered y devoluciones. Consulta pedidos en orden inverso. Verifica el importe con calculate. Devuelve únicamente el JSON pedido."
+          },
+          {
+            "role": "user",
+            "content": "cliente=C1 mes=2026-01. Calcula el gasto en pedidos delivered de ese mes, excluyendo unidades devueltas. Incluye solo IDs con unidades no devueltas. Devuelve JSON exacto con total_cents (entero) y order_ids (lista)."
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "function": {
+                  "name": "search_orders",
+                  "arguments": {
+                    "customer_id": "C1"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_name": "search_orders",
+            "content": "[{\"id\": \"O1\", \"customer_id\": \"C1\", \"date\": \"2026-01-03\", \"status\": \"delivered\"}, {\"id\": \"O2\", \"customer_id\": \"C1\", \"date\": \"2026-01-25\", \"status\": \"delivered\"}, {\"id\": \"O3\", \"customer_id\": \"C1\", \"date\": \"2026-01-15\", \"status\": \"cancelled\"}, {\"id\": \"O4\", \"customer_id\": \"C1\", \"date\": \"2026-02-01\", \"status\": \"delivered\"}]"
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "function": {
+                  "name": "order_lines",
+                  "arguments": {
+                    "order_id": "O2"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_name": "order_lines",
+            "content": "[{\"product_id\": \"P3\", \"name\": \"Mochila\", \"unit_cents\": 2000, \"quantity\": 1, \"returned_quantity\": 0}]"
+          }
+        ],
+        "max_output_tokens": 4080
+      }
+    },
+    {
+      "seq": 317,
+      "kind": "inference_response",
+      "at": 1791458469.4018419,
+      "payload": {
+        "response": {
+          "message": {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "function": {
+                  "name": "order_lines",
+                  "arguments": {
+                    "order_id": "O1"
+                  }
+                }
+              }
+            ]
+          },
+          "done": true,
+          "done_reason": "stop",
+          "simulated": true
+        },
+        "duration_s": 0.004412300000694813
+      }
+    },
+    {
+      "seq": 318,
+      "kind": "tool_request",
+      "at": 1791458469.4058483,
+      "payload": {
+        "name": "order_lines",
+        "arguments": {
+          "order_id": "O1"
+        }
+      }
+    },
+    {
+      "seq": 319,
+      "kind": "tool_result",
+      "at": 1791458469.4077666,
+      "payload": {
+        "name": "order_lines",
+        "result": [
+          {
+            "product_id": "P1",
+            "name": "Cuaderno",
+            "unit_cents": 500,
+            "quantity": 3,
+            "returned_quantity": 1
+          },
+          {
+            "product_id": "P2",
+            "name": "Lápiz",
+            "unit_cents": 250,
+            "quantity": 2,
+            "returned_quantity": 0
+          }
+        ],
+        "error": null,
+        "duration_s": 0.0009685999993962469
+      }
+    },
+    {
+      "seq": 320,
+      "kind": "inference_request",
+      "at": 1791458469.4148347,
+      "payload": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Eres un auditor de pedidos. Comprueba cliente, mes, estado delivered y devoluciones. Consulta pedidos en orden inverso. Verifica el importe con calculate. Devuelve únicamente el JSON pedido."
+          },
+          {
+            "role": "user",
+            "content": "cliente=C1 mes=2026-01. Calcula el gasto en pedidos delivered de ese mes, excluyendo unidades devueltas. Incluye solo IDs con unidades no devueltas. Devuelve JSON exacto con total_cents (entero) y order_ids (lista)."
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "function": {
+                  "name": "search_orders",
+                  "arguments": {
+                    "customer_id": "C1"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_name": "search_orders",
+            "content": "[{\"id\": \"O1\", \"customer_id\": \"C1\", \"date\": \"2026-01-03\", \"status\": \"delivered\"}, {\"id\": \"O2\", \"customer_id\": \"C1\", \"date\": \"2026-01-25\", \"status\": \"delivered\"}, {\"id\": \"O3\", \"customer_id\": \"C1\", \"date\": \"2026-01-15\", \"status\": \"cancelled\"}, {\"id\": \"O4\", \"customer_id\": \"C1\", \"date\": \"2026-02-01\", \"status\": \"delivered\"}]"
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "function": {
+                  "name": "order_lines",
+                  "arguments": {
+                    "order_id": "O2"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_name": "order_lines",
+            "content": "[{\"product_id\": \"P3\", \"name\": \"Mochila\", \"unit_cents\": 2000, \"quantity\": 1, \"returned_quantity\": 0}]"
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "function": {
+                  "name": "order_lines",
+                  "arguments": {
+                    "order_id": "O1"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_name": "order_lines",
+            "content": "[{\"product_id\": \"P1\", \"name\": \"Cuaderno\", \"unit_cents\": 500, \"quantity\": 3, \"returned_quantity\": 1}, {\"product_id\": \"P2\", \"name\": \"L\\u00e1piz\", \"unit_cents\": 250, \"quantity\": 2, \"returned_quantity\": 0}]"
+          }
+        ],
+        "max_output_tokens": 4072
+      }
+    },
+    {
+      "seq": 321,
+      "kind": "inference_response",
+      "at": 1791458469.419853,
+      "payload": {
+        "response": {
+          "message": {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "function": {
+                  "name": "calculate",
+                  "arguments": {
+                    "operation": "sum",
+                    "values": [
+                      2000,
+                      1000,
+                      500
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "done": true,
+          "done_reason": "stop",
+          "simulated": true
+        },
+        "duration_s": 0.003697100000863429
+      }
+    },
+    {
+      "seq": 322,
+      "kind": "tool_request",
+      "at": 1791458469.4253812,
+      "payload": {
+        "name": "calculate",
+        "arguments": {
+          "operation": "sum",
+          "values": [
+            2000,
+            1000,
+            500
+          ]
+        }
+      }
+    },
+    {
+      "seq": 323,
+      "kind": "tool_result",
+      "at": 1791458469.4264832,
+      "payload": {
+        "name": "calculate",
+        "result": {
+          "value": 3500
+        },
+        "error": null,
+        "duration_s": 0.0010431999999127584
+      }
+    },
+    {
+      "seq": 324,
+      "kind": "inference_request",
+      "at": 1791458469.4334693,
+      "payload": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Eres un auditor de pedidos. Comprueba cliente, mes, estado delivered y devoluciones. Consulta pedidos en orden inverso. Verifica el importe con calculate. Devuelve únicamente el JSON pedido."
+          },
+          {
+            "role": "user",
+            "content": "cliente=C1 mes=2026-01. Calcula el gasto en pedidos delivered de ese mes, excluyendo unidades devueltas. Incluye solo IDs con unidades no devueltas. Devuelve JSON exacto con total_cents (entero) y order_ids (lista)."
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "function": {
+                  "name": "search_orders",
+                  "arguments": {
+                    "customer_id": "C1"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_name": "search_orders",
+            "content": "[{\"id\": \"O1\", \"customer_id\": \"C1\", \"date\": \"2026-01-03\", \"status\": \"delivered\"}, {\"id\": \"O2\", \"customer_id\": \"C1\", \"date\": \"2026-01-25\", \"status\": \"delivered\"}, {\"id\": \"O3\", \"customer_id\": \"C1\", \"date\": \"2026-01-15\", \"status\": \"cancelled\"}, {\"id\": \"O4\", \"customer_id\": \"C1\", \"date\": \"2026-02-01\", \"status\": \"delivered\"}]"
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "function": {
+                  "name": "order_lines",
+                  "arguments": {
+                    "order_id": "O2"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_name": "order_lines",
+            "content": "[{\"product_id\": \"P3\", \"name\": \"Mochila\", \"unit_cents\": 2000, \"quantity\": 1, \"returned_quantity\": 0}]"
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "function": {
+                  "name": "order_lines",
+                  "arguments": {
+                    "order_id": "O1"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_name": "order_lines",
+            "content": "[{\"product_id\": \"P1\", \"name\": \"Cuaderno\", \"unit_cents\": 500, \"quantity\": 3, \"returned_quantity\": 1}, {\"product_id\": \"P2\", \"name\": \"L\\u00e1piz\", \"unit_cents\": 250, \"quantity\": 2, \"returned_quantity\": 0}]"
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "function": {
+                  "name": "calculate",
+                  "arguments": {
+                    "operation": "sum",
+                    "values": [
+                      2000,
+                      1000,
+                      500
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_name": "calculate",
+            "content": "{\"value\": 3500}"
+          }
+        ],
+        "max_output_tokens": 4064
+      }
+    },
+    {
+      "seq": 325,
+      "kind": "inference_response",
+      "at": 1791458469.4403822,
+      "payload": {
+        "response": {
+          "message": {
+            "role": "assistant",
+            "content": "{\"total_cents\": 3500, \"order_ids\": [\"O2\", \"O1\"]}"
+          },
+          "done": true,
+          "done_reason": "stop",
+          "simulated": true
+        },
+        "duration_s": 0.005628599999909056
+      }
+    },
+    {
+      "seq": 327,
+      "kind": "finished",
+      "at": 1791458469.4531777,
+      "payload": {
+        "status": "succeeded",
+        "success": true,
+        "format_ok": true,
+        "answer": "{\"total_cents\": 3500, \"order_ids\": [\"O2\", \"O1\"]}",
+        "reason": "ok",
+        "tool_calls": 4,
+        "tool_errors": 0
+      }
+    }
+  ],
+  "note": "Reproducción de traza guardada del 08/10/2026 · simulador. No se ejecuta un modelo ni se muestra razonamiento interno. Selección de eventos: sin recursos ni metadatos privados. Los tiempos pertenecen al simulador."
+}

@@ -1,3 +1,4 @@
+import { DEMO_MODE } from './runtime-mode';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AppComponent } from './app.component';
@@ -11,7 +12,8 @@ import { LoadingIndicatorComponent } from './loading-indicator.component';
   selector:'arena-root', standalone:true, imports:[FormsModule, AppComponent, BrandMarkComponent, LoadingIndicatorComponent],
   template:`
     @if (activity.visible()) { <div class="global-loading" role="progressbar" aria-label="Procesando solicitudes" [attr.aria-busy]="activity.pending()"><span class="loading-spinner" aria-hidden="true"></span><span>Procesando…</span></div> }
-    @if (!auth.ready()) { <main class="auth-layout" aria-busy="true"><arena-loading label="Abriendo tu espacio…" /></main> }
+    @if (demo) { <arena-workspace /> }
+    @else if (!auth.ready()) { <main class="auth-layout" aria-busy="true"><arena-loading label="Abriendo tu espacio…" /></main> }
     @else if (auth.user()) { <arena-workspace /> }
     @else {
       <div class="auth-top"><span class="brand"><arena-brand-mark />Agent Arena</span><span class="hint">Tu laboratorio local</span></div>
@@ -42,13 +44,14 @@ import { LoadingIndicatorComponent } from './loading-indicator.component';
   `,
 })
 export class RootComponent {
+  demo = DEMO_MODE;
   auth = inject(AuthService);
   activity = inject(LoadingService);
   register = false;
   username = ''; password = ''; displayName = '';
   busy = signal(false); error = signal('');
   invalidField = signal('');
-  constructor() { void this.auth.initialize(); }
+  constructor() { if (!this.demo) void this.auth.initialize(); }
   clearValidation() { if (this.invalidField()) this.error.set(''); this.invalidField.set(''); }
   switchMode() {
     this.register = !this.register; this.error.set(''); this.invalidField.set(''); this.password = '';

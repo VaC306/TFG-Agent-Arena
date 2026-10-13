@@ -21,6 +21,7 @@ async function evidence(page:Page, name:string, project:string) {
 
 test('borrador por cuenta: teclado, recarga, adjuntos, descarte y resultado inmutable', async ({page},info) => {
   const first=await register(page);
+  await page.getByLabel('Entradas independientes',{exact:true}).check();
   await page.getByLabel('Nombre',{exact:true}).fill('Borrador ficticio A');
   await page.getByLabel('Entrada A',{exact:true}).fill('Texto privado A');
   await page.getByLabel('Entrada B',{exact:true}).fill('Texto privado B');
@@ -55,6 +56,7 @@ test('borrador por cuenta: teclado, recarga, adjuntos, descarte y resultado inmu
   await page.getByLabel('Entrada A',{exact:true}).fill('Preparación siguiente');
   await logout(page);
   await register(page);
+  await page.getByLabel('Entradas independientes',{exact:true}).check();
   await expect(page.getByRole('button',{name:'Recuperar borrador'})).toHaveCount(0);
   await expect(page.getByLabel('Entrada A',{exact:true})).toHaveValue('');
   await page.getByLabel('Entrada A',{exact:true}).fill('Cuenta diferente');
@@ -93,6 +95,7 @@ test('URL: recarga, Atrás/Adelante, selección, ID inválido y cuenta ajena', a
   const a=await compare(page,'Primera ruta'); await finished(page,a);
   await expect(page).toHaveURL(new RegExp(`#/results\\?comparison=${a}`));
   await page.getByRole('button',{name:'Modelos',exact:true}).click();
+  if (await page.locator('.secondary-menu').isVisible()) await page.locator('.secondary-menu > summary').click();
   await page.getByRole('button',{name:'Guía',exact:true}).click();
   await page.goBack(); await expect(page.getByRole('heading',{name:'Tus modelos, de un vistazo.'})).toBeVisible();
   await page.goBack(); await expect(page.getByRole('heading',{name:'Primera ruta',exact:true})).toBeVisible();
@@ -170,6 +173,7 @@ for (const status of [200,401]) test(`validación tardía ${status} no recupera 
 
 test('envío sin confirmación: recuperar no crea otra comparación', async ({page})=>{
   await register(page);
+  await page.getByLabel('Entradas independientes',{exact:true}).check();
   await page.getByLabel('Entrada A',{exact:true}).fill('Caso ficticio A');
   await page.getByLabel('Entrada B',{exact:true}).fill('Caso ficticio B');
   let savedId='';

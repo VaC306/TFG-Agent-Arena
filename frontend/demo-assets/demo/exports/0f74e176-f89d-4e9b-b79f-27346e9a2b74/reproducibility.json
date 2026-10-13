@@ -1,0 +1,284 @@
+{
+  "snapshot": {
+    "config": {
+      "name": "Auditoría UI simulada 2026-10-12",
+      "adapter": "simulated",
+      "split": "dev",
+      "repetitions": 1,
+      "comparison": "same_model",
+      "agents": {
+        "A": {
+          "model": "simulated-a",
+          "system_prompt": "Responde a la solicitud usando el contenido proporcionado. Distingue hechos de suposiciones y señala la información que falta.",
+          "temperature": 0.0,
+          "seed": 42,
+          "num_ctx": 16384,
+          "limits": {
+            "max_output_tokens": 4096,
+            "timeout_s": 120.0
+          }
+        },
+        "B": {
+          "model": "simulated-a",
+          "system_prompt": "Analiza los datos proporcionados. Identifica patrones, inconsistencias y limitaciones. Explica los resultados con claridad y no inventes cifras.",
+          "temperature": 0.0,
+          "seed": 42,
+          "num_ctx": 16384,
+          "limits": {
+            "max_output_tokens": 4096,
+            "timeout_s": 120.0
+          }
+        }
+      }
+    },
+    "tasks": [
+      {
+        "id": "capital",
+        "input": "Capital de Francia. Responde únicamente el nombre de la ciudad.",
+        "expected_answer": "París",
+        "evaluation": "exact_match",
+        "criteria": null
+      },
+      {
+        "id": "cuenta",
+        "input": "Calcula 17 + 25. Responde únicamente el número.",
+        "expected_answer": "42",
+        "evaluation": "exact_match",
+        "criteria": null
+      },
+      {
+        "id": "lectura",
+        "input": "Texto: La reunión comienza a las 10:30 y termina a las 11:15. ¿A qué hora termina? Responde solo HH:MM.",
+        "expected_answer": "11:15",
+        "evaluation": "exact_match",
+        "criteria": null
+      }
+    ],
+    "conditions": {
+      "inputs_shared": true
+    },
+    "data_sha256": "ac797c76fe08f99dc6f295a85a2c657a3e1f78e8db667124210fd2bffd639705"
+  },
+  "runs": [
+    {
+      "id": "a818cc88-fc70-473d-aa6b-f779114bb537",
+      "task_id": "capital",
+      "branch": "B",
+      "repetition": 0,
+      "status": "cancelled",
+      "result": {
+        "success": false,
+        "format_ok": null,
+        "error": "Cancelled before execution"
+      }
+    },
+    {
+      "id": "4ee0febc-26d1-434d-a970-9e94da676e7b",
+      "task_id": "capital",
+      "branch": "A",
+      "repetition": 0,
+      "status": "failed",
+      "result": {
+        "success": false,
+        "format_ok": null,
+        "agent_s": 0.025376999998115934,
+        "queue_s": 21.15015149116516,
+        "input_tokens": 20,
+        "output_tokens": 8,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 1000.0,
+        "answer": "SIMULACIÓN — modelo simulated-a. Entrada recibida:\nCapital de Francia. Responde únicamente el nombre de la ciudad.\nImágenes recibidas: 0. El simulador no interpreta imágenes ni mide calidad del modelo.",
+        "reason": "Comparación exacta con la respuesta esperada (sin espacios en los extremos)"
+      }
+    },
+    {
+      "id": "9c38ec09-f694-4bf8-8371-173f30bb0b59",
+      "task_id": "cuenta",
+      "branch": "B",
+      "repetition": 0,
+      "status": "failed",
+      "result": {
+        "success": false,
+        "format_ok": null,
+        "agent_s": 0.019224099996790756,
+        "queue_s": 21.199257850646973,
+        "input_tokens": 20,
+        "output_tokens": 8,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 1000.0,
+        "answer": "SIMULACIÓN — modelo simulated-a. Entrada recibida:\nCalcula 17 + 25. Responde únicamente el número.\nImágenes recibidas: 0. El simulador no interpreta imágenes ni mide calidad del modelo.",
+        "reason": "Comparación exacta con la respuesta esperada (sin espacios en los extremos)"
+      }
+    },
+    {
+      "id": "0009024b-4ecf-4b55-95bf-0ae89e854624",
+      "task_id": "cuenta",
+      "branch": "A",
+      "repetition": 0,
+      "status": "failed",
+      "result": {
+        "success": false,
+        "format_ok": null,
+        "agent_s": 0.019753100001253188,
+        "queue_s": 21.238226890563965,
+        "input_tokens": 20,
+        "output_tokens": 8,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 1000.0,
+        "answer": "SIMULACIÓN — modelo simulated-a. Entrada recibida:\nCalcula 17 + 25. Responde únicamente el número.\nImágenes recibidas: 0. El simulador no interpreta imágenes ni mide calidad del modelo.",
+        "reason": "Comparación exacta con la respuesta esperada (sin espacios en los extremos)"
+      }
+    },
+    {
+      "id": "56015548-c851-4677-a6dd-19c4fc6eaa4f",
+      "task_id": "lectura",
+      "branch": "A",
+      "repetition": 0,
+      "status": "failed",
+      "result": {
+        "success": false,
+        "format_ok": null,
+        "agent_s": 0.021077199999126606,
+        "queue_s": 21.277483463287354,
+        "input_tokens": 20,
+        "output_tokens": 8,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 1000.0,
+        "answer": "SIMULACIÓN — modelo simulated-a. Entrada recibida:\nTexto: La reunión comienza a las 10:30 y termina a las 11:15. ¿A qué hora termina? Responde solo HH:MM.\nImágenes recibidas: 0. El simulador no interpreta imágenes ni mide calidad del modelo.",
+        "reason": "Comparación exacta con la respuesta esperada (sin espacios en los extremos)"
+      }
+    },
+    {
+      "id": "a96e03b2-cd18-4568-b8fc-a86481e34049",
+      "task_id": "lectura",
+      "branch": "B",
+      "repetition": 0,
+      "status": "failed",
+      "result": {
+        "success": false,
+        "format_ok": null,
+        "agent_s": 0.021258999993733596,
+        "queue_s": 21.317129373550415,
+        "input_tokens": 20,
+        "output_tokens": 8,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 1000.0,
+        "answer": "SIMULACIÓN — modelo simulated-a. Entrada recibida:\nTexto: La reunión comienza a las 10:30 y termina a las 11:15. ¿A qué hora termina? Responde solo HH:MM.\nImágenes recibidas: 0. El simulador no interpreta imágenes ni mide calidad del modelo.",
+        "reason": "Comparación exacta con la respuesta esperada (sin espacios en los extremos)"
+      }
+    }
+  ],
+  "protocol": {
+    "version": "arena-protocol-v1",
+    "evaluator_version": "arena-evaluation-v2",
+    "comparison_scope": "configurations",
+    "inputs_shared": true,
+    "prompts_equal": false,
+    "evaluations": [
+      "exact_match"
+    ],
+    "warnings": [
+      "Simulación: tokens y tiempo de generación sintéticos. El tiempo del agente mide el simulador, no un modelo real; no aporta evidencia sobre calidad de modelos reales.",
+      "Los prompts son distintos: se comparan configuraciones, no solo modelos.",
+      "Había cambios sin commit al guardar. Para identificar el código, usa también las fuentes y hashes del informe.",
+      "Sin calentamiento previo. El tiempo del agente incluye consulta de metadatos y puede incluir carga del modelo.",
+      "Política de memoria del modelo (keep_alive): 0. No se garantiza un inicio en frío si otro programa lo tiene cargado.",
+      "Semilla fija no garantiza respuestas idénticas. La carga de otros programas no está aislada.",
+      "Resultados guardados del 12/10/2026. Muestras pequeñas y exploratorias; sin ranking ni conclusión de superioridad. A/B secuenciales, sin aislamiento del host; tiempo total puede incluir carga y preparación. Semilla fija no garantiza determinismo. No se publican fuentes, entornos, adjuntos binarios ni trazas completas del worker."
+    ],
+    "branches": {
+      "A": {
+        "total": 3,
+        "finished": 3,
+        "evaluated": 3,
+        "planned_evaluable": 3,
+        "correct": 0,
+        "incorrect": 3,
+        "invalid_format": 0,
+        "execution_errors": 0,
+        "unscored": 0,
+        "pending": 0,
+        "mean_answer_s": 0.022069099999498576,
+        "timed_answers": 3,
+        "answers": 3
+      },
+      "B": {
+        "total": 3,
+        "finished": 3,
+        "evaluated": 2,
+        "planned_evaluable": 3,
+        "correct": 0,
+        "incorrect": 2,
+        "invalid_format": 0,
+        "execution_errors": 1,
+        "unscored": 0,
+        "pending": 0,
+        "mean_answer_s": 0.020241549995262176,
+        "timed_answers": 2,
+        "answers": 2
+      }
+    },
+    "models": {
+      "A": {
+        "digest": null,
+        "server_version": null,
+        "quantization": null,
+        "verified": false
+      },
+      "B": {
+        "digest": null,
+        "server_version": null,
+        "quantization": null,
+        "verified": false
+      }
+    }
+  },
+  "overviews": {
+    "A": {
+      "total": 3,
+      "finished": 3,
+      "evaluated": 3,
+      "planned_evaluable": 3,
+      "correct": 0,
+      "incorrect": 3,
+      "invalid_format": 0,
+      "execution_errors": 0,
+      "cancelled": 0,
+      "unscored": 0,
+      "pending": 0,
+      "mean_answer_s": 0.022069099999498576,
+      "timed_answers": 3
+    },
+    "B": {
+      "total": 3,
+      "finished": 3,
+      "evaluated": 2,
+      "planned_evaluable": 3,
+      "correct": 0,
+      "incorrect": 2,
+      "invalid_format": 0,
+      "execution_errors": 0,
+      "cancelled": 1,
+      "unscored": 0,
+      "pending": 0,
+      "mean_answer_s": 0.020241549995262176,
+      "timed_answers": 2
+    }
+  },
+  "selection": {
+    "source": "experiments/local-flow-2026-10-12/simulated-reproducibility.json",
+    "sha256": "6222597e26aa1a9a66efbe9cbfeee7d2bff6b57677bbd45b96318d9c0baf0a7a",
+    "note": "Resultados guardados del 12/10/2026. Muestras pequeñas y exploratorias; sin ranking ni conclusión de superioridad. A/B secuenciales, sin aislamiento del host; tiempo total puede incluir carga y preparación. Semilla fija no garantiza determinismo. No se publican fuentes, entornos, adjuntos binarios ni trazas completas del worker.",
+    "summary_policy": "Recomputed with current backend outcome semantics; cancellations separated from execution errors."
+  }
+}

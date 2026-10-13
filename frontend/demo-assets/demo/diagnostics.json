@@ -1,0 +1,1453 @@
+{
+  "note": "Inferencias reales con fixtures sintéticos de desarrollo; una observación por condición. No son un ranking ni una traza completa del worker.",
+  "probes": [
+    {
+      "model": "qwen2.5:3b",
+      "case": "search-c1",
+      "condition": "single_tool",
+      "assessment": {
+        "correct": true,
+        "arguments_valid": true,
+        "tool_result": [
+          {
+            "id": "O1",
+            "customer_id": "C1",
+            "date": "2026-01-03",
+            "status": "delivered"
+          },
+          {
+            "id": "O2",
+            "customer_id": "C1",
+            "date": "2026-01-25",
+            "status": "delivered"
+          },
+          {
+            "id": "O3",
+            "customer_id": "C1",
+            "date": "2026-01-15",
+            "status": "cancelled"
+          },
+          {
+            "id": "O4",
+            "customer_id": "C1",
+            "date": "2026-02-01",
+            "status": "delivered"
+          }
+        ],
+        "reason": "Llamada y argumentos correctos"
+      },
+      "continuation_correct": false,
+      "elapsed_s": 5.97616449999623,
+      "request": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Usa la herramienta solicitada con sus argumentos exactos. No respondas de memoria."
+          },
+          {
+            "role": "user",
+            "content": "Llama a search_orders con customer_id igual a C1. No añadas otros argumentos."
+          }
+        ],
+        "options": {
+          "temperature": 0,
+          "num_predict": 256,
+          "num_ctx": 4096,
+          "seed": 42
+        }
+      },
+      "response": {
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "id": "call_vk3civh3",
+              "function": {
+                "index": 0,
+                "name": "search_orders",
+                "arguments": {
+                  "customer_id": "C1"
+                }
+              }
+            }
+          ]
+        },
+        "done_reason": "stop",
+        "prompt_eval_count": 183,
+        "eval_count": 22
+      },
+      "continuation_request": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Usa la herramienta solicitada con sus argumentos exactos. No respondas de memoria."
+          },
+          {
+            "role": "user",
+            "content": "Llama a search_orders con customer_id igual a C1. No añadas otros argumentos."
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_vk3civh3",
+                "function": {
+                  "index": 0,
+                  "name": "search_orders",
+                  "arguments": {
+                    "customer_id": "C1"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_name": "search_orders",
+            "content": "[{\"id\": \"O1\", \"customer_id\": \"C1\", \"date\": \"2026-01-03\", \"status\": \"delivered\"}, {\"id\": \"O2\", \"customer_id\": \"C1\", \"date\": \"2026-01-25\", \"status\": \"delivered\"}, {\"id\": \"O3\", \"customer_id\": \"C1\", \"date\": \"2026-01-15\", \"status\": \"cancelled\"}, {\"id\": \"O4\", \"customer_id\": \"C1\", \"date\": \"2026-02-01\", \"status\": \"delivered\"}]"
+          },
+          {
+            "role": "user",
+            "content": "Devuelve únicamente el resultado de la herramienta como JSON válido, sin cambiar los datos ni llamar más herramientas."
+          }
+        ],
+        "options": {
+          "temperature": 0,
+          "num_predict": 256,
+          "num_ctx": 4096,
+          "seed": 42
+        }
+      },
+      "continuation_response": {
+        "message": {
+          "role": "assistant",
+          "content": "[\n    {\"id\": \"O1\", \"customer_id\": \"C1\", \"date\": \"2026-01-03\", \"status\": \"delivered\"},\n    {\"id\": \"O2\", \"customer_id\": \"C1\", \"date\": \"2026-01-25\", \"status\": \"delivered\"}\n]"
+        },
+        "done_reason": "stop",
+        "prompt_eval_count": 271,
+        "eval_count": 79
+      }
+    },
+    {
+      "model": "qwen2.5:3b",
+      "case": "search-c1",
+      "condition": "all_tools",
+      "assessment": {
+        "correct": true,
+        "arguments_valid": true,
+        "tool_result": [
+          {
+            "id": "O1",
+            "customer_id": "C1",
+            "date": "2026-01-03",
+            "status": "delivered"
+          },
+          {
+            "id": "O2",
+            "customer_id": "C1",
+            "date": "2026-01-25",
+            "status": "delivered"
+          },
+          {
+            "id": "O3",
+            "customer_id": "C1",
+            "date": "2026-01-15",
+            "status": "cancelled"
+          },
+          {
+            "id": "O4",
+            "customer_id": "C1",
+            "date": "2026-02-01",
+            "status": "delivered"
+          }
+        ],
+        "reason": "Llamada y argumentos correctos"
+      },
+      "continuation_correct": false,
+      "elapsed_s": 4.777180000004591,
+      "request": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Usa la herramienta solicitada con sus argumentos exactos. No respondas de memoria."
+          },
+          {
+            "role": "user",
+            "content": "Llama a search_orders con customer_id igual a C1. No añadas otros argumentos."
+          }
+        ],
+        "options": {
+          "temperature": 0,
+          "num_predict": 256,
+          "num_ctx": 4096,
+          "seed": 42
+        }
+      },
+      "response": {
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "id": "call_ypskt7s6",
+              "function": {
+                "index": 0,
+                "name": "search_orders",
+                "arguments": {
+                  "customer_id": "C1"
+                }
+              }
+            }
+          ]
+        },
+        "done_reason": "stop",
+        "prompt_eval_count": 320,
+        "eval_count": 22
+      },
+      "continuation_request": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Usa la herramienta solicitada con sus argumentos exactos. No respondas de memoria."
+          },
+          {
+            "role": "user",
+            "content": "Llama a search_orders con customer_id igual a C1. No añadas otros argumentos."
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_ypskt7s6",
+                "function": {
+                  "index": 0,
+                  "name": "search_orders",
+                  "arguments": {
+                    "customer_id": "C1"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_name": "search_orders",
+            "content": "[{\"id\": \"O1\", \"customer_id\": \"C1\", \"date\": \"2026-01-03\", \"status\": \"delivered\"}, {\"id\": \"O2\", \"customer_id\": \"C1\", \"date\": \"2026-01-25\", \"status\": \"delivered\"}, {\"id\": \"O3\", \"customer_id\": \"C1\", \"date\": \"2026-01-15\", \"status\": \"cancelled\"}, {\"id\": \"O4\", \"customer_id\": \"C1\", \"date\": \"2026-02-01\", \"status\": \"delivered\"}]"
+          },
+          {
+            "role": "user",
+            "content": "Devuelve únicamente el resultado de la herramienta como JSON válido, sin cambiar los datos ni llamar más herramientas."
+          }
+        ],
+        "options": {
+          "temperature": 0,
+          "num_predict": 256,
+          "num_ctx": 4096,
+          "seed": 42
+        }
+      },
+      "continuation_response": {
+        "message": {
+          "role": "assistant",
+          "content": "[\n    {\"id\": \"O1\", \"customer_id\": \"C1\", \"date\": \"2026-01-03\", \"status\": \"delivered\"},\n    {\"id\": \"O2\", \"customer_id\": \"C1\", \"date\": \"2026-01-25\", \"status\": \"delivered\"}\n]"
+        },
+        "done_reason": "stop",
+        "prompt_eval_count": 271,
+        "eval_count": 79
+      }
+    },
+    {
+      "model": "qwen2.5:3b",
+      "case": "lines-o1",
+      "condition": "single_tool",
+      "assessment": {
+        "correct": true,
+        "arguments_valid": true,
+        "tool_result": [
+          {
+            "product_id": "P1",
+            "name": "Cuaderno",
+            "unit_cents": 500,
+            "quantity": 3,
+            "returned_quantity": 1
+          },
+          {
+            "product_id": "P2",
+            "name": "Lápiz",
+            "unit_cents": 250,
+            "quantity": 2,
+            "returned_quantity": 0
+          }
+        ],
+        "reason": "Llamada y argumentos correctos"
+      },
+      "continuation_correct": true,
+      "elapsed_s": 4.982748499998706,
+      "request": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Usa la herramienta solicitada con sus argumentos exactos. No respondas de memoria."
+          },
+          {
+            "role": "user",
+            "content": "Llama a order_lines con order_id igual a O1. No añadas otros argumentos."
+          }
+        ],
+        "options": {
+          "temperature": 0,
+          "num_predict": 256,
+          "num_ctx": 4096,
+          "seed": 42
+        }
+      },
+      "response": {
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "id": "call_irnduy3l",
+              "function": {
+                "index": 0,
+                "name": "order_lines",
+                "arguments": {
+                  "order_id": "O1"
+                }
+              }
+            }
+          ]
+        },
+        "done_reason": "stop",
+        "prompt_eval_count": 187,
+        "eval_count": 22
+      },
+      "continuation_request": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Usa la herramienta solicitada con sus argumentos exactos. No respondas de memoria."
+          },
+          {
+            "role": "user",
+            "content": "Llama a order_lines con order_id igual a O1. No añadas otros argumentos."
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_irnduy3l",
+                "function": {
+                  "index": 0,
+                  "name": "order_lines",
+                  "arguments": {
+                    "order_id": "O1"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_name": "order_lines",
+            "content": "[{\"product_id\": \"P1\", \"name\": \"Cuaderno\", \"unit_cents\": 500, \"quantity\": 3, \"returned_quantity\": 1}, {\"product_id\": \"P2\", \"name\": \"Lápiz\", \"unit_cents\": 250, \"quantity\": 2, \"returned_quantity\": 0}]"
+          },
+          {
+            "role": "user",
+            "content": "Devuelve únicamente el resultado de la herramienta como JSON válido, sin cambiar los datos ni llamar más herramientas."
+          }
+        ],
+        "options": {
+          "temperature": 0,
+          "num_predict": 256,
+          "num_ctx": 4096,
+          "seed": 42
+        }
+      },
+      "continuation_response": {
+        "message": {
+          "role": "assistant",
+          "content": "[\n    {\n        \"product_id\": \"P1\",\n        \"name\": \"Cuaderno\",\n        \"unit_cents\": 500,\n        \"quantity\": 3,\n        \"returned_quantity\": 1\n    },\n    {\n        \"product_id\": \"P2\",\n        \"name\": \"Lápiz\",\n        \"unit_cents\": 250,\n        \"quantity\": 2,\n        \"returned_quantity\": 0\n    }\n]"
+        },
+        "done_reason": "stop",
+        "prompt_eval_count": 201,
+        "eval_count": 99
+      }
+    },
+    {
+      "model": "qwen2.5:3b",
+      "case": "lines-o1",
+      "condition": "all_tools",
+      "assessment": {
+        "correct": true,
+        "arguments_valid": true,
+        "tool_result": [
+          {
+            "product_id": "P1",
+            "name": "Cuaderno",
+            "unit_cents": 500,
+            "quantity": 3,
+            "returned_quantity": 1
+          },
+          {
+            "product_id": "P2",
+            "name": "Lápiz",
+            "unit_cents": 250,
+            "quantity": 2,
+            "returned_quantity": 0
+          }
+        ],
+        "reason": "Llamada y argumentos correctos"
+      },
+      "continuation_correct": true,
+      "elapsed_s": 4.456884600003832,
+      "request": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Usa la herramienta solicitada con sus argumentos exactos. No respondas de memoria."
+          },
+          {
+            "role": "user",
+            "content": "Llama a order_lines con order_id igual a O1. No añadas otros argumentos."
+          }
+        ],
+        "options": {
+          "temperature": 0,
+          "num_predict": 256,
+          "num_ctx": 4096,
+          "seed": 42
+        }
+      },
+      "response": {
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "id": "call_jkwwpnn6",
+              "function": {
+                "index": 0,
+                "name": "order_lines",
+                "arguments": {
+                  "order_id": "O1"
+                }
+              }
+            }
+          ]
+        },
+        "done_reason": "stop",
+        "prompt_eval_count": 320,
+        "eval_count": 22
+      },
+      "continuation_request": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Usa la herramienta solicitada con sus argumentos exactos. No respondas de memoria."
+          },
+          {
+            "role": "user",
+            "content": "Llama a order_lines con order_id igual a O1. No añadas otros argumentos."
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_jkwwpnn6",
+                "function": {
+                  "index": 0,
+                  "name": "order_lines",
+                  "arguments": {
+                    "order_id": "O1"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_name": "order_lines",
+            "content": "[{\"product_id\": \"P1\", \"name\": \"Cuaderno\", \"unit_cents\": 500, \"quantity\": 3, \"returned_quantity\": 1}, {\"product_id\": \"P2\", \"name\": \"Lápiz\", \"unit_cents\": 250, \"quantity\": 2, \"returned_quantity\": 0}]"
+          },
+          {
+            "role": "user",
+            "content": "Devuelve únicamente el resultado de la herramienta como JSON válido, sin cambiar los datos ni llamar más herramientas."
+          }
+        ],
+        "options": {
+          "temperature": 0,
+          "num_predict": 256,
+          "num_ctx": 4096,
+          "seed": 42
+        }
+      },
+      "continuation_response": {
+        "message": {
+          "role": "assistant",
+          "content": "[\n    {\n        \"product_id\": \"P1\",\n        \"name\": \"Cuaderno\",\n        \"unit_cents\": 500,\n        \"quantity\": 3,\n        \"returned_quantity\": 1\n    },\n    {\n        \"product_id\": \"P2\",\n        \"name\": \"Lápiz\",\n        \"unit_cents\": 250,\n        \"quantity\": 2,\n        \"returned_quantity\": 0\n    }\n]"
+        },
+        "done_reason": "stop",
+        "prompt_eval_count": 201,
+        "eval_count": 99
+      }
+    },
+    {
+      "model": "qwen2.5:3b",
+      "case": "sum-integers",
+      "condition": "single_tool",
+      "assessment": {
+        "correct": true,
+        "arguments_valid": true,
+        "tool_result": {
+          "value": 300
+        },
+        "reason": "Llamada y argumentos correctos"
+      },
+      "continuation_correct": true,
+      "elapsed_s": 3.844621799995366,
+      "request": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Usa la herramienta solicitada con sus argumentos exactos. No respondas de memoria."
+          },
+          {
+            "role": "user",
+            "content": "Llama a calculate para sumar los enteros 100 y 200. operation debe ser sum y values debe ser [100,200]."
+          }
+        ],
+        "options": {
+          "temperature": 0,
+          "num_predict": 256,
+          "num_ctx": 4096,
+          "seed": 42
+        }
+      },
+      "response": {
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "id": "call_cmtxlxyr",
+              "function": {
+                "index": 0,
+                "name": "calculate",
+                "arguments": {
+                  "operation": "sum",
+                  "values": [
+                    100,
+                    200
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "done_reason": "stop",
+        "prompt_eval_count": 227,
+        "eval_count": 33
+      },
+      "continuation_request": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Usa la herramienta solicitada con sus argumentos exactos. No respondas de memoria."
+          },
+          {
+            "role": "user",
+            "content": "Llama a calculate para sumar los enteros 100 y 200. operation debe ser sum y values debe ser [100,200]."
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_cmtxlxyr",
+                "function": {
+                  "index": 0,
+                  "name": "calculate",
+                  "arguments": {
+                    "operation": "sum",
+                    "values": [
+                      100,
+                      200
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_name": "calculate",
+            "content": "{\"value\": 300}"
+          },
+          {
+            "role": "user",
+            "content": "Devuelve únicamente el resultado de la herramienta como JSON válido, sin cambiar los datos ni llamar más herramientas."
+          }
+        ],
+        "options": {
+          "temperature": 0,
+          "num_predict": 256,
+          "num_ctx": 4096,
+          "seed": 42
+        }
+      },
+      "continuation_response": {
+        "message": {
+          "role": "assistant",
+          "content": "{\"value\": 300}"
+        },
+        "done_reason": "stop",
+        "prompt_eval_count": 155,
+        "eval_count": 9
+      }
+    },
+    {
+      "model": "qwen2.5:3b",
+      "case": "sum-integers",
+      "condition": "all_tools",
+      "assessment": {
+        "correct": true,
+        "arguments_valid": true,
+        "tool_result": {
+          "value": 300
+        },
+        "reason": "Llamada y argumentos correctos"
+      },
+      "continuation_correct": true,
+      "elapsed_s": 4.02912419999484,
+      "request": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Usa la herramienta solicitada con sus argumentos exactos. No respondas de memoria."
+          },
+          {
+            "role": "user",
+            "content": "Llama a calculate para sumar los enteros 100 y 200. operation debe ser sum y values debe ser [100,200]."
+          }
+        ],
+        "options": {
+          "temperature": 0,
+          "num_predict": 256,
+          "num_ctx": 4096,
+          "seed": 42
+        }
+      },
+      "response": {
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "id": "call_9x5qva0r",
+              "function": {
+                "index": 0,
+                "name": "calculate",
+                "arguments": {
+                  "values": [
+                    100,
+                    200
+                  ],
+                  "operation": "sum"
+                }
+              }
+            }
+          ]
+        },
+        "done_reason": "stop",
+        "prompt_eval_count": 337,
+        "eval_count": 33
+      },
+      "continuation_request": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Usa la herramienta solicitada con sus argumentos exactos. No respondas de memoria."
+          },
+          {
+            "role": "user",
+            "content": "Llama a calculate para sumar los enteros 100 y 200. operation debe ser sum y values debe ser [100,200]."
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_9x5qva0r",
+                "function": {
+                  "index": 0,
+                  "name": "calculate",
+                  "arguments": {
+                    "values": [
+                      100,
+                      200
+                    ],
+                    "operation": "sum"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_name": "calculate",
+            "content": "{\"value\": 300}"
+          },
+          {
+            "role": "user",
+            "content": "Devuelve únicamente el resultado de la herramienta como JSON válido, sin cambiar los datos ni llamar más herramientas."
+          }
+        ],
+        "options": {
+          "temperature": 0,
+          "num_predict": 256,
+          "num_ctx": 4096,
+          "seed": 42
+        }
+      },
+      "continuation_response": {
+        "message": {
+          "role": "assistant",
+          "content": "{\"value\": 300}"
+        },
+        "done_reason": "stop",
+        "prompt_eval_count": 155,
+        "eval_count": 9
+      }
+    },
+    {
+      "model": "qwen2.5:7b",
+      "case": "search-c1",
+      "condition": "single_tool",
+      "assessment": {
+        "correct": true,
+        "arguments_valid": true,
+        "tool_result": [
+          {
+            "id": "O1",
+            "customer_id": "C1",
+            "date": "2026-01-03",
+            "status": "delivered"
+          },
+          {
+            "id": "O2",
+            "customer_id": "C1",
+            "date": "2026-01-25",
+            "status": "delivered"
+          },
+          {
+            "id": "O3",
+            "customer_id": "C1",
+            "date": "2026-01-15",
+            "status": "cancelled"
+          },
+          {
+            "id": "O4",
+            "customer_id": "C1",
+            "date": "2026-02-01",
+            "status": "delivered"
+          }
+        ],
+        "reason": "Llamada y argumentos correctos"
+      },
+      "continuation_correct": true,
+      "elapsed_s": 8.13451470000291,
+      "request": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Usa la herramienta solicitada con sus argumentos exactos. No respondas de memoria."
+          },
+          {
+            "role": "user",
+            "content": "Llama a search_orders con customer_id igual a C1. No añadas otros argumentos."
+          }
+        ],
+        "options": {
+          "temperature": 0,
+          "num_predict": 256,
+          "num_ctx": 4096,
+          "seed": 42
+        }
+      },
+      "response": {
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "id": "call_zuzymov8",
+              "function": {
+                "index": 0,
+                "name": "search_orders",
+                "arguments": {
+                  "customer_id": "C1"
+                }
+              }
+            }
+          ]
+        },
+        "done_reason": "stop",
+        "prompt_eval_count": 183,
+        "eval_count": 22
+      },
+      "continuation_request": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Usa la herramienta solicitada con sus argumentos exactos. No respondas de memoria."
+          },
+          {
+            "role": "user",
+            "content": "Llama a search_orders con customer_id igual a C1. No añadas otros argumentos."
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_zuzymov8",
+                "function": {
+                  "index": 0,
+                  "name": "search_orders",
+                  "arguments": {
+                    "customer_id": "C1"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_name": "search_orders",
+            "content": "[{\"id\": \"O1\", \"customer_id\": \"C1\", \"date\": \"2026-01-03\", \"status\": \"delivered\"}, {\"id\": \"O2\", \"customer_id\": \"C1\", \"date\": \"2026-01-25\", \"status\": \"delivered\"}, {\"id\": \"O3\", \"customer_id\": \"C1\", \"date\": \"2026-01-15\", \"status\": \"cancelled\"}, {\"id\": \"O4\", \"customer_id\": \"C1\", \"date\": \"2026-02-01\", \"status\": \"delivered\"}]"
+          },
+          {
+            "role": "user",
+            "content": "Devuelve únicamente el resultado de la herramienta como JSON válido, sin cambiar los datos ni llamar más herramientas."
+          }
+        ],
+        "options": {
+          "temperature": 0,
+          "num_predict": 256,
+          "num_ctx": 4096,
+          "seed": 42
+        }
+      },
+      "continuation_response": {
+        "message": {
+          "role": "assistant",
+          "content": "[{\"id\": \"O1\", \"customer_id\": \"C1\", \"date\": \"2026-01-03\", \"status\": \"delivered\"}, {\"id\": \"O2\", \"customer_id\": \"C1\", \"date\": \"2026-01-25\", \"status\": \"delivered\"}, {\"id\": \"O3\", \"customer_id\": \"C1\", \"date\": \"2026-01-15\", \"status\": \"cancelled\"}, {\"id\": \"O4\", \"customer_id\": \"C1\", \"date\": \"2026-02-01\", \"status\": \"delivered\"}]"
+        },
+        "done_reason": "stop",
+        "prompt_eval_count": 271,
+        "eval_count": 150
+      }
+    },
+    {
+      "model": "qwen2.5:7b",
+      "case": "search-c1",
+      "condition": "all_tools",
+      "assessment": {
+        "correct": true,
+        "arguments_valid": true,
+        "tool_result": [
+          {
+            "id": "O1",
+            "customer_id": "C1",
+            "date": "2026-01-03",
+            "status": "delivered"
+          },
+          {
+            "id": "O2",
+            "customer_id": "C1",
+            "date": "2026-01-25",
+            "status": "delivered"
+          },
+          {
+            "id": "O3",
+            "customer_id": "C1",
+            "date": "2026-01-15",
+            "status": "cancelled"
+          },
+          {
+            "id": "O4",
+            "customer_id": "C1",
+            "date": "2026-02-01",
+            "status": "delivered"
+          }
+        ],
+        "reason": "Llamada y argumentos correctos"
+      },
+      "continuation_correct": true,
+      "elapsed_s": 8.27918160000263,
+      "request": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Usa la herramienta solicitada con sus argumentos exactos. No respondas de memoria."
+          },
+          {
+            "role": "user",
+            "content": "Llama a search_orders con customer_id igual a C1. No añadas otros argumentos."
+          }
+        ],
+        "options": {
+          "temperature": 0,
+          "num_predict": 256,
+          "num_ctx": 4096,
+          "seed": 42
+        }
+      },
+      "response": {
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "id": "call_loiowpcq",
+              "function": {
+                "index": 0,
+                "name": "search_orders",
+                "arguments": {
+                  "customer_id": "C1"
+                }
+              }
+            }
+          ]
+        },
+        "done_reason": "stop",
+        "prompt_eval_count": 320,
+        "eval_count": 22
+      },
+      "continuation_request": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Usa la herramienta solicitada con sus argumentos exactos. No respondas de memoria."
+          },
+          {
+            "role": "user",
+            "content": "Llama a search_orders con customer_id igual a C1. No añadas otros argumentos."
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_loiowpcq",
+                "function": {
+                  "index": 0,
+                  "name": "search_orders",
+                  "arguments": {
+                    "customer_id": "C1"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_name": "search_orders",
+            "content": "[{\"id\": \"O1\", \"customer_id\": \"C1\", \"date\": \"2026-01-03\", \"status\": \"delivered\"}, {\"id\": \"O2\", \"customer_id\": \"C1\", \"date\": \"2026-01-25\", \"status\": \"delivered\"}, {\"id\": \"O3\", \"customer_id\": \"C1\", \"date\": \"2026-01-15\", \"status\": \"cancelled\"}, {\"id\": \"O4\", \"customer_id\": \"C1\", \"date\": \"2026-02-01\", \"status\": \"delivered\"}]"
+          },
+          {
+            "role": "user",
+            "content": "Devuelve únicamente el resultado de la herramienta como JSON válido, sin cambiar los datos ni llamar más herramientas."
+          }
+        ],
+        "options": {
+          "temperature": 0,
+          "num_predict": 256,
+          "num_ctx": 4096,
+          "seed": 42
+        }
+      },
+      "continuation_response": {
+        "message": {
+          "role": "assistant",
+          "content": "[{\"id\": \"O1\", \"customer_id\": \"C1\", \"date\": \"2026-01-03\", \"status\": \"delivered\"}, {\"id\": \"O2\", \"customer_id\": \"C1\", \"date\": \"2026-01-25\", \"status\": \"delivered\"}, {\"id\": \"O3\", \"customer_id\": \"C1\", \"date\": \"2026-01-15\", \"status\": \"cancelled\"}, {\"id\": \"O4\", \"customer_id\": \"C1\", \"date\": \"2026-02-01\", \"status\": \"delivered\"}]"
+        },
+        "done_reason": "stop",
+        "prompt_eval_count": 271,
+        "eval_count": 150
+      }
+    },
+    {
+      "model": "qwen2.5:7b",
+      "case": "lines-o1",
+      "condition": "single_tool",
+      "assessment": {
+        "correct": true,
+        "arguments_valid": true,
+        "tool_result": [
+          {
+            "product_id": "P1",
+            "name": "Cuaderno",
+            "unit_cents": 500,
+            "quantity": 3,
+            "returned_quantity": 1
+          },
+          {
+            "product_id": "P2",
+            "name": "Lápiz",
+            "unit_cents": 250,
+            "quantity": 2,
+            "returned_quantity": 0
+          }
+        ],
+        "reason": "Llamada y argumentos correctos"
+      },
+      "continuation_correct": false,
+      "elapsed_s": 7.425625800002308,
+      "request": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Usa la herramienta solicitada con sus argumentos exactos. No respondas de memoria."
+          },
+          {
+            "role": "user",
+            "content": "Llama a order_lines con order_id igual a O1. No añadas otros argumentos."
+          }
+        ],
+        "options": {
+          "temperature": 0,
+          "num_predict": 256,
+          "num_ctx": 4096,
+          "seed": 42
+        }
+      },
+      "response": {
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "id": "call_xnwz5kvi",
+              "function": {
+                "index": 0,
+                "name": "order_lines",
+                "arguments": {
+                  "order_id": "O1"
+                }
+              }
+            }
+          ]
+        },
+        "done_reason": "stop",
+        "prompt_eval_count": 187,
+        "eval_count": 22
+      },
+      "continuation_request": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Usa la herramienta solicitada con sus argumentos exactos. No respondas de memoria."
+          },
+          {
+            "role": "user",
+            "content": "Llama a order_lines con order_id igual a O1. No añadas otros argumentos."
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_xnwz5kvi",
+                "function": {
+                  "index": 0,
+                  "name": "order_lines",
+                  "arguments": {
+                    "order_id": "O1"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_name": "order_lines",
+            "content": "[{\"product_id\": \"P1\", \"name\": \"Cuaderno\", \"unit_cents\": 500, \"quantity\": 3, \"returned_quantity\": 1}, {\"product_id\": \"P2\", \"name\": \"Lápiz\", \"unit_cents\": 250, \"quantity\": 2, \"returned_quantity\": 0}]"
+          },
+          {
+            "role": "user",
+            "content": "Devuelve únicamente el resultado de la herramienta como JSON válido, sin cambiar los datos ni llamar más herramientas."
+          }
+        ],
+        "options": {
+          "temperature": 0,
+          "num_predict": 256,
+          "num_ctx": 4096,
+          "seed": 42
+        }
+      },
+      "continuation_response": {
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"order_lines\": [\n    {\n      \"product_id\": \"P1\",\n      \"name\": \"Cuaderno\",\n      \"unit_cents\": 500,\n      \"quantity\": 3,\n      \"returned_quantity\": 1\n    },\n    {\n      \"product_id\": \"P2\",\n      \"name\": \"Lápiz\",\n      \"unit_cents\": 250,\n      \"quantity\": 2,\n      \"returned_quantity\": 0\n    }\n  ]\n}"
+        },
+        "done_reason": "stop",
+        "prompt_eval_count": 201,
+        "eval_count": 107
+      }
+    },
+    {
+      "model": "qwen2.5:7b",
+      "case": "lines-o1",
+      "condition": "all_tools",
+      "assessment": {
+        "correct": true,
+        "arguments_valid": true,
+        "tool_result": [
+          {
+            "product_id": "P1",
+            "name": "Cuaderno",
+            "unit_cents": 500,
+            "quantity": 3,
+            "returned_quantity": 1
+          },
+          {
+            "product_id": "P2",
+            "name": "Lápiz",
+            "unit_cents": 250,
+            "quantity": 2,
+            "returned_quantity": 0
+          }
+        ],
+        "reason": "Llamada y argumentos correctos"
+      },
+      "continuation_correct": false,
+      "elapsed_s": 7.493931800003338,
+      "request": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Usa la herramienta solicitada con sus argumentos exactos. No respondas de memoria."
+          },
+          {
+            "role": "user",
+            "content": "Llama a order_lines con order_id igual a O1. No añadas otros argumentos."
+          }
+        ],
+        "options": {
+          "temperature": 0,
+          "num_predict": 256,
+          "num_ctx": 4096,
+          "seed": 42
+        }
+      },
+      "response": {
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "id": "call_tyqr6fvm",
+              "function": {
+                "index": 0,
+                "name": "order_lines",
+                "arguments": {
+                  "order_id": "O1"
+                }
+              }
+            }
+          ]
+        },
+        "done_reason": "stop",
+        "prompt_eval_count": 320,
+        "eval_count": 22
+      },
+      "continuation_request": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Usa la herramienta solicitada con sus argumentos exactos. No respondas de memoria."
+          },
+          {
+            "role": "user",
+            "content": "Llama a order_lines con order_id igual a O1. No añadas otros argumentos."
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_tyqr6fvm",
+                "function": {
+                  "index": 0,
+                  "name": "order_lines",
+                  "arguments": {
+                    "order_id": "O1"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_name": "order_lines",
+            "content": "[{\"product_id\": \"P1\", \"name\": \"Cuaderno\", \"unit_cents\": 500, \"quantity\": 3, \"returned_quantity\": 1}, {\"product_id\": \"P2\", \"name\": \"Lápiz\", \"unit_cents\": 250, \"quantity\": 2, \"returned_quantity\": 0}]"
+          },
+          {
+            "role": "user",
+            "content": "Devuelve únicamente el resultado de la herramienta como JSON válido, sin cambiar los datos ni llamar más herramientas."
+          }
+        ],
+        "options": {
+          "temperature": 0,
+          "num_predict": 256,
+          "num_ctx": 4096,
+          "seed": 42
+        }
+      },
+      "continuation_response": {
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"order_lines\": [\n    {\n      \"product_id\": \"P1\",\n      \"name\": \"Cuaderno\",\n      \"unit_cents\": 500,\n      \"quantity\": 3,\n      \"returned_quantity\": 1\n    },\n    {\n      \"product_id\": \"P2\",\n      \"name\": \"Lápiz\",\n      \"unit_cents\": 250,\n      \"quantity\": 2,\n      \"returned_quantity\": 0\n    }\n  ]\n}"
+        },
+        "done_reason": "stop",
+        "prompt_eval_count": 201,
+        "eval_count": 107
+      }
+    },
+    {
+      "model": "qwen2.5:7b",
+      "case": "sum-integers",
+      "condition": "single_tool",
+      "assessment": {
+        "correct": true,
+        "arguments_valid": true,
+        "tool_result": {
+          "value": 300
+        },
+        "reason": "Llamada y argumentos correctos"
+      },
+      "continuation_correct": true,
+      "elapsed_s": 5.645012799999677,
+      "request": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Usa la herramienta solicitada con sus argumentos exactos. No respondas de memoria."
+          },
+          {
+            "role": "user",
+            "content": "Llama a calculate para sumar los enteros 100 y 200. operation debe ser sum y values debe ser [100,200]."
+          }
+        ],
+        "options": {
+          "temperature": 0,
+          "num_predict": 256,
+          "num_ctx": 4096,
+          "seed": 42
+        }
+      },
+      "response": {
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "id": "call_3a700nml",
+              "function": {
+                "index": 0,
+                "name": "calculate",
+                "arguments": {
+                  "operation": "sum",
+                  "values": [
+                    100,
+                    200
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "done_reason": "stop",
+        "prompt_eval_count": 227,
+        "eval_count": 33
+      },
+      "continuation_request": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Usa la herramienta solicitada con sus argumentos exactos. No respondas de memoria."
+          },
+          {
+            "role": "user",
+            "content": "Llama a calculate para sumar los enteros 100 y 200. operation debe ser sum y values debe ser [100,200]."
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_3a700nml",
+                "function": {
+                  "index": 0,
+                  "name": "calculate",
+                  "arguments": {
+                    "operation": "sum",
+                    "values": [
+                      100,
+                      200
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_name": "calculate",
+            "content": "{\"value\": 300}"
+          },
+          {
+            "role": "user",
+            "content": "Devuelve únicamente el resultado de la herramienta como JSON válido, sin cambiar los datos ni llamar más herramientas."
+          }
+        ],
+        "options": {
+          "temperature": 0,
+          "num_predict": 256,
+          "num_ctx": 4096,
+          "seed": 42
+        }
+      },
+      "continuation_response": {
+        "message": {
+          "role": "assistant",
+          "content": "{\"value\": 300}"
+        },
+        "done_reason": "stop",
+        "prompt_eval_count": 155,
+        "eval_count": 9
+      }
+    },
+    {
+      "model": "qwen2.5:7b",
+      "case": "sum-integers",
+      "condition": "all_tools",
+      "assessment": {
+        "correct": true,
+        "arguments_valid": true,
+        "tool_result": {
+          "value": 300
+        },
+        "reason": "Llamada y argumentos correctos"
+      },
+      "continuation_correct": true,
+      "elapsed_s": 5.73090570000204,
+      "request": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Usa la herramienta solicitada con sus argumentos exactos. No respondas de memoria."
+          },
+          {
+            "role": "user",
+            "content": "Llama a calculate para sumar los enteros 100 y 200. operation debe ser sum y values debe ser [100,200]."
+          }
+        ],
+        "options": {
+          "temperature": 0,
+          "num_predict": 256,
+          "num_ctx": 4096,
+          "seed": 42
+        }
+      },
+      "response": {
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "id": "call_fa8536n7",
+              "function": {
+                "index": 0,
+                "name": "calculate",
+                "arguments": {
+                  "operation": "sum",
+                  "values": [
+                    100,
+                    200
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "done_reason": "stop",
+        "prompt_eval_count": 337,
+        "eval_count": 33
+      },
+      "continuation_request": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Usa la herramienta solicitada con sus argumentos exactos. No respondas de memoria."
+          },
+          {
+            "role": "user",
+            "content": "Llama a calculate para sumar los enteros 100 y 200. operation debe ser sum y values debe ser [100,200]."
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_fa8536n7",
+                "function": {
+                  "index": 0,
+                  "name": "calculate",
+                  "arguments": {
+                    "operation": "sum",
+                    "values": [
+                      100,
+                      200
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_name": "calculate",
+            "content": "{\"value\": 300}"
+          },
+          {
+            "role": "user",
+            "content": "Devuelve únicamente el resultado de la herramienta como JSON válido, sin cambiar los datos ni llamar más herramientas."
+          }
+        ],
+        "options": {
+          "temperature": 0,
+          "num_predict": 256,
+          "num_ctx": 4096,
+          "seed": 42
+        }
+      },
+      "continuation_response": {
+        "message": {
+          "role": "assistant",
+          "content": "{\"value\": 300}"
+        },
+        "done_reason": "stop",
+        "prompt_eval_count": 155,
+        "eval_count": 9
+      }
+    }
+  ]
+}

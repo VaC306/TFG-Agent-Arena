@@ -60,6 +60,7 @@ class Preferences(Contract):
     adapter: Literal['simulated', 'ollama'] = 'simulated'
     mode: Literal['same_model', 'different_models'] = 'same_model'
     source: Literal['manual', 'dataset'] = 'manual'
+    independentInputs: bool = Field(default=False, strict=True)
     repetitions: int = Field(default=1, ge=1, le=10, strict=True)
     evaluation: Literal['exact_match', 'json_match', 'none'] = 'exact_match'
     settings: InferenceSettings = Field(default_factory=InferenceSettings)

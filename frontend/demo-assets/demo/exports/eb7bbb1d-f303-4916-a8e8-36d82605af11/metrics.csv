@@ -1,0 +1,7 @@
+task_id,branch,repetition,status,success,format_ok,agent_s,input_tokens,output_tokens,tool_calls,error,answer
+capital,B,0,succeeded,True,,4.4332643000016105,57,3,0,,París
+capital,A,0,failed,False,,2.5211198999968474,57,2,0,,Paris
+cuenta,B,0,succeeded,True,,3.0973696999935783,59,3,0,,42
+cuenta,A,0,succeeded,True,,3.1572048000016366,59,3,0,,42
+lectura,A,0,succeeded,True,,3.4171537999936845,82,6,0,,11:15
+lectura,B,0,succeeded,True,,4.43357819999801,82,6,0,,11:15

@@ -72,12 +72,14 @@ test('dataset, comparación, métricas, biblioteca, campaña e informes coherent
   await library.getByRole('combobox',{name:/^Ejecución/}).selectOption('ollama');
   await page.getByRole('button',{name:'Ver respuestas y referencia'}).click();
   await expect(page.getByRole('heading',{name:'Comparación de fixture',exact:true})).toBeVisible();
+  await page.getByText('Campaña y repetición del diseño',{exact:true}).click();
   await page.getByLabel('Nombre de campaña').fill('Campaña de fixture');
   await page.getByRole('button',{name:'Crear campaña',exact:true}).click();
   await expect(page.getByRole('heading',{name:'Campaña de fixture',exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Repetir diseño',exact:true}).click();
   await expect(page.getByRole('button',{name:'Repetir diseño',exact:true})).toBeEnabled();
   await expect(page.getByRole('region',{name:'Evolución de la campaña, tabla desplazable'}).getByRole('row')).toHaveCount(5);
+  await page.getByText('Registrar condiciones externas',{exact:true}).click();
   await page.getByLabel('Intento',{exact:true}).selectOption(id);
   await page.getByLabel('Condiciones observadas').fill('Carga controlada E2E');
   await page.getByLabel('Tipo de anotación').selectOption('observation');

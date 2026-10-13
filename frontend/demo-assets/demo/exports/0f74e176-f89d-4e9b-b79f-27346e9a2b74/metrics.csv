@@ -1,0 +1,17 @@
+task_id,branch,repetition,status,success,format_ok,agent_s,input_tokens,output_tokens,tool_calls,error,answer
+capital,B,0,cancelled,False,,,,,,Cancelled before execution,
+capital,A,0,failed,False,,0.025376999998115934,20,8,0,,"SIMULACIÓN — modelo simulated-a. Entrada recibida:
+Capital de Francia. Responde únicamente el nombre de la ciudad.
+Imágenes recibidas: 0. El simulador no interpreta imágenes ni mide calidad del modelo."
+cuenta,B,0,failed,False,,0.019224099996790756,20,8,0,,"SIMULACIÓN — modelo simulated-a. Entrada recibida:
+Calcula 17 + 25. Responde únicamente el número.
+Imágenes recibidas: 0. El simulador no interpreta imágenes ni mide calidad del modelo."
+cuenta,A,0,failed,False,,0.019753100001253188,20,8,0,,"SIMULACIÓN — modelo simulated-a. Entrada recibida:
+Calcula 17 + 25. Responde únicamente el número.
+Imágenes recibidas: 0. El simulador no interpreta imágenes ni mide calidad del modelo."
+lectura,A,0,failed,False,,0.021077199999126606,20,8,0,,"SIMULACIÓN — modelo simulated-a. Entrada recibida:
+Texto: La reunión comienza a las 10:30 y termina a las 11:15. ¿A qué hora termina? Responde solo HH:MM.
+Imágenes recibidas: 0. El simulador no interpreta imágenes ni mide calidad del modelo."
+lectura,B,0,failed,False,,0.021258999993733596,20,8,0,,"SIMULACIÓN — modelo simulated-a. Entrada recibida:
+Texto: La reunión comienza a las 10:30 y termina a las 11:15. ¿A qué hora termina? Responde solo HH:MM.
+Imágenes recibidas: 0. El simulador no interpreta imágenes ni mide calidad del modelo."

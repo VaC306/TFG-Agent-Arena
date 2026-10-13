@@ -73,6 +73,25 @@ def test_invalid_comparison_rules(case):
     with pytest.raises(ValueError): ComparisonRequest.model_validate(data)
 
 
+def test_shared_input_for_one_model_preserves_references_and_original_design(tmp_path):
+    data = request_data()
+    data['shared_input'] = data.pop('branch_inputs')['A'] | {'expected_answer': 'PRIVATE_REFERENCE'}
+    store = Store(tmp_path / 'shared.sqlite')
+    eid = submit_comparison(store, ComparisonRequest.model_validate(data))
+    original = copy.deepcopy(store.snapshot(eid))
+    assert original['branch_tasks'] is None
+    assert original['conditions']['inputs_shared'] is True
+    asyncio.run(work(store, once=True))
+    assert store.snapshot(eid) == original
+    messages = [next(e['payload']['messages'] for e in store.events(run['id']) if e['kind'] == 'input') for run in store.list_runs(eid)]
+    assert messages[0][1] == messages[1][1]
+    assert 'Hola A' in messages[0][1]['content']
+    assert 'PRIVATE_REFERENCE' not in json.dumps(messages)
+    data['branch_inputs'] = {'A': {'text': 'one'}, 'B': {'text': 'two'}}
+    with pytest.raises(ValueError, match='no ambas'):
+        ComparisonRequest.model_validate(data)
+
+
 @pytest.mark.parametrize('name,data', [
     ('file.txt',b'plain'), ('file.json',b'{"value":42}'), ('file.csv',b'name,value\nuno,1')])
 def test_text_attachment(name,data):

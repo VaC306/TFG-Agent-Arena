@@ -1,7 +1,9 @@
 {
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
-  "cli": { "analytics": false },
+  "cli": {
+    "analytics": false
+  },
   "projects": {
     "arena": {
       "projectType": "application",
@@ -15,20 +17,93 @@
             "index": "src/index.html",
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
-            "assets": [{"glob":"**/*", "input":"src/assets", "output":"assets"}],
-            "styles": ["src/styles.css", "src/composer.css"]
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "src/assets",
+                "output": "assets"
+              }
+            ],
+            "styles": [
+              "src/styles.css",
+              "src/composer.css"
+            ]
           },
           "configurations": {
-            "production": { "outputHashing": "all", "budgets": [{ "type": "initial", "maximumWarning": "600kB", "maximumError": "1MB" }] },
-            "development": { "optimization": false, "sourceMap": true }
+            "production": {
+              "outputHashing": "all",
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "600kB",
+                  "maximumError": "1MB"
+                }
+              ]
+            },
+            "development": {
+              "optimization": false,
+              "sourceMap": true
+            },
+            "demo": {
+              "outputPath": "dist/sites",
+              "outputHashing": "all",
+              "sourceMap": false,
+              "baseHref": "./",
+              "assets": [
+                {
+                  "glob": "Manrope-LICENSE.txt",
+                  "input": "src/assets/fonts",
+                  "output": "assets/fonts"
+                },
+                {
+                  "glob": "**/*",
+                  "input": "demo-assets",
+                  "output": "."
+                }
+              ],
+              "fileReplacements": [
+                {
+                  "replace": "src/app/runtime-mode.ts",
+                  "with": "src/app/runtime-mode.demo.ts"
+                },
+                {
+                  "replace": "src/app/data-providers.ts",
+                  "with": "src/app/data-providers.demo.ts"
+                },
+                {
+                  "replace": "src/app/contact.component.ts",
+                  "with": "src/app/contact.component.demo.ts"
+                },
+                {
+                  "replace": "src/app/demo-overview.component.ts",
+                  "with": "src/app/demo-overview.component.demo.ts"
+                },
+                {
+                  "replace": "src/app/demo-guide.component.ts",
+                  "with": "src/app/demo-guide.component.demo.ts"
+                }
+              ],
+              "styles": [
+                "src/styles.css",
+                "src/composer.css",
+                "src/demo-layout.css"
+              ]
+            }
           },
           "defaultConfiguration": "production"
         },
         "serve": {
           "builder": "@angular/build:dev-server",
           "configurations": {
-            "development": { "buildTarget": "arena:build:development" },
-            "production": { "buildTarget": "arena:build:production" }
+            "development": {
+              "buildTarget": "arena:build:development"
+            },
+            "production": {
+              "buildTarget": "arena:build:production"
+            },
+            "demo": {
+              "buildTarget": "arena:build:demo"
+            }
           },
           "defaultConfiguration": "development"
         }

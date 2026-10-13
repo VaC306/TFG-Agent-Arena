@@ -1,4 +1,5 @@
-import { Component, DestroyRef, EventEmitter, inject, Output, signal } from '@angular/core';
+import { Component, DestroyRef, EventEmitter, inject, Input, Output, signal } from '@angular/core';
+import { WorkerStatusComponent } from './worker-status.component';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ArenaService, ComparisonBody, DatasetPreview, InputData, PresetId, PromptTemplate, EvaluationMode, defaultSettings } from './arena.service';
@@ -35,10 +36,11 @@ function validDraft(value: unknown, owner: string | undefined): value is Compose
 }
 
 @Component({
-  selector: 'arena-composer', standalone: true, imports: [FormsModule, InputEditorComponent, InfoDialogComponent,LoadingIndicatorComponent],
+  selector: 'arena-composer', standalone: true, imports: [FormsModule, InputEditorComponent, InfoDialogComponent,LoadingIndicatorComponent,WorkerStatusComponent],
   templateUrl: './composer.component.html',
 })
 export class ComposerComponent {
+  @Input() active = true;
   private api = inject(ArenaService);
   private auth = inject(AuthService);
   private activity = inject(LoadingService);
@@ -78,6 +80,15 @@ export class ComposerComponent {
   readingB = false;
   readingShared = false;
   source: 'manual' | 'dataset' = 'manual';
+  independentInputs = false;
+  usesIndependentInputs() { return this.mode === 'same_model' && this.independentInputs; }
+  variablesChanged() {
+    const changes = [];
+    if (this.mode === 'different_models') changes.push('modelo');
+    if (this.promptA.text !== this.promptB.text) changes.push('prompt');
+    if (this.source === 'manual' && this.usesIndependentInputs() && JSON.stringify(this.pack(this.inputA)) !== JSON.stringify(this.pack(this.inputB))) changes.push('datos o referencias');
+    return changes.length ? 'Cambia: ' + changes.join(' · ') : 'No cambian las variables configuradas entre A y B.';
+  }
   dataset = signal<DatasetPreview | null>(null);
   datasetName = signal('');
   datasetBusy = signal(false);
@@ -115,6 +126,7 @@ export class ComposerComponent {
     if (saved) {
       this.name = saved.name; this.adapter = saved.adapter; this.mode = saved.mode;
       this.source = saved.source; this.repetitions = saved.repetitions;
+      this.independentInputs = saved.independentInputs ?? false;
       this.evaluation = saved.evaluation ?? 'exact_match'; this.settings = {...defaultSettings(), ...saved.settings};
       this.split = saved.split ?? 'dev';
       this.modelA = saved.modelA; this.modelB = saved.modelB;
@@ -139,7 +151,7 @@ export class ComposerComponent {
   private config(): Preferences {
     return {name:this.name, adapter:this.adapter, mode:this.mode, source:this.source,
       repetitions:this.repetitions, modelA:this.modelA, modelB:this.modelB,
-      promptA:{...this.promptA}, promptB:{...this.promptB}, evaluation:this.evaluation, settings:{...this.settings}, split:this.split};
+      promptA:{...this.promptA}, promptB:{...this.promptB}, evaluation:this.evaluation, settings:{...this.settings}, split:this.split, independentInputs:this.independentInputs};
   }
 
   recoverDraft() {
@@ -148,6 +160,8 @@ export class ComposerComponent {
     ++this.datasetVersion;
     const config = draft.config;
     this.name = config.name; this.adapter = config.adapter; this.mode = config.mode; this.source = config.source;
+    // Earlier drafts used independent manual inputs. Recover that choice without reinterpreting their data.
+    this.independentInputs = config.independentInputs ?? (config.mode === 'same_model' && config.source === 'manual');
     this.repetitions = config.repetitions; this.modelA = config.modelA; this.modelB = config.modelB;
     this.promptA = {...config.promptA}; this.promptB = {...config.promptB};
     this.evaluation = config.evaluation ?? 'exact_match'; this.settings = {...defaultSettings(),...config.settings}; this.split = config.split ?? 'dev';
@@ -210,9 +224,7 @@ export class ComposerComponent {
     if (!Number.isInteger(this.repetitions) || this.repetitions < 1 || this.repetitions > 10) {
       this.preferencesNotice.set('Revisa las repeticiones para guardar las preferencias.'); return;
     }
-    const prefs: Preferences = {name:this.name, adapter:this.adapter, mode:this.mode, source:this.source,
-      repetitions:this.repetitions, modelA:this.modelA, modelB:this.modelB,
-      promptA:{...this.promptA}, promptB:{...this.promptB}, evaluation:this.evaluation, settings:{...this.settings}, split:this.split};
+    const prefs = this.config();
     try { await this.auth.savePreferences(prefs); this.preferencesNotice.set('Preferencias guardadas en tu perfil.'); }
     catch { this.preferencesNotice.set('No se guardaron las preferencias. Vuelve a modificar un campo para reintentar.'); }
   }
@@ -273,12 +285,12 @@ export class ComposerComponent {
 
   async submit() {
     if (this.pendingDraft()) { this.error.set('Recupera o descarta el borrador antes de ejecutar.'); return; }
-    const activeSlots = this.source === 'dataset' ? [] : this.mode === 'same_model' ? ['inputA','inputB'] : ['shared'];
+    const activeSlots = this.source === 'dataset' ? [] : this.usesIndependentInputs() ? ['inputA','inputB'] : ['shared'];
     if (this.missingAttachments().some(file => activeSlots.includes(file.slot))) { this.error.set('Reselecciona los adjuntos pendientes o indica que quieres omitirlos antes de ejecutar.'); return; }
     if (this.busy() || this.modelsBusy() || !this.validModels() || this.datasetBusy() || this.readingA || this.readingB || this.readingShared || (this.source === 'dataset' && !this.dataset())) return;
     const fields: [string, string, number, boolean][] = [
       ['comparison-name', this.name, 120, true], ['prompt-a', this.promptA.text, 6000, true], ['prompt-b', this.promptB.text, 6000, true],
-      ...(this.source === 'manual' ? (this.mode === 'same_model' ? [['a', this.inputA], ['b', this.inputB]] as const : [['shared', this.shared]] as const).flatMap(([slot, input]) => [
+      ...(this.source === 'manual' ? (this.usesIndependentInputs() ? [['a', this.inputA], ['b', this.inputB]] as const : [['shared', this.shared]] as const).flatMap(([slot, input]) => [
         [slot + '-input', input.text, 6000, true] as [string,string,number,boolean],
         [slot + '-reference', input.expected_answer, 6000, false] as [string,string,number,boolean],
       ]) : []),
@@ -312,7 +324,7 @@ export class ComposerComponent {
     }
     if (this.evaluation === 'json_match') {
       const references = this.source === 'dataset' ? this.dataset()!.cases.map(c => c.expected_answer) :
-        (this.mode === 'same_model' ? [this.inputA, this.inputB] : [this.shared]).map(i => i.expected_answer);
+        (this.usesIndependentInputs() ? [this.inputA, this.inputB] : [this.shared]).map(i => i.expected_answer);
       try { references.filter(r => r?.trim()).forEach(r => JSON.parse(r!)); }
       catch { this.error.set('Para evaluar JSON, las respuestas esperadas deben contener JSON válido.'); return; }
     }
@@ -337,7 +349,7 @@ export class ComposerComponent {
         A:{model:this.modelA.trim(), system_prompt:this.promptA.text, prompt_template:this.promptA.template},
         B:{model:(this.mode === 'same_model' ? this.modelA : this.modelB).trim(), system_prompt:this.promptB.text, prompt_template:this.promptB.template},
       },
-      ...(this.source === 'dataset' ? {dataset:this.dataset()!.cases} : this.mode === 'same_model' ? {branch_inputs:{A:this.pack(this.inputA), B:this.pack(this.inputB)}} : {shared_input:this.pack(this.shared)}),
+      ...(this.source === 'dataset' ? {dataset:this.dataset()!.cases} : this.usesIndependentInputs() ? {branch_inputs:{A:this.pack(this.inputA), B:this.pack(this.inputB)}} : {shared_input:this.pack(this.shared)}),
     };
     this.submissionPending.set(true); this.saveDraft();
     try {

@@ -1,0 +1,47 @@
+{
+  "note": "Fixtures sintéticos del benchmark; sin datos personales reales. No son datos recibidos de visitantes.",
+  "files": [
+    {
+      "name": "catalog-dev.json",
+      "split": "dev",
+      "content": "{\"A\":10,\"B\":5}\n",
+      "source": "benchmarks/v1/fixtures/catalog-dev.json"
+    },
+    {
+      "name": "quantities-dev.csv",
+      "split": "dev",
+      "content": "sku,cantidad\nA,2\nB,3\n",
+      "source": "benchmarks/v1/fixtures/quantities-dev.csv"
+    },
+    {
+      "name": "note-dev.txt",
+      "split": "dev",
+      "content": "Los precios del catálogo están en euros y son por unidad. Multiplica cada precio por su cantidad y suma los resultados.\n",
+      "source": "benchmarks/v1/fixtures/note-dev.txt"
+    },
+    {
+      "name": "catalog-eval.json",
+      "split": "eval",
+      "content": "{\"R\":7,\"S\":4}\n",
+      "source": "benchmarks/v1/fixtures/catalog-eval.json"
+    },
+    {
+      "name": "quantities-eval.csv",
+      "split": "eval",
+      "content": "sku,cantidad\nR,3\nS,2\n",
+      "source": "benchmarks/v1/fixtures/quantities-eval.csv"
+    },
+    {
+      "name": "note-eval.txt",
+      "split": "eval",
+      "content": "Todos los precios son por unidad y están expresados en euros. No hay descuentos ni impuestos adicionales.\n",
+      "source": "benchmarks/v1/fixtures/note-eval.txt"
+    },
+    {
+      "name": "orders.json",
+      "split": "shared",
+      "content": "{\n  \"currency\": \"EUR\",\n  \"orders\": [\n    {\"id\":\"O1\",\"customer_id\":\"C1\",\"date\":\"2026-01-03\",\"status\":\"delivered\",\"lines\":[{\"product_id\":\"P1\",\"name\":\"Cuaderno\",\"unit_cents\":500,\"quantity\":3,\"returned_quantity\":1},{\"product_id\":\"P2\",\"name\":\"Lápiz\",\"unit_cents\":250,\"quantity\":2,\"returned_quantity\":0}]},\n    {\"id\":\"O2\",\"customer_id\":\"C1\",\"date\":\"2026-01-25\",\"status\":\"delivered\",\"lines\":[{\"product_id\":\"P3\",\"name\":\"Mochila\",\"unit_cents\":2000,\"quantity\":1,\"returned_quantity\":0}]},\n    {\"id\":\"O3\",\"customer_id\":\"C1\",\"date\":\"2026-01-15\",\"status\":\"cancelled\",\"lines\":[{\"product_id\":\"P3\",\"name\":\"Mochila\",\"unit_cents\":2000,\"quantity\":1,\"returned_quantity\":0}]},\n    {\"id\":\"O4\",\"customer_id\":\"C1\",\"date\":\"2026-02-01\",\"status\":\"delivered\",\"lines\":[{\"product_id\":\"P2\",\"name\":\"Lápiz\",\"unit_cents\":250,\"quantity\":1,\"returned_quantity\":0}]},\n    {\"id\":\"O5\",\"customer_id\":\"C2\",\"date\":\"2026-01-31\",\"status\":\"delivered\",\"lines\":[{\"product_id\":\"P4\",\"name\":\"Carpeta\",\"unit_cents\":999,\"quantity\":2,\"returned_quantity\":0}]},\n    {\"id\":\"O6\",\"customer_id\":\"C2\",\"date\":\"2026-02-28\",\"status\":\"delivered\",\"lines\":[{\"product_id\":\"P4\",\"name\":\"Carpeta\",\"unit_cents\":999,\"quantity\":1,\"returned_quantity\":1}]},\n    {\"id\":\"O7\",\"customer_id\":\"C3\",\"date\":\"2026-02-01\",\"status\":\"pending\",\"lines\":[{\"product_id\":\"P1\",\"name\":\"Cuaderno\",\"unit_cents\":500,\"quantity\":1,\"returned_quantity\":0}]},\n    {\"id\":\"O8\",\"customer_id\":\"C3\",\"date\":\"2026-03-31\",\"status\":\"delivered\",\"lines\":[{\"product_id\":\"P5\",\"name\":\"Regla\",\"unit_cents\":333,\"quantity\":3,\"returned_quantity\":1}]},\n    {\"id\":\"O9\",\"customer_id\":\"C3\",\"date\":\"2026-04-01\",\"status\":\"delivered\",\"lines\":[{\"product_id\":\"P5\",\"name\":\"Regla\",\"unit_cents\":333,\"quantity\":2,\"returned_quantity\":0}]}\n  ]\n}\n",
+      "source": "benchmarks/v1/fixtures/orders.json"
+    }
+  ]
+}

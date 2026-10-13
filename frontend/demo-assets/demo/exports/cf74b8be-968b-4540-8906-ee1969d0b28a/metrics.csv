@@ -1,0 +1,18 @@
+task_id,branch,repetition,status,success,format_ok,agent_s,input_tokens,output_tokens,tool_calls,error,answer
+eval-full-return,B,0,failed,False,False,27.731816100000287,5729,359,6,,"The total cost for the valid order is 1998 cents. Therefore, the final result is:
+
+```json
+{
+  ""total_cents"": 1998,
+  ""order_ids"": [""O5""]
+}
+```
+
+This JSON object represents the total cost in cents and the order IDs that contributed to this cost."
+eval-full-return,A,0,failed,False,False,6.280125600002066,1197,97,1,,"Los datos proporcionados para la búsqueda no son válidos. La fecha debe ser en el formato AAAA-MM y el estado debe ser 'pending', 'delivered', 'cancelled', o 'completed'. Por favor, verifique y vuelva a intentarlo."
+eval-pending,B,0,failed,False,False,16.622589400001743,3682,143,4,ValueError: El servidor no devolvió una respuesta de texto válida,
+eval-pending,A,0,failed,False,False,5.9933956999957445,1269,120,1,,"El formato de las fechas y el estado no es correcto. Asegúrate de proporcionar los valores en el formato correcto (por ejemplo, fechas en el formato YYYY-MM-DD y el estado como un valor de cadena). Vuelve a intentarlo con los valores correctos."
+eval-partial-return,A,0,failed,False,False,5.548251299995172,1197,89,1,,"Hubo un error en la consulta de búsqueda. Parece que hay entradas no permitidas para los campos order_status y order_date. Por favor, asegúrate de proporcionar los valores correctos para estos campos."
+eval-partial-return,B,0,failed,False,False,16.80945700000302,3682,143,4,ValueError: El servidor no devolvió una respuesta de texto válida,
+eval-month-boundary,B,0,failed,False,False,20.306965800002217,4686,175,5,ValueError: El servidor no devolvió una respuesta de texto válida,
+eval-month-boundary,A,0,failed,False,False,5.608508699995582,1197,123,1,,"Los valores proporcionados para `order_status` y `order_date` no son válidos. Asegúrate de proporcionar los valores correctos según la documentación de los parámetros. Por ejemplo, `order_status` debe ser 'delivered' y `order_date` debe ser en el formato `YYYY-MM-DD`. Vuelve a intentarlo con los valores correctos."

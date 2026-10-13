@@ -18,11 +18,11 @@ import { LoadingIndicatorComponent } from './loading-indicator.component';
       <button type="button" class="text-button" [disabled]="busy()" (click)="logout()">Cerrar sesión</button>
       @if (message()) { <p class="hint" role="status">{{ message() }}</p> }
       @if (error()) { <p id="profile-error" class="alert error" role="alert">{{ error() }}</p> }
-    </form><section class="connections"><h2>Conexiones</h2><p class="hint">Aquí reunirás tus proveedores de modelos.</p>
+    </form><section class="connections"><h2>Modelos locales</h2><p class="hint">La ejecución pertenece a esta instalación.</p>
       <div class="connection-row"><div><h3>Ollama</h3><p class="hint">Modelos instalados en esta máquina</p></div><span class="tag">Local</span></div>
-      <div class="connection-row"><div><h3>ChatGPT</h3><p class="hint">Vinculación por cuenta en una próxima fase</p></div><span class="tag">Próximamente</span></div>
+      <details><summary>Conexiones futuras</summary><div class="connection-row"><div><h3>ChatGPT</h3><p class="hint">Vinculación por cuenta en una próxima fase</p></div><span class="tag">Próximamente</span></div>
       <div class="connection-row"><div><h3>Claude</h3><p class="hint">Vinculación por cuenta en una próxima fase</p></div><span class="tag">Próximamente</span></div>
-      <p class="hint">Todavía no se conectan cuentas externas ni se solicitan claves de estos servicios.</p>
+      <p class="hint">Todavía no se conectan cuentas externas ni se solicitan claves de estos servicios.</p></details>
     </section></div>
     <section class="profile-history" aria-labelledby="history-settings-title">
       <div><h2 id="history-settings-title">Historial</h2><p class="hint">Elimina las comparaciones, campañas y resultados de esta cuenta. Tus preferencias se conservan.</p></div>

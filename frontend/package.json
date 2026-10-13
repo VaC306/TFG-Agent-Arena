@@ -9,7 +9,10 @@
     "e2e": "node e2e/run.cjs",
     "e2e:repeat": "node e2e/run.cjs --repeat-each=3",
     "e2e:typecheck": "tsc --noEmit -p e2e/tsconfig.json",
-    "e2e:install": "playwright install chromium"
+    "e2e:install": "playwright install chromium",
+    "start:demo": "ng serve --configuration demo --host 127.0.0.1",
+    "build:demo": "ng build --configuration demo",
+    "test:demo": "node demo-tests/browser.cjs"
   },
   "engines": {
     "node": "^20.19.0 || ^22.12.0 || ^24.0.0"

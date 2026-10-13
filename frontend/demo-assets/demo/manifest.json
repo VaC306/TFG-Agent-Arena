@@ -1,0 +1,49 @@
+{
+  "schema": 2,
+  "sources": {
+    "benchmarks/v1/results/2026-10-12/dev/text.json": "dc172579c0eb0f5c5e994246a7b34366eb0f376c942a173bec82a6a183f28f58",
+    "benchmarks/v1/datasets/text-dev.csv": "b89d311ccef9e8b90d7b7658f7989d744ebd5cb8455bc8cd6585a6d754237a4c",
+    "benchmarks/v1/results/2026-10-12/dev/json.json": "9ad501229be8347733299a511dc9c7cffb5a0aa368e7da4360a25968d450b690",
+    "benchmarks/v1/datasets/json-dev.jsonl": "0bb64007513f322cc34359b19fe7ed74580d9c49ca58fdb7c4441c4e90166de8",
+    "benchmarks/v1/results/2026-10-12/dev/orders.json": "10a77aad70cd7855848a1c9eecdd4e589b3d211075739b84da7e29a9fc32800c",
+    "benchmarks/v1/datasets/orders-dev.jsonl": "83fde58f61e33367d01f7d522ec5a484fba443f173e3b24656f8f2fbbe117f09",
+    "benchmarks/v1/results/2026-10-12/dev/attachments.json": "06df4fb86ea4f7c5bdefd3a2dc0e9f7f4abda586edebdea08ad8113b056bed83",
+    "benchmarks/v1/datasets/attachments-dev.json": "c0bd82324057ef944200bcd4e53fb2c7eea9e6f4562731ce851b4f02aade78a9",
+    "benchmarks/v1/results/2026-10-12/eval/text.json": "41a6ce35e98f7d5cd0c22ae3785d3c815a89ed1460a08a61f6ff3fd055fe7670",
+    "benchmarks/v1/datasets/text-eval.csv": "00c1a99b0fea9b3066dfcba3703f2e8cefdb64bda114a0db1978897c41b20631",
+    "benchmarks/v1/results/2026-10-12/eval/json.json": "3f0c0867b5892abcb08190aee655c2d2a8214ad01f7760889687b7ee07da9f98",
+    "benchmarks/v1/datasets/json-eval.jsonl": "9afd5cb8d4c951b85d59b09274b77de02a422748fdb255c8a5b5678735f5289f",
+    "benchmarks/v1/results/2026-10-12/eval/orders.json": "b55185955fb74b4027e3bb24d0282490a83cb69a04a835b95b8def94d2c9fd59",
+    "benchmarks/v1/datasets/orders-eval.jsonl": "82d0534c24fa26c8721b8721891bd506b4adeec9888c0cf35e099b79de725a56",
+    "benchmarks/v1/results/2026-10-12/eval/attachments.json": "4de05d3f60b94e569a2a01feb5ea9ba26c3d33e5e01604e3eecf0ee4eb323e05",
+    "benchmarks/v1/datasets/attachments-eval.json": "5d4bcc703215124e0591487094bc6891b4549bd93f9b628f1632295a5e23bc16",
+    "experiments/local-flow-2026-10-12/reproducibility.json": "6495e4de014ce07bcf7afe6e665b404d4078f85da842cc7a8a334e8229ee2b9f",
+    "experiments/local-flow-2026-10-12/simulated-reproducibility.json": "6222597e26aa1a9a66efbe9cbfeee7d2bff6b57677bbd45b96318d9c0baf0a7a",
+    "benchmarks/v1/results/2026-10-12/tool-diagnostics.json": "d008d646da355fa6070f4d71772abf100154faeb5c3b25c0c3e524682ae6ebf6",
+    "benchmarks/v1/fixtures/catalog-dev.json": "49bba80b2b8b96506fddaa985ec4cd24d335cd5d126abcefabc0d31fa94e8db5",
+    "benchmarks/v1/fixtures/quantities-dev.csv": "6902792d7c9d7f434a9179760ce5676710d11469fa0e49fffe46540ad3c7f6ef",
+    "benchmarks/v1/fixtures/note-dev.txt": "0081074864a8710d11de7ba00c7f5468a4ba8f9ba18c19e6df700e966339b05e",
+    "benchmarks/v1/fixtures/catalog-eval.json": "3ec7f8f23949c19866fd7361e2343515977706ac6f6289160595746a56c1b879",
+    "benchmarks/v1/fixtures/quantities-eval.csv": "be4f9b20ac2b68290b02f6a92790e9375daf7222ffcc6c7b2420f27ae9fe11c7",
+    "benchmarks/v1/fixtures/note-eval.txt": "6a4dbd959f1cda595899f902cb64d90200f8d26889e82dae56a97a699c5b0e7e",
+    "benchmarks/v1/fixtures/orders.json": "1e3389d6b40b252b4cc5acf04f35b65d6fd0d006fc7c9cb990ea62cfec4a0021",
+    "experiments/simulated-dev-final-2026-10-08/snapshot.json": "782cc19fb7c9436b2c3bd8efe4aca4020e7717b2386ae3cdd345188453224a70",
+    "experiments/simulated-dev-final-2026-10-08/runs.json": "1ac51816fee762c7b1c0cfebafb8521ef98c8d6179140c70f75f42f05499ad4e",
+    "experiments/simulated-dev-final-2026-10-08/events.jsonl": "222f2e9c69bc5255ce59605193625691145488bd6367bdfe1fd0073648ef2607"
+  },
+  "lf_normalized_sources": [
+    "experiments/simulated-dev-final-2026-10-08/events.jsonl",
+    "experiments/simulated-dev-final-2026-10-08/runs.json",
+    "experiments/simulated-dev-final-2026-10-08/snapshot.json"
+  ],
+  "selection": "10 comparisons, saved terminal runs; diagnostics; synthetic text fixtures; one selected simulated replay. No runtime or database.",
+  "omissions": [
+    "host",
+    "source code",
+    "full environments",
+    "binary attachments",
+    "full worker traces",
+    "campaigns (not exported)"
+  ],
+  "note": "Resultados guardados del 12/10/2026. Muestras pequeñas y exploratorias; sin ranking ni conclusión de superioridad. A/B secuenciales, sin aislamiento del host; tiempo total puede incluir carga y preparación. Semilla fija no garantiza determinismo. No se publican fuentes, entornos, adjuntos binarios ni trazas completas del worker."
+}

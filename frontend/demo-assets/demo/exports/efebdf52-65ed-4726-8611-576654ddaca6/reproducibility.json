@@ -1,0 +1,418 @@
+{
+  "snapshot": {
+    "config": {
+      "name": "arena-benchmarks-v1 json eval",
+      "adapter": "ollama",
+      "split": "eval",
+      "repetitions": 1,
+      "comparison": "different_models",
+      "agents": {
+        "A": {
+          "model": "qwen2.5:3b",
+          "system_prompt": "Extrae la información solicitada y devuelve únicamente JSON válido, sin Markdown ni explicaciones. Respeta los tipos pedidos, usa null para datos ausentes y no inventes valores.",
+          "temperature": 0.0,
+          "seed": 42,
+          "num_ctx": 4096,
+          "limits": {
+            "max_output_tokens": 1024,
+            "timeout_s": 90.0
+          }
+        },
+        "B": {
+          "model": "qwen2.5:7b",
+          "system_prompt": "Extrae la información solicitada y devuelve únicamente JSON válido, sin Markdown ni explicaciones. Respeta los tipos pedidos, usa null para datos ausentes y no inventes valores.",
+          "temperature": 0.0,
+          "seed": 42,
+          "num_ctx": 4096,
+          "limits": {
+            "max_output_tokens": 1024,
+            "timeout_s": 90.0
+          }
+        }
+      }
+    },
+    "tasks": [
+      {
+        "id": "eval-product",
+        "input": "Extrae nombre y precio de: Producto: Regla; precio: 2.25 euros. Devuelve solo JSON con nombre y precio numérico, sin moneda.",
+        "expected_answer": "{\"nombre\":\"Regla\",\"precio\":2.25}",
+        "evaluation": "json_match"
+      },
+      {
+        "id": "eval-inactive",
+        "input": "Ficha: cuenta activa: no. Devuelve solo JSON con activo booleano.",
+        "expected_answer": "{\"activo\":false}",
+        "evaluation": "json_match"
+      },
+      {
+        "id": "eval-missing",
+        "input": "Personaje ficticio: Nombre: Leo. No se indica teléfono. Devuelve solo JSON con nombre y telefono; usa null para datos ausentes.",
+        "expected_answer": "{\"nombre\":\"Leo\",\"telefono\":null}",
+        "evaluation": "json_match"
+      },
+      {
+        "id": "eval-list",
+        "input": "Códigos en orden: B2, A1, C3. Devuelve solo JSON con codigos como lista de cadenas en ese mismo orden.",
+        "expected_answer": "{\"codigos\":[\"B2\",\"A1\",\"C3\"]}",
+        "evaluation": "json_match"
+      },
+      {
+        "id": "eval-zero",
+        "input": "Existencias: 0 unidades. Devuelve solo JSON con cantidad como número entero.",
+        "expected_answer": "{\"cantidad\":0}",
+        "evaluation": "json_match"
+      },
+      {
+        "id": "eval-nested",
+        "input": "Producto: carpeta. Stock: 8. Devuelve solo JSON con producto, objeto con claves nombre y stock numérico.",
+        "expected_answer": "{\"producto\":{\"nombre\":\"carpeta\",\"stock\":8}}",
+        "evaluation": "json_match"
+      }
+    ],
+    "conditions": {
+      "inputs_shared": true
+    },
+    "data_sha256": "2df33a7caf9ea5c64c265a86267a3b073c44ccd0f7c26e528e76fbf0979f58a2"
+  },
+  "runs": [
+    {
+      "id": "660e0f55-b31e-4971-91af-e8ab43d885c5",
+      "task_id": "eval-product",
+      "branch": "B",
+      "repetition": 0,
+      "status": "succeeded",
+      "result": {
+        "success": true,
+        "format_ok": true,
+        "agent_s": 3.7953278999993927,
+        "queue_s": 0.009000301361083984,
+        "input_tokens": 89,
+        "output_tokens": 21,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 53.4341627502818,
+        "answer": "{\n  \"nombre\": \"Regla\",\n  \"precio\": 2.25\n}",
+        "reason": "JSON equivalente a la referencia"
+      }
+    },
+    {
+      "id": "3683546d-3fcf-40c2-bed5-f074da18a706",
+      "task_id": "eval-product",
+      "branch": "A",
+      "repetition": 0,
+      "status": "succeeded",
+      "result": {
+        "success": true,
+        "format_ok": true,
+        "agent_s": 2.7350430999940727,
+        "queue_s": 3.831576347351074,
+        "input_tokens": 89,
+        "output_tokens": 21,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 107.03964034680844,
+        "answer": "{\n  \"nombre\": \"Regla\",\n  \"precio\": 2.25\n}",
+        "reason": "JSON equivalente a la referencia"
+      }
+    },
+    {
+      "id": "b3d9e512-6739-4dbf-88c5-8d91fc32532d",
+      "task_id": "eval-inactive",
+      "branch": "B",
+      "repetition": 0,
+      "status": "succeeded",
+      "result": {
+        "success": true,
+        "format_ok": true,
+        "agent_s": 2.8914483999978984,
+        "queue_s": 6.5844526290893555,
+        "input_tokens": 71,
+        "output_tokens": 6,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 57.13741548423959,
+        "answer": "{\"activo\": false}",
+        "reason": "JSON equivalente a la referencia"
+      }
+    },
+    {
+      "id": "37a083b8-e3e3-4fcd-881a-154a8e57b3c1",
+      "task_id": "eval-inactive",
+      "branch": "A",
+      "repetition": 0,
+      "status": "succeeded",
+      "result": {
+        "success": true,
+        "format_ok": true,
+        "agent_s": 2.599427300003299,
+        "queue_s": 9.494868040084839,
+        "input_tokens": 71,
+        "output_tokens": 6,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 104.59156991946449,
+        "answer": "{\"activo\": false}",
+        "reason": "JSON equivalente a la referencia"
+      }
+    },
+    {
+      "id": "35b74af1-c852-4702-ab2b-e31c328f917d",
+      "task_id": "eval-missing",
+      "branch": "A",
+      "repetition": 0,
+      "status": "succeeded",
+      "result": {
+        "success": true,
+        "format_ok": true,
+        "agent_s": 3.1110470999992685,
+        "queue_s": 12.11430811882019,
+        "input_tokens": 82,
+        "output_tokens": 12,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 105.58268443975187,
+        "answer": "{\"nombre\": \"Leo\", \"telefono\": null}",
+        "reason": "JSON equivalente a la referencia"
+      }
+    },
+    {
+      "id": "864a5b7c-40fa-414e-9f57-b5e2b0ecf5c3",
+      "task_id": "eval-missing",
+      "branch": "B",
+      "repetition": 0,
+      "status": "succeeded",
+      "result": {
+        "success": true,
+        "format_ok": true,
+        "agent_s": 3.81626580000011,
+        "queue_s": 15.246075868606567,
+        "input_tokens": 82,
+        "output_tokens": 16,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 54.09407636055054,
+        "answer": "{\n  \"nombre\": \"Leo\",\n  \"telefono\": null\n}",
+        "reason": "JSON equivalente a la referencia"
+      }
+    },
+    {
+      "id": "724bd03b-39a7-49db-8ebd-a1ab798b63a7",
+      "task_id": "eval-list",
+      "branch": "B",
+      "repetition": 0,
+      "status": "failed",
+      "result": {
+        "success": false,
+        "format_ok": true,
+        "agent_s": 3.479028100002324,
+        "queue_s": 19.081602811813354,
+        "input_tokens": 84,
+        "output_tokens": 13,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 54.039224163015554,
+        "answer": "[\"B2\", \"A1\", \"C3\"]",
+        "reason": "El JSON contiene valores o estructura distintos"
+      }
+    },
+    {
+      "id": "5127262c-32f6-4a45-8ae4-5268c6d1455e",
+      "task_id": "eval-list",
+      "branch": "A",
+      "repetition": 0,
+      "status": "succeeded",
+      "result": {
+        "success": true,
+        "format_ok": true,
+        "agent_s": 2.615345199999865,
+        "queue_s": 22.579159259796143,
+        "input_tokens": 84,
+        "output_tokens": 17,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 107.62490820228417,
+        "answer": "{\"codigos\": [\"B2\", \"A1\", \"C3\"]}",
+        "reason": "JSON equivalente a la referencia"
+      }
+    },
+    {
+      "id": "920f5976-247f-4813-baba-5a7fd3e75478",
+      "task_id": "eval-zero",
+      "branch": "B",
+      "repetition": 0,
+      "status": "succeeded",
+      "result": {
+        "success": true,
+        "format_ok": true,
+        "agent_s": 3.6342468000002555,
+        "queue_s": 25.214239597320557,
+        "input_tokens": 70,
+        "output_tokens": 7,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 55.98298117372318,
+        "answer": "{\"cantidad\": 0}",
+        "reason": "JSON equivalente a la referencia"
+      }
+    },
+    {
+      "id": "8fc5a78b-ede7-489d-aea3-57950423c66b",
+      "task_id": "eval-zero",
+      "branch": "A",
+      "repetition": 0,
+      "status": "succeeded",
+      "result": {
+        "success": true,
+        "format_ok": true,
+        "agent_s": 3.105218700002297,
+        "queue_s": 28.867275714874268,
+        "input_tokens": 70,
+        "output_tokens": 7,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 95.55400849065617,
+        "answer": "{\"cantidad\": 0}",
+        "reason": "JSON equivalente a la referencia"
+      }
+    },
+    {
+      "id": "fab577d0-1c5f-4fb1-b0ce-c8b3e8bc2806",
+      "task_id": "eval-nested",
+      "branch": "B",
+      "repetition": 0,
+      "status": "failed",
+      "result": {
+        "success": false,
+        "format_ok": true,
+        "agent_s": 3.9677195999975083,
+        "queue_s": 31.992339849472046,
+        "input_tokens": 80,
+        "output_tokens": 25,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 53.457868784453595,
+        "answer": "{\n  \"producto\": \"carpeta\",\n  \"nombre\": null,\n  \"stock\": 8\n}",
+        "reason": "El JSON contiene valores o estructura distintos"
+      }
+    },
+    {
+      "id": "84198a02-3f73-4651-b1e4-8e9581627558",
+      "task_id": "eval-nested",
+      "branch": "A",
+      "repetition": 0,
+      "status": "succeeded",
+      "result": {
+        "success": true,
+        "format_ok": true,
+        "agent_s": 2.7000421000047936,
+        "queue_s": 35.978445529937744,
+        "input_tokens": 80,
+        "output_tokens": 18,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 106.58518821167819,
+        "answer": "{\"producto\": {\"nombre\": \"carpeta\", \"stock\": 8}}",
+        "reason": "JSON equivalente a la referencia"
+      }
+    }
+  ],
+  "protocol": {
+    "version": "arena-protocol-v1",
+    "evaluator_version": "arena-evaluation-v2",
+    "comparison_scope": "models",
+    "inputs_shared": true,
+    "prompts_equal": true,
+    "evaluations": [
+      "json_match"
+    ],
+    "warnings": [
+      "Había cambios sin commit al guardar. Para identificar el código, usa también las fuentes y hashes del informe.",
+      "Sin calentamiento previo. El tiempo del agente incluye consulta de metadatos y puede incluir carga del modelo.",
+      "Política de memoria del modelo (keep_alive): 0. No se garantiza un inicio en frío si otro programa lo tiene cargado.",
+      "Semilla fija no garantiza respuestas idénticas. La carga de otros programas no está aislada.",
+      "Resultados guardados del 12/10/2026. Muestras pequeñas y exploratorias; sin ranking ni conclusión de superioridad. A/B secuenciales, sin aislamiento del host; tiempo total puede incluir carga y preparación. Semilla fija no garantiza determinismo. No se publican fuentes, entornos, adjuntos binarios ni trazas completas del worker."
+    ],
+    "branches": {
+      "A": {
+        "total": 6,
+        "answers": 6,
+        "evaluated": 6,
+        "correct": 6,
+        "execution_errors": 0,
+        "mean_answer_s": 2.811020583333933
+      },
+      "B": {
+        "total": 6,
+        "answers": 6,
+        "evaluated": 6,
+        "correct": 4,
+        "execution_errors": 0,
+        "mean_answer_s": 3.5973394333329147
+      }
+    },
+    "models": {
+      "B": {
+        "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+        "server_version": "0.40.3",
+        "quantization": "Q4_K_M",
+        "verified": true
+      },
+      "A": {
+        "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+        "server_version": "0.40.3",
+        "quantization": "Q4_K_M",
+        "verified": true
+      }
+    }
+  },
+  "overviews": {
+    "A": {
+      "total": 6,
+      "finished": 6,
+      "evaluated": 6,
+      "planned_evaluable": 6,
+      "correct": 6,
+      "incorrect": 0,
+      "invalid_format": 0,
+      "execution_errors": 0,
+      "cancelled": 0,
+      "unscored": 0,
+      "pending": 0,
+      "mean_answer_s": 2.811020583333933,
+      "timed_answers": 6
+    },
+    "B": {
+      "total": 6,
+      "finished": 6,
+      "evaluated": 6,
+      "planned_evaluable": 6,
+      "correct": 4,
+      "incorrect": 2,
+      "invalid_format": 0,
+      "execution_errors": 0,
+      "cancelled": 0,
+      "unscored": 0,
+      "pending": 0,
+      "mean_answer_s": 3.5973394333329147,
+      "timed_answers": 6
+    }
+  },
+  "selection": {
+    "source": "benchmarks/v1/results/2026-10-12/eval/json.json",
+    "sha256": "3f0c0867b5892abcb08190aee655c2d2a8214ad01f7760889687b7ee07da9f98",
+    "note": "Resultados guardados del 12/10/2026. Muestras pequeñas y exploratorias; sin ranking ni conclusión de superioridad. A/B secuenciales, sin aislamiento del host; tiempo total puede incluir carga y preparación. Semilla fija no garantiza determinismo. No se publican fuentes, entornos, adjuntos binarios ni trazas completas del worker.",
+    "summary_policy": "Recomputed with current backend outcome semantics; cancellations separated from execution errors."
+  }
+}

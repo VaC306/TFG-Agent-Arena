@@ -116,8 +116,11 @@ class ComparisonRequest(Contract):
         if self.comparison == 'different_models':
             if self.shared_input is None or self.branch_inputs is not None:
                 raise ValueError('Dos modelos requieren una única entrada y archivos compartidos')
-        elif self.shared_input is not None or self.branch_inputs is None or set(self.branch_inputs) != {'A', 'B'}:
-            raise ValueError('Un modelo requiere entradas A y B independientes')
+        elif self.shared_input is not None:
+            if self.branch_inputs is not None:
+                raise ValueError('Elige entrada compartida o entradas independientes, no ambas')
+        elif self.branch_inputs is None or set(self.branch_inputs) != {'A', 'B'}:
+            raise ValueError('Un modelo requiere una entrada compartida o entradas A y B completas')
         return self
 
     def config(self):

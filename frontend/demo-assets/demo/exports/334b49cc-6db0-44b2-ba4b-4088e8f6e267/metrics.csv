@@ -1,0 +1,20 @@
+task_id,branch,repetition,status,success,format_ok,agent_s,input_tokens,output_tokens,tool_calls,error,answer
+producto,B,0,succeeded,True,True,3.8348896999959834,91,21,0,,"{
+  ""nombre"": ""Cuaderno"",
+  ""precio"": 3.5
+}"
+producto,A,0,succeeded,True,True,2.7461231000052067,91,21,0,,"{
+  ""nombre"": ""Cuaderno"",
+  ""precio"": 3.5
+}"
+activo,B,0,succeeded,True,True,3.1805679999961285,78,9,0,,"{
+  ""activo"": true
+}"
+activo,A,0,succeeded,True,True,3.1810058999981266,78,9,0,,"{
+  ""activo"": true
+}"
+ausente,A,0,succeeded,True,True,3.091345699998783,81,12,0,,"{""nombre"": ""Ana"", ""telefono"": null}"
+ausente,B,0,succeeded,True,True,3.843180299998494,81,16,0,,"{
+  ""nombre"": ""Ana"",
+  ""telefono"": null
+}"

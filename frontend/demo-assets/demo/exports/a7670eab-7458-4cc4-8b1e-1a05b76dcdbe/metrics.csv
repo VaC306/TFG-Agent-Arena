@@ -1,0 +1,12 @@
+task_id,branch,repetition,status,success,format_ok,agent_s,input_tokens,output_tokens,tool_calls,error,answer
+dev-partial-return,B,0,limit,False,False,28.63949899999716,7407,213,8,model_calls,
+dev-partial-return,A,0,failed,False,False,5.9491609999968205,1197,102,1,,"El formato de la fecha y el estado del pedido no es correcto. Asegúrate de proporcionar el formato correcto para la fecha (YYYY-MM-DD) y el estado del pedido (por ejemplo, 'delivered'). Vuelve a intentarlo con los datos correctos."
+dev-month-boundary,B,0,limit,False,False,28.823865999998816,7867,198,8,model_calls,
+dev-month-boundary,A,0,failed,False,False,6.034341500002483,1197,111,1,,"Los valores proporcionados para `order_status` y `order_date` no son válidos. Asegúrate de proporcionar los valores correctos según la documentación de los parámetros. Por ejemplo, `order_status` debe ser 'delivered' y `order_date` debe ser en el formato `YYYY-MM`."
+dev-no-customer,A,0,failed,False,False,6.79868919999717,1269,127,1,,"El formato de las fechas y el estado no es correcto. Asegúrate de proporcionar los valores en el formato correcto (por ejemplo, '2026-01-01' para la fecha y 'delivered' para el estado). Vuelve a intentarlo con los valores correctos."
+dev-no-customer,B,0,succeeded,True,True,20.41209009999875,4217,138,5,,"{
+  ""total_cents"": 0,
+  ""order_ids"": []
+}"
+dev-integer-money,B,0,limit,False,False,36.043358699993405,6592,235,8,model_calls,
+dev-integer-money,A,0,failed,False,False,7.485348800000793,1197,102,1,,"El formato de la fecha y el estado del pedido no es correcto. Asegúrate de proporcionar el formato correcto para la fecha (YYYY-MM-DD) y el estado del pedido (por ejemplo, 'delivered'). Vuelve a intentarlo con los datos correctos."

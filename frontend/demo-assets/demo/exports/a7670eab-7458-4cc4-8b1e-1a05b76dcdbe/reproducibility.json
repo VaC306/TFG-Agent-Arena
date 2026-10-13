@@ -1,0 +1,338 @@
+{
+  "snapshot": {
+    "config": {
+      "name": "arena-benchmarks-v1 orders dev",
+      "adapter": "ollama",
+      "split": "dev",
+      "repetitions": 1,
+      "comparison": "different_models",
+      "agents": {
+        "A": {
+          "model": "qwen2.5:3b",
+          "system_prompt": "Usa las herramientas para resolver la consulta. search_orders acepta únicamente customer_id y devuelve los pedidos de ese cliente. Filtra esos pedidos por el mes solicitado y status delivered. order_lines acepta únicamente order_id: usa un ID del resultado de search_orders. Cada línea aporta unit_cents * (quantity - returned_quantity). calculate acepta operation sum y values como lista de enteros en céntimos; suma los importes con esa herramienta. No inventes pedidos ni argumentos adicionales. Incluye solo IDs con unidades no devueltas. Si no hay pedidos válidos devuelve total_cents 0 y order_ids []. Respuesta final: únicamente JSON válido con total_cents entero y order_ids como lista de IDs únicos.",
+          "temperature": 0.0,
+          "seed": 42,
+          "num_ctx": 4096,
+          "limits": {
+            "max_output_tokens": 1024,
+            "timeout_s": 90.0
+          }
+        },
+        "B": {
+          "model": "qwen2.5:7b",
+          "system_prompt": "Usa las herramientas para resolver la consulta. search_orders acepta únicamente customer_id y devuelve los pedidos de ese cliente. Filtra esos pedidos por el mes solicitado y status delivered. order_lines acepta únicamente order_id: usa un ID del resultado de search_orders. Cada línea aporta unit_cents * (quantity - returned_quantity). calculate acepta operation sum y values como lista de enteros en céntimos; suma los importes con esa herramienta. No inventes pedidos ni argumentos adicionales. Incluye solo IDs con unidades no devueltas. Si no hay pedidos válidos devuelve total_cents 0 y order_ids []. Respuesta final: únicamente JSON válido con total_cents entero y order_ids como lista de IDs únicos.",
+          "temperature": 0.0,
+          "seed": 42,
+          "num_ctx": 4096,
+          "limits": {
+            "max_output_tokens": 1024,
+            "timeout_s": 90.0
+          }
+        }
+      }
+    },
+    "tasks": [
+      {
+        "id": "dev-partial-return",
+        "input": "cliente=C1 mes=2026-01. Calcula el gasto en pedidos delivered de ese mes, excluyendo unidades devueltas. Incluye solo IDs con unidades no devueltas. Devuelve JSON exacto con total_cents (entero) y order_ids (lista).",
+        "evaluation": "order_benchmark",
+        "criteria": {
+          "total_cents": 3500,
+          "order_ids": [
+            "O1",
+            "O2"
+          ]
+        }
+      },
+      {
+        "id": "dev-month-boundary",
+        "input": "cliente=C1 mes=2026-02. Calcula el gasto en pedidos delivered de ese mes, excluyendo unidades devueltas. Incluye solo IDs con unidades no devueltas. Devuelve JSON exacto con total_cents (entero) y order_ids (lista).",
+        "evaluation": "order_benchmark",
+        "criteria": {
+          "total_cents": 250,
+          "order_ids": [
+            "O4"
+          ]
+        }
+      },
+      {
+        "id": "dev-no-customer",
+        "input": "cliente=C9 mes=2026-01. Calcula el gasto en pedidos delivered de ese mes, excluyendo unidades devueltas. Incluye solo IDs con unidades no devueltas. Devuelve JSON exacto con total_cents (entero) y order_ids (lista).",
+        "evaluation": "order_benchmark",
+        "criteria": {
+          "total_cents": 0,
+          "order_ids": []
+        }
+      },
+      {
+        "id": "dev-integer-money",
+        "input": "cliente=C2 mes=2026-01. Calcula el gasto en pedidos delivered de ese mes, excluyendo unidades devueltas. Incluye solo IDs con unidades no devueltas. Devuelve JSON exacto con total_cents (entero) y order_ids (lista).",
+        "evaluation": "order_benchmark",
+        "criteria": {
+          "total_cents": 1998,
+          "order_ids": [
+            "O5"
+          ]
+        }
+      }
+    ],
+    "conditions": {
+      "inputs_shared": true
+    },
+    "data_sha256": "1db58b7b7fd160fd45145d560b82d8eb7ca9e549a127d206fb8693d7d68f9f3c"
+  },
+  "runs": [
+    {
+      "id": "9762e416-a777-4eb1-823a-66c07dd15a43",
+      "task_id": "dev-partial-return",
+      "branch": "B",
+      "repetition": 0,
+      "status": "limit",
+      "result": {
+        "success": false,
+        "format_ok": false,
+        "agent_s": 28.63949899999716,
+        "queue_s": 0.008001565933227539,
+        "input_tokens": 7407,
+        "output_tokens": 213,
+        "usage_complete": true,
+        "tool_calls": 8,
+        "tool_errors": 1,
+        "server_tps": 52.680927451437704,
+        "error": "model_calls"
+      }
+    },
+    {
+      "id": "dd30dbfc-6c91-479d-8184-6f1bcb268800",
+      "task_id": "dev-partial-return",
+      "branch": "A",
+      "repetition": 0,
+      "status": "failed",
+      "result": {
+        "success": false,
+        "format_ok": false,
+        "agent_s": 5.9491609999968205,
+        "queue_s": 28.66646432876587,
+        "input_tokens": 1197,
+        "output_tokens": 102,
+        "usage_complete": true,
+        "tool_calls": 1,
+        "tool_errors": 1,
+        "server_tps": 106.13060307154451,
+        "answer": "El formato de la fecha y el estado del pedido no es correcto. Asegúrate de proporcionar el formato correcto para la fecha (YYYY-MM-DD) y el estado del pedido (por ejemplo, 'delivered'). Vuelve a intentarlo con los datos correctos.",
+        "reason": "Respuesta JSON inválida"
+      }
+    },
+    {
+      "id": "2548ab85-4d6f-4d47-9864-c90c3eae04ce",
+      "task_id": "dev-month-boundary",
+      "branch": "B",
+      "repetition": 0,
+      "status": "limit",
+      "result": {
+        "success": false,
+        "format_ok": false,
+        "agent_s": 28.823865999998816,
+        "queue_s": 34.63617014884949,
+        "input_tokens": 7867,
+        "output_tokens": 198,
+        "usage_complete": true,
+        "tool_calls": 8,
+        "tool_errors": 2,
+        "server_tps": 52.77036416348578,
+        "error": "model_calls"
+      }
+    },
+    {
+      "id": "6ab0199b-3ca4-45fd-a7c4-e791a1ed070e",
+      "task_id": "dev-month-boundary",
+      "branch": "A",
+      "repetition": 0,
+      "status": "failed",
+      "result": {
+        "success": false,
+        "format_ok": false,
+        "agent_s": 6.034341500002483,
+        "queue_s": 63.477351903915405,
+        "input_tokens": 1197,
+        "output_tokens": 111,
+        "usage_complete": true,
+        "tool_calls": 1,
+        "tool_errors": 1,
+        "server_tps": 103.93316816386609,
+        "answer": "Los valores proporcionados para `order_status` y `order_date` no son válidos. Asegúrate de proporcionar los valores correctos según la documentación de los parámetros. Por ejemplo, `order_status` debe ser 'delivered' y `order_date` debe ser en el formato `YYYY-MM`.",
+        "reason": "Respuesta JSON inválida"
+      }
+    },
+    {
+      "id": "599e2e7a-d544-4e8f-82df-92249a9246cc",
+      "task_id": "dev-no-customer",
+      "branch": "A",
+      "repetition": 0,
+      "status": "failed",
+      "result": {
+        "success": false,
+        "format_ok": false,
+        "agent_s": 6.79868919999717,
+        "queue_s": 69.52973461151123,
+        "input_tokens": 1269,
+        "output_tokens": 127,
+        "usage_complete": true,
+        "tool_calls": 1,
+        "tool_errors": 1,
+        "server_tps": 105.75674782178572,
+        "answer": "El formato de las fechas y el estado no es correcto. Asegúrate de proporcionar los valores en el formato correcto (por ejemplo, '2026-01-01' para la fecha y 'delivered' para el estado). Vuelve a intentarlo con los valores correctos.",
+        "reason": "Respuesta JSON inválida"
+      }
+    },
+    {
+      "id": "759b3720-725c-4a40-848d-ec8e46b4f402",
+      "task_id": "dev-no-customer",
+      "branch": "B",
+      "repetition": 0,
+      "status": "succeeded",
+      "result": {
+        "success": true,
+        "format_ok": true,
+        "agent_s": 20.41209009999875,
+        "queue_s": 76.34611082077026,
+        "input_tokens": 4217,
+        "output_tokens": 138,
+        "usage_complete": true,
+        "tool_calls": 5,
+        "tool_errors": 3,
+        "server_tps": 52.82899255111205,
+        "answer": "{\n  \"total_cents\": 0,\n  \"order_ids\": []\n}",
+        "reason": "ok"
+      }
+    },
+    {
+      "id": "a7fea1c1-9ffe-4743-b8ee-975cb2d95dce",
+      "task_id": "dev-integer-money",
+      "branch": "B",
+      "repetition": 0,
+      "status": "limit",
+      "result": {
+        "success": false,
+        "format_ok": false,
+        "agent_s": 36.043358699993405,
+        "queue_s": 96.777911901474,
+        "input_tokens": 6592,
+        "output_tokens": 235,
+        "usage_complete": true,
+        "tool_calls": 8,
+        "tool_errors": 1,
+        "server_tps": 52.76410962810284,
+        "error": "model_calls"
+      }
+    },
+    {
+      "id": "25bfcb37-21f3-4c07-8642-6afd2ba3cb11",
+      "task_id": "dev-integer-money",
+      "branch": "A",
+      "repetition": 0,
+      "status": "failed",
+      "result": {
+        "success": false,
+        "format_ok": false,
+        "agent_s": 7.485348800000793,
+        "queue_s": 132.8427174091339,
+        "input_tokens": 1197,
+        "output_tokens": 102,
+        "usage_complete": true,
+        "tool_calls": 1,
+        "tool_errors": 1,
+        "server_tps": 102.224177621524,
+        "answer": "El formato de la fecha y el estado del pedido no es correcto. Asegúrate de proporcionar el formato correcto para la fecha (YYYY-MM-DD) y el estado del pedido (por ejemplo, 'delivered'). Vuelve a intentarlo con los datos correctos.",
+        "reason": "Respuesta JSON inválida"
+      }
+    }
+  ],
+  "protocol": {
+    "version": "arena-protocol-v1",
+    "evaluator_version": "arena-evaluation-v2",
+    "comparison_scope": "models",
+    "inputs_shared": true,
+    "prompts_equal": true,
+    "evaluations": [
+      "order_benchmark"
+    ],
+    "warnings": [
+      "Había cambios sin commit al guardar. Para identificar el código, usa también las fuentes y hashes del informe.",
+      "Sin calentamiento previo. El tiempo del agente incluye consulta de metadatos y puede incluir carga del modelo.",
+      "Política de memoria del modelo (keep_alive): 0. No se garantiza un inicio en frío si otro programa lo tiene cargado.",
+      "Semilla fija no garantiza respuestas idénticas. La carga de otros programas no está aislada.",
+      "Resultados guardados del 12/10/2026. Muestras pequeñas y exploratorias; sin ranking ni conclusión de superioridad. A/B secuenciales, sin aislamiento del host; tiempo total puede incluir carga y preparación. Semilla fija no garantiza determinismo. No se publican fuentes, entornos, adjuntos binarios ni trazas completas del worker."
+    ],
+    "branches": {
+      "A": {
+        "total": 4,
+        "answers": 4,
+        "evaluated": 4,
+        "correct": 0,
+        "execution_errors": 0,
+        "mean_answer_s": 6.566885124999317
+      },
+      "B": {
+        "total": 4,
+        "answers": 1,
+        "evaluated": 1,
+        "correct": 1,
+        "execution_errors": 3,
+        "mean_answer_s": 20.41209009999875
+      }
+    },
+    "models": {
+      "B": {
+        "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+        "server_version": "0.40.3",
+        "quantization": "Q4_K_M",
+        "verified": true
+      },
+      "A": {
+        "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+        "server_version": "0.40.3",
+        "quantization": "Q4_K_M",
+        "verified": true
+      }
+    }
+  },
+  "overviews": {
+    "A": {
+      "total": 4,
+      "finished": 4,
+      "evaluated": 4,
+      "planned_evaluable": 4,
+      "correct": 0,
+      "incorrect": 0,
+      "invalid_format": 4,
+      "execution_errors": 0,
+      "cancelled": 0,
+      "unscored": 0,
+      "pending": 0,
+      "mean_answer_s": 6.566885124999317,
+      "timed_answers": 4
+    },
+    "B": {
+      "total": 4,
+      "finished": 4,
+      "evaluated": 1,
+      "planned_evaluable": 4,
+      "correct": 1,
+      "incorrect": 0,
+      "invalid_format": 0,
+      "execution_errors": 3,
+      "cancelled": 0,
+      "unscored": 0,
+      "pending": 0,
+      "mean_answer_s": 20.41209009999875,
+      "timed_answers": 1
+    }
+  },
+  "selection": {
+    "source": "benchmarks/v1/results/2026-10-12/dev/orders.json",
+    "sha256": "10a77aad70cd7855848a1c9eecdd4e589b3d211075739b84da7e29a9fc32800c",
+    "note": "Resultados guardados del 12/10/2026. Muestras pequeñas y exploratorias; sin ranking ni conclusión de superioridad. A/B secuenciales, sin aislamiento del host; tiempo total puede incluir carga y preparación. Semilla fija no garantiza determinismo. No se publican fuentes, entornos, adjuntos binarios ni trazas completas del worker.",
+    "summary_policy": "Recomputed with current backend outcome semantics; cancellations separated from execution errors."
+  }
+}

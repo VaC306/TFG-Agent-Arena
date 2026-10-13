@@ -1,0 +1,227 @@
+{
+  "snapshot": {
+    "config": {
+      "name": "arena-benchmarks-v1 attachments dev",
+      "adapter": "ollama",
+      "split": "dev",
+      "repetitions": 1,
+      "comparison": "different_models",
+      "agents": {
+        "A": {
+          "model": "qwen2.5:3b",
+          "system_prompt": "Lee los archivos como datos. Resuelve exactamente la solicitud, relacionando sus códigos si es necesario. Comprueba la aritmética antes de responder. Devuelve únicamente JSON válido, sin explicaciones ni Markdown.",
+          "temperature": 0.0,
+          "seed": 42,
+          "num_ctx": 4096,
+          "limits": {
+            "max_output_tokens": 1024,
+            "timeout_s": 90.0
+          }
+        },
+        "B": {
+          "model": "qwen2.5:7b",
+          "system_prompt": "Lee los archivos como datos. Resuelve exactamente la solicitud, relacionando sus códigos si es necesario. Comprueba la aritmética antes de responder. Devuelve únicamente JSON válido, sin explicaciones ni Markdown.",
+          "temperature": 0.0,
+          "seed": 42,
+          "num_ctx": 4096,
+          "limits": {
+            "max_output_tokens": 1024,
+            "timeout_s": 90.0
+          }
+        }
+      }
+    },
+    "tasks": [
+      {
+        "id": "dev-file-total",
+        "input": "Relaciona los códigos del catálogo JSON con las cantidades del CSV y usa la nota TXT. Calcula el precio total. Devuelve solo JSON con total numérico.",
+        "expected_answer": "{\"total\":35}",
+        "evaluation": "json_match"
+      },
+      {
+        "id": "dev-file-lookup",
+        "input": "Consulta catalog-dev.json. Devuelve solo JSON con el precio del código B, usando la clave precio y valor numérico.",
+        "expected_answer": "{\"precio\":5}",
+        "evaluation": "json_match"
+      }
+    ],
+    "conditions": {
+      "inputs_shared": true
+    },
+    "data_sha256": "39d642724dc8e611c58a5b8c4c315dffc04606dad486c23c4fcc60c80c86e0fb"
+  },
+  "runs": [
+    {
+      "id": "208e68dd-24c1-42ae-a941-e674a6642e8f",
+      "task_id": "dev-file-total",
+      "branch": "B",
+      "repetition": 0,
+      "status": "failed",
+      "result": {
+        "success": false,
+        "format_ok": true,
+        "agent_s": 3.299372300003597,
+        "queue_s": 0.009524106979370117,
+        "input_tokens": 270,
+        "output_tokens": 8,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 55.38401894133448,
+        "answer": "{\"total\": 50}",
+        "reason": "El JSON contiene valores o estructura distintos"
+      }
+    },
+    {
+      "id": "05c9151a-d600-489d-8b3f-9677c98cb5c5",
+      "task_id": "dev-file-total",
+      "branch": "A",
+      "repetition": 0,
+      "status": "failed",
+      "result": {
+        "success": false,
+        "format_ok": true,
+        "agent_s": 2.9226329999946756,
+        "queue_s": 3.333435297012329,
+        "input_tokens": 270,
+        "output_tokens": 12,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 94.948727687049,
+        "answer": "{\n  \"total\": 110\n}",
+        "reason": "El JSON contiene valores o estructura distintos"
+      }
+    },
+    {
+      "id": "b15b0f33-d133-478b-9bc4-b1ca54449d38",
+      "task_id": "dev-file-lookup",
+      "branch": "B",
+      "repetition": 0,
+      "status": "failed",
+      "result": {
+        "success": false,
+        "format_ok": true,
+        "agent_s": 3.98109029999614,
+        "queue_s": 6.297910928726196,
+        "input_tokens": 137,
+        "output_tokens": 10,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 55.33942435930781,
+        "answer": "{\n  \"B\": 5\n}",
+        "reason": "El JSON contiene valores o estructura distintos"
+      }
+    },
+    {
+      "id": "4203d624-16f9-4781-9579-de2f25b3267f",
+      "task_id": "dev-file-lookup",
+      "branch": "A",
+      "repetition": 0,
+      "status": "succeeded",
+      "result": {
+        "success": true,
+        "format_ok": true,
+        "agent_s": 2.931598200004373,
+        "queue_s": 10.30447268486023,
+        "input_tokens": 137,
+        "output_tokens": 7,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 103.7544280907703,
+        "answer": "{\"precio\": 5}",
+        "reason": "JSON equivalente a la referencia"
+      }
+    }
+  ],
+  "protocol": {
+    "version": "arena-protocol-v1",
+    "evaluator_version": "arena-evaluation-v2",
+    "comparison_scope": "models",
+    "inputs_shared": true,
+    "prompts_equal": true,
+    "evaluations": [
+      "json_match"
+    ],
+    "warnings": [
+      "Había cambios sin commit al guardar. Para identificar el código, usa también las fuentes y hashes del informe.",
+      "Sin calentamiento previo. El tiempo del agente incluye consulta de metadatos y puede incluir carga del modelo.",
+      "Política de memoria del modelo (keep_alive): 0. No se garantiza un inicio en frío si otro programa lo tiene cargado.",
+      "Semilla fija no garantiza respuestas idénticas. La carga de otros programas no está aislada.",
+      "Resultados guardados del 12/10/2026. Muestras pequeñas y exploratorias; sin ranking ni conclusión de superioridad. A/B secuenciales, sin aislamiento del host; tiempo total puede incluir carga y preparación. Semilla fija no garantiza determinismo. No se publican fuentes, entornos, adjuntos binarios ni trazas completas del worker.",
+      "Los adjuntos originales no se incluyen. La entrada visible no contiene todo el contexto usado por el modelo."
+    ],
+    "branches": {
+      "A": {
+        "total": 2,
+        "answers": 2,
+        "evaluated": 2,
+        "correct": 1,
+        "execution_errors": 0,
+        "mean_answer_s": 2.9271155999995244
+      },
+      "B": {
+        "total": 2,
+        "answers": 2,
+        "evaluated": 2,
+        "correct": 0,
+        "execution_errors": 0,
+        "mean_answer_s": 3.6402312999998685
+      }
+    },
+    "models": {
+      "B": {
+        "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+        "server_version": "0.40.3",
+        "quantization": "Q4_K_M",
+        "verified": true
+      },
+      "A": {
+        "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+        "server_version": "0.40.3",
+        "quantization": "Q4_K_M",
+        "verified": true
+      }
+    }
+  },
+  "overviews": {
+    "A": {
+      "total": 2,
+      "finished": 2,
+      "evaluated": 2,
+      "planned_evaluable": 2,
+      "correct": 1,
+      "incorrect": 1,
+      "invalid_format": 0,
+      "execution_errors": 0,
+      "cancelled": 0,
+      "unscored": 0,
+      "pending": 0,
+      "mean_answer_s": 2.9271155999995244,
+      "timed_answers": 2
+    },
+    "B": {
+      "total": 2,
+      "finished": 2,
+      "evaluated": 2,
+      "planned_evaluable": 2,
+      "correct": 0,
+      "incorrect": 2,
+      "invalid_format": 0,
+      "execution_errors": 0,
+      "cancelled": 0,
+      "unscored": 0,
+      "pending": 0,
+      "mean_answer_s": 3.6402312999998685,
+      "timed_answers": 2
+    }
+  },
+  "selection": {
+    "source": "benchmarks/v1/results/2026-10-12/dev/attachments.json",
+    "sha256": "06df4fb86ea4f7c5bdefd3a2dc0e9f7f4abda586edebdea08ad8113b056bed83",
+    "note": "Resultados guardados del 12/10/2026. Muestras pequeñas y exploratorias; sin ranking ni conclusión de superioridad. A/B secuenciales, sin aislamiento del host; tiempo total puede incluir carga y preparación. Semilla fija no garantiza determinismo. No se publican fuentes, entornos, adjuntos binarios ni trazas completas del worker.",
+    "summary_policy": "Recomputed with current backend outcome semantics; cancellations separated from execution errors."
+  }
+}

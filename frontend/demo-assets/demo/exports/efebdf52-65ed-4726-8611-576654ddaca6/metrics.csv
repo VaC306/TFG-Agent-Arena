@@ -1,0 +1,26 @@
+task_id,branch,repetition,status,success,format_ok,agent_s,input_tokens,output_tokens,tool_calls,error,answer
+eval-product,B,0,succeeded,True,True,3.7953278999993927,89,21,0,,"{
+  ""nombre"": ""Regla"",
+  ""precio"": 2.25
+}"
+eval-product,A,0,succeeded,True,True,2.7350430999940727,89,21,0,,"{
+  ""nombre"": ""Regla"",
+  ""precio"": 2.25
+}"
+eval-inactive,B,0,succeeded,True,True,2.8914483999978984,71,6,0,,"{""activo"": false}"
+eval-inactive,A,0,succeeded,True,True,2.599427300003299,71,6,0,,"{""activo"": false}"
+eval-missing,A,0,succeeded,True,True,3.1110470999992685,82,12,0,,"{""nombre"": ""Leo"", ""telefono"": null}"
+eval-missing,B,0,succeeded,True,True,3.81626580000011,82,16,0,,"{
+  ""nombre"": ""Leo"",
+  ""telefono"": null
+}"
+eval-list,B,0,failed,False,True,3.479028100002324,84,13,0,,"[""B2"", ""A1"", ""C3""]"
+eval-list,A,0,succeeded,True,True,2.615345199999865,84,17,0,,"{""codigos"": [""B2"", ""A1"", ""C3""]}"
+eval-zero,B,0,succeeded,True,True,3.6342468000002555,70,7,0,,"{""cantidad"": 0}"
+eval-zero,A,0,succeeded,True,True,3.105218700002297,70,7,0,,"{""cantidad"": 0}"
+eval-nested,B,0,failed,False,True,3.9677195999975083,80,25,0,,"{
+  ""producto"": ""carpeta"",
+  ""nombre"": null,
+  ""stock"": 8
+}"
+eval-nested,A,0,succeeded,True,True,2.7000421000047936,80,18,0,,"{""producto"": {""nombre"": ""carpeta"", ""stock"": 8}}"

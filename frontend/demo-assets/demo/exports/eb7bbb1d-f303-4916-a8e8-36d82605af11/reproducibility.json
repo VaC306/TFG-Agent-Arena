@@ -1,0 +1,291 @@
+{
+  "snapshot": {
+    "config": {
+      "name": "Auditoría real 3b frente a 7b 2026-10-12",
+      "adapter": "ollama",
+      "split": "dev",
+      "repetitions": 1,
+      "comparison": "different_models",
+      "agents": {
+        "A": {
+          "model": "qwen2.5:3b",
+          "system_prompt": "Responde a la solicitud usando el contenido proporcionado. Distingue hechos de suposiciones y señala la información que falta.",
+          "temperature": 0.0,
+          "seed": 42,
+          "num_ctx": 2048,
+          "limits": {
+            "max_output_tokens": 64,
+            "timeout_s": 120.0
+          }
+        },
+        "B": {
+          "model": "qwen2.5:7b",
+          "system_prompt": "Responde a la solicitud usando el contenido proporcionado. Distingue hechos de suposiciones y señala la información que falta.",
+          "temperature": 0.0,
+          "seed": 42,
+          "num_ctx": 2048,
+          "limits": {
+            "max_output_tokens": 64,
+            "timeout_s": 120.0
+          }
+        }
+      }
+    },
+    "tasks": [
+      {
+        "id": "capital",
+        "input": "Capital de Francia. Responde únicamente el nombre de la ciudad.",
+        "expected_answer": "París",
+        "evaluation": "exact_match",
+        "criteria": null
+      },
+      {
+        "id": "cuenta",
+        "input": "Calcula 17 + 25. Responde únicamente el número.",
+        "expected_answer": "42",
+        "evaluation": "exact_match",
+        "criteria": null
+      },
+      {
+        "id": "lectura",
+        "input": "Texto: La reunión comienza a las 10:30 y termina a las 11:15. ¿A qué hora termina? Responde solo HH:MM.",
+        "expected_answer": "11:15",
+        "evaluation": "exact_match",
+        "criteria": null
+      }
+    ],
+    "conditions": {
+      "inputs_shared": true
+    },
+    "data_sha256": "ac797c76fe08f99dc6f295a85a2c657a3e1f78e8db667124210fd2bffd639705"
+  },
+  "runs": [
+    {
+      "id": "40698146-726c-4eb6-be5f-274ae9645332",
+      "task_id": "capital",
+      "branch": "B",
+      "repetition": 0,
+      "status": "succeeded",
+      "result": {
+        "success": true,
+        "format_ok": null,
+        "agent_s": 4.4332643000016105,
+        "queue_s": 16.463345050811768,
+        "input_tokens": 57,
+        "output_tokens": 3,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 57.46245786086424,
+        "answer": "París",
+        "reason": "Comparación exacta con la respuesta esperada (sin espacios en los extremos)"
+      }
+    },
+    {
+      "id": "c3ecdd32-acda-4a58-bec7-c408d316a4a2",
+      "task_id": "capital",
+      "branch": "A",
+      "repetition": 0,
+      "status": "failed",
+      "result": {
+        "success": false,
+        "format_ok": null,
+        "agent_s": 2.5211198999968474,
+        "queue_s": 20.917911529541016,
+        "input_tokens": 57,
+        "output_tokens": 2,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 112.5809175344779,
+        "answer": "Paris",
+        "reason": "Comparación exacta con la respuesta esperada (sin espacios en los extremos)"
+      }
+    },
+    {
+      "id": "6976a6d4-ddaf-4ec6-9384-28b0bd6c1a98",
+      "task_id": "cuenta",
+      "branch": "B",
+      "repetition": 0,
+      "status": "succeeded",
+      "result": {
+        "success": true,
+        "format_ok": null,
+        "agent_s": 3.0973696999935783,
+        "queue_s": 23.457282543182373,
+        "input_tokens": 59,
+        "output_tokens": 3,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 64.39841150584952,
+        "answer": "42",
+        "reason": "Comparación exacta con la respuesta esperada (sin espacios en los extremos)"
+      }
+    },
+    {
+      "id": "1d642edd-f0ae-4d7c-ba31-1542ba38a43f",
+      "task_id": "cuenta",
+      "branch": "A",
+      "repetition": 0,
+      "status": "succeeded",
+      "result": {
+        "success": true,
+        "format_ok": null,
+        "agent_s": 3.1572048000016366,
+        "queue_s": 26.57445478439331,
+        "input_tokens": 59,
+        "output_tokens": 3,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 94.17969485778866,
+        "answer": "42",
+        "reason": "Comparación exacta con la respuesta esperada (sin espacios en los extremos)"
+      }
+    },
+    {
+      "id": "36880e38-d6dd-455b-aa2f-daaf496b4f11",
+      "task_id": "lectura",
+      "branch": "A",
+      "repetition": 0,
+      "status": "succeeded",
+      "result": {
+        "success": true,
+        "format_ok": null,
+        "agent_s": 3.4171537999936845,
+        "queue_s": 29.753186225891113,
+        "input_tokens": 82,
+        "output_tokens": 6,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 95.76403741181728,
+        "answer": "11:15",
+        "reason": "Comparación exacta con la respuesta esperada (sin espacios en los extremos)"
+      }
+    },
+    {
+      "id": "792b9383-c13c-40d1-86e2-d8a7cf777b56",
+      "task_id": "lectura",
+      "branch": "B",
+      "repetition": 0,
+      "status": "succeeded",
+      "result": {
+        "success": true,
+        "format_ok": null,
+        "agent_s": 4.43357819999801,
+        "queue_s": 33.194138288497925,
+        "input_tokens": 82,
+        "output_tokens": 6,
+        "usage_complete": true,
+        "tool_calls": 0,
+        "tool_errors": 0,
+        "server_tps": 57.08088361207832,
+        "answer": "11:15",
+        "reason": "Comparación exacta con la respuesta esperada (sin espacios en los extremos)"
+      }
+    }
+  ],
+  "protocol": {
+    "version": "arena-protocol-v1",
+    "evaluator_version": "arena-evaluation-v2",
+    "comparison_scope": "models",
+    "inputs_shared": true,
+    "prompts_equal": true,
+    "evaluations": [
+      "exact_match"
+    ],
+    "warnings": [
+      "Había cambios sin commit al guardar. Para identificar el código, usa también las fuentes y hashes del informe.",
+      "Sin calentamiento previo. El tiempo del agente incluye consulta de metadatos y puede incluir carga del modelo.",
+      "Política de memoria del modelo (keep_alive): 0. No se garantiza un inicio en frío si otro programa lo tiene cargado.",
+      "Semilla fija no garantiza respuestas idénticas. La carga de otros programas no está aislada.",
+      "Resultados guardados del 12/10/2026. Muestras pequeñas y exploratorias; sin ranking ni conclusión de superioridad. A/B secuenciales, sin aislamiento del host; tiempo total puede incluir carga y preparación. Semilla fija no garantiza determinismo. No se publican fuentes, entornos, adjuntos binarios ni trazas completas del worker."
+    ],
+    "branches": {
+      "A": {
+        "total": 3,
+        "finished": 3,
+        "evaluated": 3,
+        "planned_evaluable": 3,
+        "correct": 2,
+        "incorrect": 1,
+        "invalid_format": 0,
+        "execution_errors": 0,
+        "unscored": 0,
+        "pending": 0,
+        "mean_answer_s": 3.031826166664056,
+        "timed_answers": 3,
+        "answers": 3
+      },
+      "B": {
+        "total": 3,
+        "finished": 3,
+        "evaluated": 3,
+        "planned_evaluable": 3,
+        "correct": 3,
+        "incorrect": 0,
+        "invalid_format": 0,
+        "execution_errors": 0,
+        "unscored": 0,
+        "pending": 0,
+        "mean_answer_s": 3.988070733331066,
+        "timed_answers": 3,
+        "answers": 3
+      }
+    },
+    "models": {
+      "B": {
+        "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+        "server_version": "0.40.3",
+        "quantization": "Q4_K_M",
+        "verified": true
+      },
+      "A": {
+        "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+        "server_version": "0.40.3",
+        "quantization": "Q4_K_M",
+        "verified": true
+      }
+    }
+  },
+  "overviews": {
+    "A": {
+      "total": 3,
+      "finished": 3,
+      "evaluated": 3,
+      "planned_evaluable": 3,
+      "correct": 2,
+      "incorrect": 1,
+      "invalid_format": 0,
+      "execution_errors": 0,
+      "cancelled": 0,
+      "unscored": 0,
+      "pending": 0,
+      "mean_answer_s": 3.031826166664056,
+      "timed_answers": 3
+    },
+    "B": {
+      "total": 3,
+      "finished": 3,
+      "evaluated": 3,
+      "planned_evaluable": 3,
+      "correct": 3,
+      "incorrect": 0,
+      "invalid_format": 0,
+      "execution_errors": 0,
+      "cancelled": 0,
+      "unscored": 0,
+      "pending": 0,
+      "mean_answer_s": 3.988070733331066,
+      "timed_answers": 3
+    }
+  },
+  "selection": {
+    "source": "experiments/local-flow-2026-10-12/reproducibility.json",
+    "sha256": "6495e4de014ce07bcf7afe6e665b404d4078f85da842cc7a8a334e8229ee2b9f",
+    "note": "Resultados guardados del 12/10/2026. Muestras pequeñas y exploratorias; sin ranking ni conclusión de superioridad. A/B secuenciales, sin aislamiento del host; tiempo total puede incluir carga y preparación. Semilla fija no garantiza determinismo. No se publican fuentes, entornos, adjuntos binarios ni trazas completas del worker.",
+    "summary_policy": "Recomputed with current backend outcome semantics; cancellations separated from execution errors."
+  }
+}

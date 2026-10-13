@@ -1,6 +1,6 @@
 <section class="model-library view-enter" aria-labelledby="models-title" [attr.aria-busy]="loading()">
-  <header class="page-header"><div><p class="eyebrow">TU BIBLIOTECA / MODELOS</p><h1 id="models-title" tabindex="-1">Tus modelos, de un vistazo.</h1><p class="subheading">El último resultado completo de cada modelo y tipo de prueba.</p></div><button class="secondary" (click)="refresh()" [disabled]="loading()">{{ loading() ? 'Actualizando…' : 'Actualizar' }}</button></header>
-  <p class="hint">Del resultado más reciente al más antiguo. Se guarda automáticamente desde tu historial. Cada versión del modelo conserva su propia ficha. Selecciona dos resultados para verlos juntos.</p>
+  <header class="page-header"><div><p class="eyebrow">TU BIBLIOTECA / MODELOS</p><h1 id="models-title" tabindex="-1">Tus modelos, de un vistazo.</h1><p class="subheading">{{ demo ? 'Resultados seleccionados por modelo, rama y tipo de prueba.' : 'El último resultado completo de cada modelo y tipo de prueba.' }}</p></div><button class="secondary" (click)="refresh()" [disabled]="loading()">{{ loading() ? 'Actualizando…' : 'Actualizar' }}</button></header>
+  <p class="hint">{{ demo ? 'Selección fija de evidencia: puede haber varias fichas del mismo modelo. Las fichas de distintos exports no se consideran automáticamente compatibles.' : 'Del resultado más reciente al más antiguo. Se guarda automáticamente desde tu historial. Cada versión del modelo conserva su propia ficha.' }} Selecciona dos resultados para verlos juntos.</p>
   @if (error()) { <p class="alert error" role="alert">{{ error() }}</p> }
   @if (loading()) { <arena-loading label="Cargando resultados guardados…" /> }
   @if (entries().length) {
