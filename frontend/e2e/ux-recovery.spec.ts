@@ -66,8 +66,15 @@ test('borrador por cuenta: teclado, recarga, adjuntos, descarte y resultado inmu
   expect((await detail(page,id)).snapshot).toEqual(original.snapshot);
   await page.getByRole('button',{name:'Descartar borrador'}).click();
   await page.reload();
+  await expect(page.getByRole('heading',{name:'Una nueva comparación'})).toBeVisible();
   await expect(page.getByRole('button',{name:'Recuperar borrador'})).toHaveCount(0);
+  // Profile preferences save separately from the local draft. Select the editor
+  // explicitly: this assertion verifies discarded data, not preference timing.
+  const shared = page.getByLabel('Entrada compartida',{exact:true});
+  if (await shared.isVisible()) await expect(shared).toHaveValue('');
+  await page.getByLabel('Entradas independientes',{exact:true}).check();
   await expect(page.getByLabel('Entrada A',{exact:true})).toHaveValue('');
+  await expect(page.getByLabel('Entrada B',{exact:true})).toHaveValue('');
 });
 
 test('dataset normalizado recuperable y error con ID, archivo y filas', async ({page},info)=>{

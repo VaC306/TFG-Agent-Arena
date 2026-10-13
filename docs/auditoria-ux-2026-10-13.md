@@ -262,3 +262,9 @@ Capturas en `runtime/ux-review-evidence/`: `respuestas-por-caso-{chromium,mobile
 UX-15 continúa como propuesta opcional, junto con las hipótesis y funciones nuevas. No se verificaron lector de pantalla, dispositivo táctil físico ni inferencia real: simulador y adaptadores controlados prueban el circuito, no rendimiento científico. El estado obsoleto del worker se probó con respuesta controlada. No se abrió ni modificó `runtime/arena.sqlite`, no se borró historial real ni se descargaron modelos.
 
 Durante la revisión se observaron commits de otra sesión (`309bc57` y `1f8ea42`); se conservaron. Tras completar las pruebas el usuario autorizó expresamente commit y push de lo pendiente. Este cierre incluye registro, pruebas de aceptación y últimos ajustes de recuperación, foco y presentación.
+
+### Corrección posterior de CI: descarte y preferencia de entrada
+
+El run `38460218658` de GitHub Actions terminó con 125 recorridos aprobados y uno fallido: tras descartar y recargar, el test buscaba «Entrada A» aunque la preferencia remota podía restaurar entrada compartida. El guardado local del borrador y el de preferencias del perfil son independientes; el criterio de descarte no exige que ambos se completen simultáneamente.
+
+Se corrigió el test para esperar al formulario recuperado, comprobar que no ofrece borrador, verificar la entrada compartida vacía cuando está visible y seleccionar expresamente entradas independientes para comprobar A y B vacías. No se cambió el comportamiento de la aplicación ni se añadieron reintentos. Verificación local: **10 recorridos aprobados**, cinco en escritorio y cinco en móvil, con servicios/base aislados; TypeScript E2E y `git diff --check` correctos. El push activa de nuevo la suite completa en GitHub.
