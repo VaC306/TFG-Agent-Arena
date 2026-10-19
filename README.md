@@ -84,6 +84,16 @@ trabajos quedan en cola. Detén los procesos con `Ctrl+C`.
 En Linux/macOS usa `.venv/bin/python` y `npm` en lugar de las variantes Windows.
 La API se documenta en [Swagger](http://127.0.0.1:8000/docs).
 
+## Apariencia
+
+El selector **Tema: Sistema / Claro / Oscuro** está en la cabecera, también antes
+de entrar y en la demo estática. «Sistema» es el valor inicial y responde a los
+cambios de apariencia del sistema. Claro y Oscuro se recuerdan en este navegador
+para este origen (incluido el puerto), independientemente de la cuenta.
+Volver a Sistema elimina la elección explícita. Si el navegador bloquea el
+almacenamiento, el selector avisa y aplica el tema durante la visita.
+[Detalles y verificación del tema](docs/tema.md).
+
 ## Comprobaciones
 
 ```powershell

@@ -1,3 +1,4 @@
+import { ThemePickerComponent } from './theme-picker.component';
 import { DEMO_MODE } from './runtime-mode';
 import { WorkerStatusComponent } from './worker-status.component';
 import { DemoOverviewComponent } from './demo-overview.component';
@@ -21,7 +22,7 @@ import { ArenaService, ArenaEvent, ExperimentDetail, ExperimentSummary, Preset, 
 
 @Component({
   selector: 'arena-workspace', standalone: true,
-  imports: [WorkerStatusComponent, DemoOverviewComponent, DemoGuideComponent, ContactComponent, DatePipe, DecimalPipe, JsonPipe, FormsModule, ComposerComponent, ProfileComponent, InfoDialogComponent, GuideComponent, BrandMarkComponent, ModelLibraryComponent, CampaignsComponent, LoadingIndicatorComponent],
+  imports: [ThemePickerComponent, WorkerStatusComponent, DemoOverviewComponent, DemoGuideComponent, ContactComponent, DatePipe, DecimalPipe, JsonPipe, FormsModule, ComposerComponent, ProfileComponent, InfoDialogComponent, GuideComponent, BrandMarkComponent, ModelLibraryComponent, CampaignsComponent, LoadingIndicatorComponent],
   templateUrl: './app.component.html',
 })
 export class AppComponent {

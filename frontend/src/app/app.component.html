@@ -17,6 +17,7 @@
     </nav>
     </div>
     </details>
+    <arena-theme-picker />
     <span class="local-label"><span class="local-dot"></span>{{ demo ? "Resultados guardados" : "Local" }}</span>
     @if (!demo) { <button class="profile-button" (click)="navigate('profile')" [attr.aria-current]="view() === 'profile' ? 'page' : null" [attr.aria-label]="'Perfil de ' + auth.user()?.display_name">{{ auth.user()?.display_name?.slice(0, 1)?.toUpperCase() }}</button> }
   </header>

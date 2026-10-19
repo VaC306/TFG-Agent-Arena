@@ -1,3 +1,4 @@
+import { ThemePickerComponent } from './theme-picker.component';
 import { DEMO_MODE } from './runtime-mode';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -9,14 +10,14 @@ import { LoadingService } from './loading.service';
 import { LoadingIndicatorComponent } from './loading-indicator.component';
 
 @Component({
-  selector:'arena-root', standalone:true, imports:[FormsModule, AppComponent, BrandMarkComponent, LoadingIndicatorComponent],
+  selector:'arena-root', standalone:true, imports:[ThemePickerComponent, FormsModule, AppComponent, BrandMarkComponent, LoadingIndicatorComponent],
   template:`
     @if (activity.visible()) { <div class="global-loading" role="progressbar" aria-label="Procesando solicitudes" [attr.aria-busy]="activity.pending()"><span class="loading-spinner" aria-hidden="true"></span><span>Procesando…</span></div> }
     @if (demo) { <arena-workspace /> }
     @else if (!auth.ready()) { <main class="auth-layout" aria-busy="true"><arena-loading label="Abriendo tu espacio…" /></main> }
     @else if (auth.user()) { <arena-workspace /> }
     @else {
-      <div class="auth-top"><span class="brand"><arena-brand-mark />Agent Arena</span><span class="hint">Tu laboratorio local</span></div>
+      <div class="auth-top"><span class="brand"><arena-brand-mark />Agent Arena</span><arena-theme-picker /></div>
       <a class="skip-link" href="#auth-title">Ir al inicio de sesión</a>
       <main class="auth-layout view-enter">
         <section class="auth-intro"><p class="eyebrow">Un espacio para tus ideas</p><h1>Experimenta.<br>Compara.<br>Quédate con<br>lo que funciona.</h1><p class="subheading">Tus modelos, tus datos y tus configuraciones.<br>Todo empieza en tu espacio.</p></section>

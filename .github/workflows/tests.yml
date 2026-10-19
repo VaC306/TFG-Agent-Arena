@@ -21,8 +21,10 @@ jobs:
       - run: npm --prefix frontend ci
       - run: npm --prefix frontend test
       - run: npm --prefix frontend run build
+      - run: npm --prefix frontend run build:demo
       - run: npm --prefix frontend run e2e:typecheck
       - run: cd frontend && npx playwright install --with-deps chromium
+      - run: npm --prefix frontend run test:demo
       - run: npm --prefix frontend run e2e:repeat
       - uses: actions/upload-artifact@v4
         if: failure()
@@ -31,4 +33,5 @@ jobs:
           path: |
             frontend/playwright-report/
             frontend/test-results/
+            frontend/dist/demo-review/
           retention-days: 7
