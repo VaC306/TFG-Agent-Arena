@@ -12,12 +12,12 @@ import { LoadingService } from './loading.service';
     <textarea [id]="slot + '-input'" [(ngModel)]="value.text" [ngModelOptions]="{standalone: true}"
       [attr.aria-invalid]="invalid ? 'true' : null" [attr.aria-describedby]="invalid ? 'composer-error' : null"
       rows="4" maxlength="6000" placeholder="¿Qué quieres que haga el modelo con esta entrada y sus archivos?" required></textarea>
-    <div class="upload-zone">
+    <details class="upload-zone"><summary>Adjuntos (opcional) · {{ value.files.length }} archivos</summary>
       <label [for]="slot + '-files'">Adjuntar archivos <span>TXT · JSON · CSV · PNG · JPG · WebP</span></label>
       <input [id]="slot + '-files'" type="file" multiple accept=".txt,.json,.csv,.png,.jpg,.jpeg,.webp"
         [attr.aria-describedby]="slot + '-file-help'" [disabled]="reading()" (change)="addFiles($event)">
       <p class="hint" [id]="slot + '-file-help'">Hasta 4 archivos, 1 MiB cada uno. Texto UTF-8; máximo conjunto: 20.000 caracteres.</p>
-    </div>
+    </details>
     @if (reading()) { <arena-loading label="Preparando vista previa…" /> }
     @if (error()) { <p class="alert error" role="alert">{{ error() }}</p> }
     <div class="file-list">
@@ -33,7 +33,7 @@ import { LoadingService } from './loading.service';
     <details class="reference-input"><summary>Respuesta esperada (opcional)</summary>
       <textarea [id]="slot + '-reference'" [attr.aria-invalid]="invalidReference ? 'true' : null" [attr.aria-describedby]="invalidReference ? 'composer-error' : null" [attr.aria-label]="'Respuesta esperada ' + title" [(ngModel)]="value.expected_answer" [ngModelOptions]="{standalone: true}"
         rows="2" maxlength="6000" placeholder="Sin referencia, la calidad aparecerá como no evaluada."></textarea>
-      <p class="hint">Se usa con la evaluación que elijas arriba. Esta referencia no se envía al modelo. Para JSON equivalente, escribe JSON válido.</p>
+      <p class="hint">Se usa con la evaluación de Condiciones de ejecución. La referencia no se envía al modelo. Para JSON equivalente, escribe JSON válido.</p>
     </details>
   `,
 })

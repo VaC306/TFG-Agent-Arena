@@ -86,6 +86,7 @@ test('dataset normalizado recuperable y error con ID, archivo y filas', async ({
   await page.reload(); await page.getByRole('button',{name:'Recuperar borrador'}).click();
   await expect(page.getByRole('button',{name:'Dos modelos',exact:false})).toHaveAttribute('aria-pressed','true');
   await expect(page.getByRole('status').filter({hasText:'casos.csv'})).toContainText('2 casos');
+  await page.locator('.dataset-cases > summary').press('Enter');
   await expect(page.getByRole('cell',{name:'adiós',exact:true})).toHaveCount(2);
   await page.getByLabel('Seleccionar dataset').setInputFiles({name:'duplicados.csv',mimeType:'text/csv',buffer:Buffer.from('id,input\nrepetido,uno\nrepetido,dos')});
   await expect(page.getByRole('alert')).toContainText('duplicados.csv: ID duplicado «repetido»: filas 2 y 3');

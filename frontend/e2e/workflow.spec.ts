@@ -78,6 +78,7 @@ test('dataset, comparación, métricas, biblioteca, campaña e informes coherent
   await expect(page.getByRole('heading',{name:'Campaña de fixture',exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Repetir diseño',exact:true}).click();
   await expect(page.getByRole('button',{name:'Repetir diseño',exact:true})).toBeEnabled();
+  await page.locator('.campaign-attempts > summary').press('Enter');
   await expect(page.getByRole('region',{name:'Evolución de la campaña, tabla desplazable'}).getByRole('row')).toHaveCount(5);
   await page.getByText('Registrar condiciones externas',{exact:true}).click();
   await page.getByLabel('Intento',{exact:true}).selectOption(id);
@@ -85,6 +86,7 @@ test('dataset, comparación, métricas, biblioteca, campaña e informes coherent
   await page.getByLabel('Tipo de anotación').selectOption('observation');
   await page.getByRole('button',{name:'Guardar anotación',exact:true}).click();
   await expect(page.getByRole('status').filter({hasText:'Anotación'})).toBeVisible();
+  await page.locator('.export-details > summary').press('Enter');
   const campaign = JSON.parse(await download(page,page.getByRole('link',{name:'↓ JSON reproducible'})));
   expect(campaign.attempts).toHaveLength(2);
   for (const attempt of campaign.attempts) {

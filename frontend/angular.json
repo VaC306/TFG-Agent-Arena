@@ -27,7 +27,8 @@
             "styles": [
               "src/theme.css",
               "src/styles.css",
-              "src/composer.css"
+              "src/composer.css",
+              "src/presentation.css"
             ]
           },
           "configurations": {
@@ -98,7 +99,8 @@
                 "src/theme.css",
                 "src/styles.css",
                 "src/composer.css",
-                "src/demo-layout.css"
+                "src/demo-layout.css",
+                "src/presentation.css"
               ],
               "optimization": {
                 "styles": {

@@ -21,7 +21,8 @@ Reproducibilidad no significa garantizar respuestas idénticas en cualquier máq
 - Entradas, adjuntos y datasets CSV/JSONL con evaluación automática.
 - Borradores por cuenta recuperables en el mismo navegador; los adjuntos requieren
   reselección tras recargar. Sección y comparación seleccionada en la URL.
-- Resultados, biblioteca de modelos y campañas con diseño fijado.
+- Respuestas A/B, gráficos de estados y tiempos y detalles desplegables.
+- Biblioteca visual de modelos y evolución de campañas con diseño fijado.
 - Análisis por tarea, cobertura, errores y estabilidad; incertidumbre exploratoria
   solo cuando la evidencia cumple las condiciones del método.
 - Anotaciones de condiciones externas, estado del worker y exportación CSV,
@@ -117,4 +118,5 @@ conclusiones sobre modelos requieren experimentos reales y casos revisados.
 - [Campañas](docs/campanas.md) · [Análisis por tarea](docs/analisis-por-tarea.md) · [Estudios de latencia](docs/estudios-de-latencia.md).
 - [Condiciones externas y worker](docs/condiciones-y-worker.md) · [Mediciones y calentamiento](docs/mediciones-y-calentamiento.md).
 - [Validación integral](docs/validacion-integral-2026-10-12.md) · [Pruebas reales](docs/diagnostico-herramientas.md).
+- [Interfaz y lectura visual](docs/claridad-visual.md).
 - [Memoria del TFG](docs/memoria.md) · [Accesibilidad](docs/accesibilidad.md).

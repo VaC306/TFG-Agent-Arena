@@ -63,12 +63,14 @@ test('respuestas primero, campaña secundaria e intentos/tareas/método por tecl
   await page.getByLabel('Nombre de campaña').fill('Campaña progresiva');
   await page.getByRole('button',{name:'Crear campaña',exact:true}).click();
   await expect(page.getByRole('heading',{name:'Campaña progresiva',exact:true})).toBeVisible();
-  await expect(page.locator('.campaign-attempts')).toHaveAttribute('open','');
+  await expect(page.locator('.campaign-attempts')).not.toHaveAttribute('open');
+  await expect(page.locator('.campaign-visual')).toBeVisible();
   await expect(page.getByLabel('Mostrar tareas',{exact:true})).not.toBeVisible();
   await page.getByText('Por tarea',{exact:true}).press('Enter');
   await expect(page.getByLabel('Mostrar tareas',{exact:true})).toBeVisible();
   await page.getByText('Método y condiciones',{exact:true}).press('Enter');
   await expect(page.getByRole('heading',{name:'Diferencias e incertidumbre',exact:true})).toBeVisible();
+  await page.locator('.campaign-attempts > summary').press('Enter');
   await page.getByText('Registrar condiciones externas',{exact:true}).press('Enter');
   await page.getByLabel('Intento',{exact:true}).selectOption(id);
   await page.getByLabel('Tipo de anotación').selectOption('observation');

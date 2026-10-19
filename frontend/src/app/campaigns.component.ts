@@ -1,3 +1,4 @@
+import { campaignPoints } from './visual-data';
 import { Component, computed, DestroyRef, inject, input, output, signal } from '@angular/core';
 import { DatePipe, DecimalPipe, JsonPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -8,6 +9,7 @@ import { LoadingIndicatorComponent } from './loading-indicator.component';
 @Component({selector:'arena-campaigns',standalone:true,imports:[DatePipe,DecimalPipe,JsonPipe,FormsModule,LoadingIndicatorComponent],
   templateUrl:'./campaigns.component.html'})
 export class CampaignsComponent {
+  evolution = campaignPoints;
   private api = inject(ArenaService);
   private destroyed = false;
   private version = 0;

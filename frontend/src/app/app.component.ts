@@ -1,3 +1,5 @@
+import { TimeChartComponent } from './time-chart.component';
+import { OutcomeChartComponent } from './outcome-chart.component';
 import { ThemePickerComponent } from './theme-picker.component';
 import { DEMO_MODE } from './runtime-mode';
 import { WorkerStatusComponent } from './worker-status.component';
@@ -22,7 +24,7 @@ import { ArenaService, ArenaEvent, ExperimentDetail, ExperimentSummary, Preset, 
 
 @Component({
   selector: 'arena-workspace', standalone: true,
-  imports: [ThemePickerComponent, WorkerStatusComponent, DemoOverviewComponent, DemoGuideComponent, ContactComponent, DatePipe, DecimalPipe, JsonPipe, FormsModule, ComposerComponent, ProfileComponent, InfoDialogComponent, GuideComponent, BrandMarkComponent, ModelLibraryComponent, CampaignsComponent, LoadingIndicatorComponent],
+  imports: [TimeChartComponent, OutcomeChartComponent, ThemePickerComponent, WorkerStatusComponent, DemoOverviewComponent, DemoGuideComponent, ContactComponent, DatePipe, DecimalPipe, JsonPipe, FormsModule, ComposerComponent, ProfileComponent, InfoDialogComponent, GuideComponent, BrandMarkComponent, ModelLibraryComponent, CampaignsComponent, LoadingIndicatorComponent],
   templateUrl: './app.component.html',
 })
 export class AppComponent {
@@ -102,9 +104,15 @@ export class AppComponent {
     completed: 'Completada · sin evaluar',
     timeout: 'Tiempo agotado', limit: 'Límite alcanzado', cancelled: 'Cancelada', interrupted: 'Interrumpida',
   };
+  executionCounts = computed(() => {
+    const summaries = this.summaries();
+    const count = (key:'total'|'execution_errors'|'cancelled'|'pending') => summaries.reduce((n,s)=>n+s[key],0);
+    return {finishedWithoutError:Math.max(0,summaries.reduce((n,s)=>n+s.finished,0)-count('execution_errors')-count('cancelled')),total:count('total'),errors:count('execution_errors'),cancelled:count('cancelled'),pending:count('pending')};
+  });
   completed = computed(() => this.detail()?.runs.filter(terminal).length ?? 0);
   pending = computed(() => this.detail()?.runs.some(r => !terminal(r)) ?? false);
   visibleRuns = computed(() => this.detail()?.runs.filter(r => this.branchFilter() === 'all' || r.branch === this.branchFilter()) ?? []);
+  allCases = signal(false);
   resultCases = computed(() => {
     const cases = new Map<string,{key:string;task:string;repetition:number;runs:Partial<Record<'A'|'B',Run>>}>();
     for (const run of this.detail()?.runs ?? []) {
@@ -117,6 +125,11 @@ export class AppComponent {
   summaries = computed(() => (['A', 'B'] as const).map(branch => {
     return {branch,...(this.detail()?.overviews?.[branch] ?? {total:0,finished:0,evaluated:0,planned_evaluable:0,correct:0,incorrect:0,invalid_format:0,execution_errors:0,cancelled:0,unscored:0,pending:0,mean_answer_s:null,timed_answers:0})};
   }));
+
+  toggleCases() {
+    this.allCases.set(!this.allCases());
+    requestAnimationFrame(() => document.getElementById('response-case-' + (this.allCases() ? 3 : 0))?.focus());
+  }
 
   runLabel(run: Run) {
     if (run.status === 'failed') return run.result?.error || run.result?.answer === undefined ? 'Error de ejecución' : run.result?.format_ok === false ? 'Formato inválido' : 'Respuesta incorrecta';
@@ -162,7 +175,7 @@ export class AppComponent {
     if (write) this.writeRoute();
     this.detail.set(null);
     this.closeTrace();
-    this.branchFilter.set('all');
+    this.branchFilter.set('all'); this.allCases.set(false);
     this.loading.set(true);
     this.error.set('');
     this.campaignError.set('');
