@@ -13,12 +13,12 @@ import { LoadingService } from './loading.service';
     <textarea [id]="slot + '-input'" [(ngModel)]="value.text" [ngModelOptions]="{standalone: true}"
       [attr.aria-invalid]="invalid ? 'true' : null" [attr.aria-describedby]="invalid ? 'composer-error' : null"
       rows="4" maxlength="6000" placeholder="¿Qué quieres que haga el modelo con esta entrada y sus archivos?" required></textarea>
-    <details class="upload-zone"><summary>Adjuntos (opcional) · {{ value.files.length }} archivos</summary>
+    @if (attachmentsEnabled) { <details class="upload-zone"><summary>Adjuntos (opcional) · {{ value.files.length }} archivos</summary>
       <label [for]="slot + '-files'">Adjuntar archivos <span>TXT · JSON · CSV · PNG · JPG · WebP</span></label>
       <input [id]="slot + '-files'" type="file" multiple accept=".txt,.json,.csv,.png,.jpg,.jpeg,.webp"
         [attr.aria-describedby]="slot + '-file-help'" [disabled]="reading()" (change)="addFiles($event)">
       <p class="hint" [id]="slot + '-file-help'">Hasta 4 archivos, 1 MiB cada uno. Texto UTF-8; máximo conjunto: 20.000 caracteres.</p>
-    </details>
+    </details> }
     @if (reading()) { <arena-loading label="Preparando vista previa…" /> }
     @if (error()) { <p class="alert error" role="alert">{{ error() }}</p> }
     <div class="file-list">
@@ -52,6 +52,7 @@ export class InputEditorComponent {
   @Input({required:true}) value!: InputData;
   @Input({required:true}) slot!: string;
   @Input() title = 'Entrada';
+  @Input() attachmentsEnabled = true;
   @Input() invalid = false;
   @Input() invalidReference = false;
   @Output() readingChange = new EventEmitter<boolean>();

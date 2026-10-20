@@ -70,7 +70,7 @@ class InferenceSettings(Contract):
 
 class ComparisonRequest(Contract):
     name: str = Field(min_length=1, max_length=120)
-    adapter: Literal['simulated', 'ollama']
+    adapter: Literal['simulated', 'ollama', 'codex']
     comparison: Literal['same_model', 'different_models']
     agents: dict[str, CustomAgent]
     shared_input: InputBundle | None = None
@@ -90,6 +90,8 @@ class ComparisonRequest(Contract):
 
     @model_validator(mode='after')
     def validate_design(self):
+        if self.adapter == 'codex' and any(bundle.files for bundle in [self.shared_input, *(self.branch_inputs or {}).values()] if bundle):
+            raise ValueError('La conexión ChatGPT admite solo texto por ahora. Retira los adjuntos o selecciona otro motor.')
         if self.settings.latency_study and (self.dataset is None or self.evaluation == 'none' or any(c.expected_answer is None for c in self.dataset)):
             raise ValueError('El estudio de latencia requiere un dataset compartido con referencia evaluable en todos los casos.')
         if set(self.agents) != {'A', 'B'}:

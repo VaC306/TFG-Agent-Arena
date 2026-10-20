@@ -10,7 +10,9 @@ Agent Arena Local permite estudiar el comportamiento de agentes con herramientas
 mediante experimentos documentados. El frontend utiliza **Angular, TypeScript,
 HTML y CSS**; el backend, **Python y FastAPI**, con un worker independiente y
 persistencia en **SQLite**. La inferencia se realiza con modelos locales de
-**Ollama**; el simulador permite verificar la plataforma sin modelos.
+**Ollama**; el simulador permite verificar la plataforma sin modelos. También
+incluye una conexión inicial de texto a **ChatGPT mediante la suscripción de Codex**,
+sin API key, usando el cliente oficial instalado y sus límites compartidos.
 
 Los informes facilitan reproducir el análisis de la evidencia guardada.
 Reproducibilidad no significa garantizar respuestas idénticas en cualquier máquina.
@@ -86,6 +88,10 @@ trabajos quedan en cola. Detén los procesos con `Ctrl+C`.
 
 En Linux/macOS usa `.venv/bin/python` y `npm` en lugar de las variantes Windows.
 La API se documenta en [Swagger](http://127.0.0.1:8000/docs).
+
+Para usar tu suscripción, selecciona **ChatGPT · suscripción mediante Codex** en
+Comparar y vincula la sesión del cliente oficial de este equipo. Consulta
+[preparación, alcance y verificación](docs/integracion-openai-suscripcion.md).
 
 ## Apariencia
 

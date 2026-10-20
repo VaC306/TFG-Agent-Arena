@@ -3,6 +3,7 @@ from .adapters import Ollama, Simulated
 from .contracts import Experiment, Task
 from .runner import execute
 from .async_cleanup import drain
+from .codex_runner import execute_codex
 
 
 async def work(store, once=False,*,heartbeat_wait=asyncio.sleep):
@@ -30,10 +31,13 @@ async def work(store, once=False,*,heartbeat_wait=asyncio.sleep):
             config = Experiment.model_validate(snapshot["config"])
             task = (Task.model_validate(snapshot['branch_tasks'][run['branch']]) if snapshot.get('branch_tasks') else
                     next(Task.model_validate(t) for t in snapshot["tasks"] if t["id"] == run["task_id"]))
-            adapter = Simulated() if config.adapter == "simulated" else Ollama(
-                config.ollama_url, keep_alive=snapshot.get('conditions', {}).get('keep_alive', '0' if config.comparison == 'different_models' else '5m'))
-            status = await execute(run, task, snapshot["environments"][task.environment], config.agents[run["branch"]], adapter, store,
-                                   measurement=snapshot.get('conditions'))
+            if config.adapter == 'codex':
+                status = await execute_codex(run, task, config.agents[run['branch']], store, snapshot.get('conditions',{}))
+            else:
+                adapter = Simulated() if config.adapter == "simulated" else Ollama(
+                    config.ollama_url, keep_alive=snapshot.get('conditions', {}).get('keep_alive', '0' if config.comparison == 'different_models' else '5m'))
+                status = await execute(run, task, snapshot["environments"][task.environment], config.agents[run["branch"]], adapter, store,
+                                       measurement=snapshot.get('conditions'))
             state[0] = 'idle'
             store.worker_signal(worker_id,'idle')
             if status == "interrupted":

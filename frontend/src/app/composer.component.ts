@@ -1,3 +1,4 @@
+import { OpenaiConnectionComponent } from './openai-connection.component';
 import { ComparisonMapComponent } from './comparison-map.component';
 import { TermHelpComponent } from './term-help.component';
 import { Component, DestroyRef, EventEmitter, inject, Input, Output, signal } from '@angular/core';
@@ -26,7 +27,7 @@ function validDraft(value: unknown, owner: string | undefined): value is Compose
   const d = value as ComposerDraft;
   const c = d.config;
   return d.version === 1 && !!owner && d.owner === owner && !!c &&
-    ['simulated','ollama'].includes(c.adapter) && ['same_model','different_models'].includes(c.mode) && ['manual','dataset'].includes(c.source) &&
+    ['simulated','ollama','codex'].includes(c.adapter) && ['same_model','different_models'].includes(c.mode) && ['manual','dataset'].includes(c.source) &&
     (c.independentInputs === undefined || typeof c.independentInputs === 'boolean') &&
     [c.name,c.modelA,c.modelB,c.promptA?.template,c.promptA?.text,c.promptB?.template,c.promptB?.text].every(v => typeof v === 'string') &&
     typeof c.repetitions === 'number' && !!c.settings && typeof c.settings === 'object' &&
@@ -39,7 +40,7 @@ function validDraft(value: unknown, owner: string | undefined): value is Compose
 }
 
 @Component({
-  selector: 'arena-composer', standalone: true, imports: [ComparisonMapComponent,TermHelpComponent,FormsModule, InputEditorComponent, InfoDialogComponent,LoadingIndicatorComponent,WorkerStatusComponent],
+  selector: 'arena-composer', standalone: true, imports: [OpenaiConnectionComponent,ComparisonMapComponent,TermHelpComponent,FormsModule, InputEditorComponent, InfoDialogComponent,LoadingIndicatorComponent,WorkerStatusComponent],
   templateUrl: './composer.component.html',
 })
 export class ComposerComponent {
@@ -147,17 +148,21 @@ export class ComposerComponent {
       }
     } catch { this.draftNotice.set('No se pudo leer el borrador local. Puedes descartarlo.'); }
     void this.loadTemplates();
-    if (this.adapter === 'ollama') void this.loadModels();
+    if (this.adapter !== 'simulated') void this.loadModels();
     inject(DestroyRef).onDestroy(() => {
       this.destroyed = true;
       if (this.saveTimer) clearTimeout(this.saveTimer);
     });
   }
 
+  private sentSettings() {
+    return this.adapter === 'codex' ? {...defaultSettings(),timeout_s:this.settings.timeout_s,order_policy:'random' as const} : {...this.settings};
+  }
+
   private config(): Preferences {
     return {name:this.name, adapter:this.adapter, mode:this.mode, source:this.source,
       repetitions:this.repetitions, modelA:this.modelA, modelB:this.modelB,
-      promptA:{...this.promptA}, promptB:{...this.promptB}, evaluation:this.evaluation, settings:{...this.settings}, split:this.split, independentInputs:this.independentInputs};
+      promptA:{...this.promptA}, promptB:{...this.promptB}, evaluation:this.evaluation, settings:this.sentSettings(), split:this.split, independentInputs:this.independentInputs};
   }
 
   recoverDraft() {
@@ -179,7 +184,7 @@ export class ComposerComponent {
     this.submissionPending.set(draft.submissionPending === true);
     this.pendingDraft.set(null); this.datasetBusy.set(false); this.datasetError.set('');
     this.draftNotice.set('Borrador recuperado: texto, referencias, configuración y dataset normalizado.');
-    if (this.adapter === 'ollama') void this.loadModels();
+    if (this.adapter !== 'simulated') void this.loadModels();
   }
 
   discardDraft() {
@@ -245,23 +250,30 @@ export class ComposerComponent {
     } catch { this.error.set('No se pudieron cargar las plantillas. Comprueba la API y pulsa Reintentar plantillas.'); }
   }
 
+  private modelVersion = 0;
   async loadModels() {
-    if (this.modelsBusy()) return;
+    const version = ++this.modelVersion;
+    const adapter = this.adapter;
+    this.models.set([]);
+    if (adapter === 'simulated') { this.modelsBusy.set(false); return; }
     this.modelsBusy.set(true);
-    this.modelNotice.set('Consultando modelos instalados…');
+    this.modelNotice.set(adapter === 'codex' ? 'Comprobando sesión ChatGPT y catálogo…' : 'Consultando modelos instalados…');
     try {
-      const result = await this.api.models();
-      if (this.destroyed) return;
+      const result = adapter === 'codex'
+        ? {available:true, models:(await this.api.openaiModels()).models ?? []}
+        : await this.api.models();
+      if (this.destroyed || version !== this.modelVersion || adapter !== this.adapter || this.auth.user()?.id !== this.ownerId) return;
       this.models.set(result.models.map(model => model.name));
-      if (this.adapter === 'ollama' && result.available) {
+      if (result.available) {
         if (!this.modelA) this.modelA = this.models()[0] ?? '';
         if (!this.modelB) this.syncModelB();
       }
-      this.modelNotice.set(result.available ? (result.models.length ? `${result.models.length} modelos instalados.` : 'No hay modelos instalados. Instala uno en Ollama y actualiza la lista.') : 'Ollama no está disponible. Inícialo y actualiza la lista.');
-    } catch {
+      this.modelNotice.set(adapter === 'codex' ? (result.models.length ? 'Catálogo de Codex actualizado. El acceso a cada modelo se comprueba al ejecutar.' : 'Codex no devolvió modelos de texto.') : result.available ? (result.models.length ? `${result.models.length} modelos instalados.` : 'No hay modelos instalados. Instala uno en Ollama y actualiza la lista.') : 'Ollama no está disponible. Inícialo y actualiza la lista.');
+    } catch (error) {
+      if (this.destroyed || version !== this.modelVersion || adapter !== this.adapter) return;
       this.models.set([]);
-      this.modelNotice.set('No se pudo consultar Ollama. Comprueba la conexión y actualiza la lista.');
-    } finally { this.modelsBusy.set(false); }
+      this.modelNotice.set(adapter === 'codex' ? error instanceof HttpErrorResponse && typeof error.error?.detail === 'string' ? error.error.detail : 'No se pudo comprobar ChatGPT. Revisa la conexión y actualiza el catálogo.' : 'No se pudo consultar Ollama. Comprueba la conexión y actualiza la lista.');
+    } finally { if (version === this.modelVersion && !this.destroyed) this.modelsBusy.set(false); }
   }
 
   availableModels() { return this.adapter === 'simulated' ? ['simulated-a', 'simulated-b'] : this.models(); }
@@ -271,9 +283,11 @@ export class ComposerComponent {
     if (!this.modelsForB().includes(this.modelB)) this.modelB = this.modelsForB()[0] ?? '';
   }
   changeAdapter() {
+    ++this.modelVersion; this.modelsBusy.set(false); this.models.set([]);
+    if (this.adapter === 'codex') { this.settings.warmup = 'none'; this.settings.latency_study = false; }
     this.modelA = this.adapter === 'simulated' ? 'simulated-a' : '';
     this.modelB = this.adapter === 'simulated' ? 'simulated-b' : '';
-    if (this.adapter === 'ollama') void this.loadModels();
+    if (this.adapter !== 'simulated') void this.loadModels();
   }
   validModels() {
     return this.availableModels().includes(this.modelA) && (this.mode === 'same_model' || this.modelsForB().includes(this.modelB));
@@ -324,11 +338,14 @@ export class ComposerComponent {
     }
     if (!Number.isInteger(this.repetitions) || this.repetitions < 1 || this.repetitions > 10)
       issues.push({id:'repetitions',message:'Elige entre 1 y 10 repeticiones.',group:'conditions'});
+    if (this.adapter === 'codex' && slots.some(slot => this[slot as DraftSlot].files.length))
+      issues.push({id:'data-source',message:'ChatGPT admite solo texto. Retira los adjuntos o selecciona otro motor.',group:'data'});
     const parameters: [string, number, number, number, boolean][] = [
       ['temperature',this.settings.temperature,0,2,false], ['seed',this.settings.seed,0,2147483647,true],
       ['context',this.settings.num_ctx,512,131072,true], ['output-limit',this.settings.max_output_tokens,1,16384,true],
       ['timeout',this.settings.timeout_s,1,3600,true],
     ];
+    if (this.adapter === 'codex') parameters.splice(0,4);
     if (this.settings.latency_study) parameters.push(['planned-attempts',this.settings.planned_attempts,2,20,true]);
     const parameterLabels: Record<string,string> = {temperature:'Temperatura',seed:'Semilla',context:'Contexto','output-limit':'Máximo de salida',timeout:'Tiempo límite','planned-attempts':'Intentos previstos'};
     for (const [id,n,min,max,integer] of parameters) {
@@ -343,11 +360,11 @@ export class ComposerComponent {
         catch { issues.push({id:ref.id,message:'Para evaluar JSON, las respuestas esperadas deben contener JSON válido.',group:'data'}); }
       }
     }
-    if (this.settings.max_output_tokens >= this.settings.num_ctx)
+    if (this.adapter !== 'codex' && this.settings.max_output_tokens >= this.settings.num_ctx)
       issues.push({id:'output-limit',message:'El máximo de salida debe ser menor que el contexto para dejar espacio a la entrada.',group:'conditions'});
-    if (this.settings.order_policy === 'balanced' && this.repetitions % 2)
+    if (this.adapter !== 'codex' && this.settings.order_policy === 'balanced' && this.repetitions % 2)
       issues.push({id:'repetitions',message:'El orden equilibrado exige repeticiones pares.',group:'conditions'});
-    if (this.settings.latency_study && (this.source !== 'dataset' || this.evaluation === 'none' || this.dataset()?.cases.some(c=>c.expected_answer == null)))
+    if (this.adapter !== 'codex' && this.settings.latency_study && (this.source !== 'dataset' || this.evaluation === 'none' || this.dataset()?.cases.some(c=>c.expected_answer == null)))
       issues.push({id:'data-source',message:'Para estudiar tiempos importa un dataset compartido con referencia en todos los casos y activa su evaluación.',group:'conditions'});
     return issues;
   }
@@ -363,7 +380,7 @@ export class ComposerComponent {
     this.error.set('');
     const body: ComparisonBody = {
       name:this.name, adapter:this.adapter, comparison:this.mode, repetitions:this.repetitions,
-      evaluation:this.evaluation, settings:{...this.settings}, split:this.split,
+      evaluation:this.evaluation, settings:this.sentSettings(), split:this.split,
       agents:{
         A:{model:this.modelA.trim(), system_prompt:this.promptA.text, prompt_template:this.promptA.template},
         B:{model:(this.mode === 'same_model' ? this.modelA : this.modelB).trim(), system_prompt:this.promptB.text, prompt_template:this.promptB.template},

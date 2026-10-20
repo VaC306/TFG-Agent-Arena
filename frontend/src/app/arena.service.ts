@@ -2,7 +2,8 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom, timeout } from 'rxjs';
 
-export type PresetId = 'simulated' | 'ollama';
+export type PresetId = 'simulated' | 'ollama' | 'codex';
+export interface OpenaiSession {linked:boolean;plan?:string;models?:{name:string;display_name:string}[]}
 export type Status = 'queued' | 'running' | 'completed' | 'succeeded' | 'failed' | 'timeout' | 'limit' | 'cancelled' | 'interrupted';
 export interface Agent { model: string; system_prompt: string; temperature?:number; seed?:number; num_ctx?:number; limits?:{max_output_tokens:number; timeout_s:number} }
 export type EvaluationMode = 'exact_match' | 'json_match' | 'none';
@@ -26,7 +27,7 @@ export interface ExperimentSummary {
 }
 export interface Result {
   success: boolean | null; format_ok?: boolean | null; agent_s?: number; queue_s?: number;
-  input_tokens?: number; output_tokens?: number; usage_complete?: boolean;
+  input_tokens?: number | null; output_tokens?: number | null; usage_complete?: boolean;
   tool_calls?: number; tool_errors?: number; server_tps?: number | null;
   error?: string; answer?: string; reason?: string;
   preparation_s?:number; task_s?:number|null; failure_phase?:string|null;
@@ -73,6 +74,10 @@ export const terminal = (run: Run) => !['queued', 'running'].includes(run.status
 export class ArenaService {
   private http = inject(HttpClient);
   private get<T>(path: string) { return firstValueFrom(this.http.get<T>('/api' + path).pipe(timeout(15000))); }
+  openaiStatus() { return this.get<OpenaiSession>('/openai/status'); }
+  openaiConnect() { return firstValueFrom(this.http.post<OpenaiSession>('/api/openai/connect',{}).pipe(timeout(30000))); }
+  openaiDisconnect() { return firstValueFrom(this.http.post<OpenaiSession>('/api/openai/disconnect',{}).pipe(timeout(15000))); }
+  openaiModels() { return firstValueFrom(this.http.get<OpenaiSession>('/api/openai/models').pipe(timeout(30000))); }
   experiments() { return this.get<ExperimentSummary[]>('/experiments'); }
   modelResults() { return this.get<{entries:ModelResult[]}>('/model-results'); }
   workerStatus() { return this.get<WorkerStatus>('/worker/status'); }

@@ -74,7 +74,7 @@ def latest_model_results(store):
             identities = [i for i in identities if i]
             identity = identities[-1] if identities else {}
             stable = verified and len({i['fingerprint'] for i in identities}) == 1
-            model = agent['model'] if ':' in agent['model'] else agent['model']+':latest'
+            model = agent['model'] if config['adapter'] == 'codex' or ':' in agent['model'] else agent['model']+':latest'
             for kind in sorted({test_kind(t) for t in tasks}):
                 cases = [t for t in tasks if test_kind(t) == kind]
                 ids = {t['id'] for t in cases}

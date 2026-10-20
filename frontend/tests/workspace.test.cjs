@@ -258,3 +258,40 @@ test('map model equality uses actual identities and ignores inactive B in one-mo
   c.modelA='example';c.modelB='example:latest';c.mode='different_models';assert.equal(c.modelsEqual(),true);
   c.modelB='other';assert.equal(c.modelsEqual(),false);c.mode='same_model';assert.equal(c.modelsEqual(),true);
 });
+
+test('navigation clears old notices but keeps late creation confirmation without redirecting',async()=>{
+  const request=deferred();const {app}=await workspace({create:()=>request.promise});
+  app.notice.set('Old cancellation');app.navigate('models');assert.equal(app.notice(),'');
+  app.navigate('compose');const creating=app.create();app.navigate('profile');request.resolve({id:'saved'});await creating;
+  assert.equal(app.view(),'profile');assert.match(app.notice(),/guardada.*historial/);
+});
+
+
+test('ChatGPT catalog discards stale adapter responses and ends loading after destroy',async()=>{
+  const request=deferred();
+  const f=fixture('composer.component.ts',{prompts:async()=>[],openaiModels:()=>request.promise});
+  const c=new f.exports.ComposerComponent();
+  c.adapter='codex';const loading=c.loadModels();
+  c.adapter='simulated';c.changeAdapter();
+  request.resolve({models:[{name:'stale-gpt'}]});await loading;
+  assert.equal(c.models().length,0);assert.equal(c.modelsBusy(),false);
+});
+
+test('ChatGPT connection ignores completion after account change',async()=>{
+  const request=deferred();let calls=0;
+  const f=fixture('openai-connection.component.ts',{openaiStatus:async()=>({linked:false}),openaiConnect:()=>{calls++;return request.promise;}});
+  const c=new f.exports.OpenaiConnectionComponent();await new Promise(r=>setImmediate(r));
+  const connecting=c.act(true);f.auth.user.set({id:'other'});
+  request.resolve({linked:true});await connecting;
+  assert.equal(calls,1);assert.equal(c.linked(),false);assert.equal(c.message(),'');
+});
+
+test('ChatGPT does not send invalid hidden Ollama settings after switching provider',async()=>{
+  let sent;
+  const f=fixture('composer.component.ts',{prompts:async()=>[],compare:async body=>{sent=body;return {id:'controlled'};}});
+  const c=new f.exports.ComposerComponent();c.adapter='codex';c.modelA='fixture-gpt';c.models.set(['fixture-gpt']);
+  c.templates.set([{id:'general'}]);c.promptA.text=c.promptB.text='Brief';c.shared.text='Hello';
+  c.settings={temperature:NaN,seed:-1,num_ctx:NaN,max_output_tokens:NaN,timeout_s:120,order_policy:'balanced',latency_study:false};
+  await c.submit();assert.equal(sent.adapter,'codex');assert.equal(sent.settings.timeout_s,120);
+  assert.equal(sent.settings.order_policy,'random');assert.notEqual(sent.settings.seed,-1);
+});

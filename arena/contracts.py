@@ -71,7 +71,7 @@ class Task(Contract):
 
 class Experiment(Contract):
     name: str
-    adapter: Literal["simulated", "ollama"] = "simulated"
+    adapter: Literal["simulated", "ollama", "codex"] = "simulated"
     mode: Literal["sequential"] = "sequential"
     agents: dict[str, AgentConfig]
     split: Literal["dev", "eval"] = "dev"
@@ -86,13 +86,15 @@ class Experiment(Contract):
 
     @model_validator(mode="after")
     def paired_model(self):
+        if self.adapter == 'codex' and (self.warmup != 'none' or self.latency_study or any(a.tools_enabled for a in self.agents.values())):
+            raise ValueError('ChatGPT admite texto sin herramientas, calentamiento ni estudios de latencia.')
         if self.order_policy == 'balanced' and self.repetitions % 2:
             raise ValueError('El orden equilibrado requiere un número par de repeticiones por caso.')
         if self.latency_study and (self.order_policy != 'balanced' or self.warmup != 'per_run'):
             raise ValueError('El estudio de latencia requiere orden equilibrado y calentamiento antes de cada ejecución.')
         if set(self.agents) != {"A", "B"}:
             raise ValueError("Se requieren exactamente las ramas A y B")
-        models = [a.model if ':' in a.model else a.model + ':latest' for a in self.agents.values()]
+        models = [a.model if self.adapter == 'codex' or ':' in a.model else a.model + ':latest' for a in self.agents.values()]
         if self.comparison == "same_model" and models[0] != models[1]:
             raise ValueError("El modo un modelo exige el mismo modelo en A y B")
         if self.comparison == "different_models" and models[0] == models[1]:

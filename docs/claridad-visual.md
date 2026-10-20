@@ -13,7 +13,8 @@ cuenta y la apariencia Sistema / Claro / Oscuro.
 3. **Variantes A/B**: elige los modelos y tipos de prompt. Las instrucciones
    completas se pueden editar en cada rama.
 4. **Condiciones de ejecución**: abre este bloque para cambiar repeticiones,
-   evaluación, fase y parámetros. Son los mismos controles y valores previos.
+   evaluación y, dentro de **Parámetros avanzados**, fase y parámetros. Son los
+   mismos controles y valores previos.
 5. **Revisar y ejecutar**: comprueba motor, datos, repeticiones, evaluación y
    variables que cambian antes de ejecutar. Los errores y los adjuntos que hay
    que reseleccionar permanecen visibles.
@@ -22,6 +23,11 @@ cuenta y la apariencia Sistema / Claro / Oscuro.
 
 El resumen muestra finalizadas, pendientes, errores de ejecución y canceladas.
 La banda de progreso distingue los estados; finalizar no equivale a acertar.
+Cada caso ofrece **Entrada de este caso** junto a sus respuestas. Lee el snapshot
+ejecutado: una entrada compartida o entradas A/B separadas, sin recurrir al
+borrador actual. Si la evidencia exportada no contiene una entrada, se indica
+su ausencia. La cancelación terminal muestra «Sin evaluación: ejecución
+cancelada»; el motivo original, si existe, sigue disponible.
 Primero aparecen las respuestas A/B. Se muestran los tres primeros pares de
 caso/repetición; el botón para ver todos indica el total y lleva el foco al primer
 par recién revelado. Al reducir, el foco vuelve al primer par. No se eliminan ni
@@ -118,3 +124,24 @@ nuevas, cambios en cálculos del backend, metodología, rankings ni causalidad.
 Pruebas nuevas: `beginner.spec.ts`, validación real en `workspace.test.cjs`,
 estados y respuestas parciales en `visual-data.test.cjs`, orientación de consulta
 en `demo-tests/browser.cjs`. Resultados y límites en el registro de auditoría.
+
+## Continuación tras exploración sin documentación previa (20/10/2026)
+
+«Probar recorrido simulado de pedidos» anticipa el contenido del ejemplo. El
+aviso del formulario aclara que el simulador confirma recepción y no genera
+respuestas a instrucciones personalizadas. Las etiquetas editables usan
+«Instrucciones (prompt) A/B». La evaluación y las repeticiones quedan antes del
+desplegable avanzado, sin cambiar valores, validaciones ni payloads.
+
+Al cerrar sesión explícitamente se limpia la selección de comparación/campaña
+de la ruta activa, conservando borradores e historial. Los enlaces profundos
+introducidos para iniciar sesión siguen funcionando. Cambiar de sección retira
+avisos anteriores; las confirmaciones de operaciones que terminan después de
+navegar siguen apareciendo sin forzar el regreso. La cancelación nombra caso y
+variante. Campañas vacías ofrece «Abrir resultados» con selección válida o
+«Preparar comparación» en su ausencia. La demo conserva solo consulta.
+
+La autorización abarcó A–F del plan de esta exploración. La reorganización de
+instrucciones/condiciones es una propuesta aprobada basada en una hipótesis;
+su implementación y verificación técnica no prueban mejora de comprensión
+con personas usuarias. Registro y límites en la auditoría UX.

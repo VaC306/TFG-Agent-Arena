@@ -25,6 +25,11 @@ def submit(store, config_path, tasks_path):
 
 
 def schedule(store, config, tasks, environments, branch_tasks=None, benchmark=None, campaign=None, conditions=None):
+    if config.adapter == 'codex':
+        if not store.provider_link():
+            raise ValueError('Vincula primero ChatGPT para esta cuenta local de Arena.')
+        if any(t.attachments or t.criteria for t in tasks) or any(t.get('attachments') or t.get('criteria') for t in (branch_tasks or {}).values()):
+            raise ValueError('ChatGPT solo admite tareas de texto sin herramientas ni adjuntos.')
     if config.latency_study and (branch_tasks is not None or not tasks or any(not(t.criteria or t.expected_answer is not None and t.evaluation!='none') for t in tasks)):
         raise ValueError('El estudio de latencia requiere tareas compartidas con referencia evaluable; también se aplica a la CLI.')
     if campaign is None and config.adapter == "ollama" and os.environ.get("ARENA_OLLAMA_URL"):
@@ -60,6 +65,13 @@ def schedule(store, config, tasks, environments, branch_tasks=None, benchmark=No
                             'reference_sent_to_model':False}
     if conditions is not None:
         snapshot['conditions'] = conditions
+    if config.adapter == 'codex':
+        from .openai_codex import RUNTIME_INSTRUCTIONS
+        snapshot['conditions'].update(provider='ChatGPT subscription via local Codex App Server',
+            provider_link=store.provider_link(), resource_scope='host_and_worker; excludes remote inference and Codex child',
+            runtime_instructions=RUNTIME_INSTRUCTIONS, native_instructions='Codex also adds its own internal instructions',
+            unsupported_settings=['temperature','seed','num_ctx','max_output_tokens','keep_alive'],
+            account_limits='Shared with Codex; credits may apply according to account settings')
     if benchmark is not None:
         snapshot['benchmark'] = benchmark
     snapshot["data_sha256"] = hashlib.sha256(json.dumps({"tasks": snapshot["tasks"], "branch_tasks": branch_tasks, "environments": environments}, sort_keys=True).encode()).hexdigest()

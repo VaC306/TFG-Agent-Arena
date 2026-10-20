@@ -17,6 +17,10 @@ test('cancelación real conserva trazas y libera el worker', async ({page}) => {
   }
   for (const branch of ['A','B']) {
     expect(result.overviews[branch]).toMatchObject({finished:1,cancelled:1,execution_errors:0,evaluated:0,timed_answers:0});
+    const card=page.getByRole('region',{name:`case, rama ${branch}, repetición 1`,exact:true});
+    await card.getByText(`Referencia y métricas de ${branch}`,{exact:true}).press('Enter');
+    await expect(card).toContainText('Sin evaluación: ejecución cancelada.');
+    await expect(card).not.toContainText('Evaluación pendiente.');
   }
   await expect(page.locator('.agent-card .result-breakdown').filter({hasText:'1 canceladas'})).toHaveCount(2);
   await expect(page.locator('.agent-card .result-breakdown').filter({hasText:'0 errores de ejecución'})).toHaveCount(2);

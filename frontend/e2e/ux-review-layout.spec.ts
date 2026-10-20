@@ -87,7 +87,7 @@ test('ejemplo simulado, worker contextual y navegación compacta sin overflow',a
   await page.getByLabel('Entrada compartida',{exact:true}).fill('Conservar mi preparación');
   await expect(page.locator('arena-composer arena-worker-status')).toContainText('Worker disponible');
   const created=page.waitForResponse(r=>r.url().endsWith('/api/experiments')&&r.request().method()==='POST');
-  await page.getByRole('button',{name:'Probar ejemplo simulado',exact:true}).press('Enter');
+  await page.getByRole('button',{name:'Probar recorrido simulado de pedidos',exact:true}).press('Enter');
   const id=(await(await created).json()).id;
   await expect.poll(async()=> (await detail(page,id)).runs.every((r:any)=>!['queued','running'].includes(r.status))).toBe(true);
   await page.getByRole('button',{name:'↻ Actualizar',exact:true}).click();
@@ -110,8 +110,9 @@ test('ejemplo simulado, worker contextual y navegación compacta sin overflow',a
   await expect(page.locator('arena-composer arena-worker-status')).toContainText('Sin señal reciente');
   await page.screenshot({path:path.resolve('..','runtime','ux-review-evidence',`inicio-compacto-${info.project.name}.png`),fullPage:true});
   await page.getByRole('button',{name:'Perfil de Prueba E2E'}).click();
-  await expect(page.getByText('ChatGPT',{exact:true})).not.toBeVisible();
+  await expect(page.getByRole('heading',{name:'ChatGPT · suscripción',exact:true})).toBeVisible();
+  await expect(page.getByText('Claude',{exact:true})).not.toBeVisible();
   await page.getByText('Conexiones futuras',{exact:true}).press('Enter');
-  await expect(page.getByText('ChatGPT',{exact:true})).toBeVisible();
+  await expect(page.getByText('Claude',{exact:true})).toBeVisible();
   expect(modelRequests).toEqual([]);
 });

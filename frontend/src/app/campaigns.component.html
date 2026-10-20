@@ -20,7 +20,7 @@
   @if (loading()) { <arena-loading label="Cargando el diseño y sus intentos…" /> }
   @if (detail(); as campaign) {
     <section class="campaign-detail panel" aria-labelledby="campaign-title" [attr.aria-busy]="busy()">
-      <div class="section-header"><div><p class="eyebrow">DISEÑO FIJADO</p><h2 id="campaign-title">{{ campaign.name }}</h2><p class="hint">{{ campaign.created_at * 1000 | date:'dd/MM/yyyy · HH:mm' }} · {{ campaign.design.config.adapter === 'simulated' ? 'Simulación' : 'Ollama' }} · {{ campaign.design.config.split === 'eval' ? 'Evaluación' : 'Desarrollo' }}</p></div><button class="primary" (click)="repeat()" [disabled]="busy() || loading() || !!error() || !!listError() || !!campaign.pending || planFinished()">{{ busy() ? 'Guardando intento…' : 'Repetir diseño' }}</button></div>
+      <div class="section-header"><div><p class="eyebrow">DISEÑO FIJADO</p><h2 id="campaign-title">{{ campaign.name }}</h2><p class="hint">{{ campaign.created_at * 1000 | date:'dd/MM/yyyy · HH:mm' }} · {{ campaign.design.config.adapter === 'simulated' ? 'Simulación' : campaign.design.config.adapter === 'codex' ? 'ChatGPT · Codex' : 'Ollama' }} · {{ campaign.design.config.split === 'eval' ? 'Evaluación' : 'Desarrollo' }}</p></div><button class="primary" (click)="repeat()" [disabled]="busy() || loading() || !!error() || !!listError() || !!campaign.pending || planFinished()">{{ busy() ? 'Guardando intento…' : 'Repetir diseño' }}</button></div>
       @if (busy()) { <arena-loading label="Guardando un intento nuevo…" /> }
       <p class="hint">{{ campaign.case_count }} casos · {{ campaign.design.config.repetitions }} repeticiones por caso en cada intento · A: {{ campaign.design.config.agents.A.model }} · B: {{ campaign.design.config.agents.B.model }}</p>
       <p class="hint" role="status">{{ campaign.attempts.length }} intentos · {{ campaign.pending }} ejecuciones pendientes · {{ campaign.analysis.included_attempts.length }}/{{ campaign.attempts.length }} intentos compatibles incluidos · {{ campaign.analysis.excluded_attempts.length }} excluidos.</p>
@@ -105,6 +105,6 @@
       </details>
     }
   } @else if (!loading() && !loadingList() && !listError() && !error()) {
-    <section class="empty panel"><h2>Prepara tu primera campaña.</h2><p>Termina una comparación, abre sus resultados y fija su diseño para repetirlo.</p></section>
+    <section class="empty panel"><h2>Prepara tu primera campaña.</h2><p>Termina una comparación, abre sus resultados y fija su diseño para repetirlo.</p><button class="secondary" (click)="continued.emit()">{{ hasComparison() ? 'Abrir resultados' : 'Preparar comparación' }}</button></section>
   }
 </section>

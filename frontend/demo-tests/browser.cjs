@@ -136,6 +136,20 @@ const server = http.createServer((req,res) => {
       await page.goto(base+'#/results?comparison='+catalog.experiments[9].id);
       await expect(page.locator('.experiment-meta')).toContainText('SIMULACIÓN');
       await page.reload(); await expect(page.locator('.experiment-meta')).toContainText('SIMULACIÓN');
+      const cancelledEntry=Object.entries(catalog.details).find(([,d])=>d.runs.some(r=>r.status==='cancelled'));
+      assert.ok(cancelledEntry,'Saved cancellation fixture');
+      const [cancelledId,cancelledDetail]=cancelledEntry,run=cancelledDetail.runs.find(r=>r.status==='cancelled');
+      await page.goto(base+'#/results?comparison='+cancelledId);
+      const caseCard=page.locator('.case-result').filter({has:page.getByRole('heading',{name:`${run.task_id} · Repetición ${run.repetition+1}`,exact:true})});
+      await caseCard.locator('.case-input > summary').press('Enter');
+      const savedTask=cancelledDetail.snapshot.tasks?.find(t=>t.id===run.task_id);
+      if(savedTask)await expect(caseCard.locator('.case-input')).toContainText(savedTask.input);
+      else await expect(caseCard.locator('.case-input')).toContainText('Entrada no incluida en esta evidencia.');
+      const cancelledCard=page.getByRole('region',{name:`${run.task_id}, rama ${run.branch}, repetición ${run.repetition+1}`,exact:true});
+      await cancelledCard.getByText(`Referencia y métricas de ${run.branch}`,{exact:true}).press('Enter');
+      await expect(cancelledCard).toContainText('Sin evaluación: ejecución cancelada.');
+      await expect(cancelledCard).not.toContainText('Evaluación pendiente.');
+      await page.screenshot({path:path.join(output,`${name}-cancelled-context.png`),fullPage:true,animations:'disabled'});
       assert.deepEqual(bad,[],'No backend, localhost service, or external requests'); assert.deepEqual(errors,[]);
       await context.close(); console.log(`${name}: navigation, branch filter, comparison, diagnostics, downloads, missing data, reload and request isolation passed`);
     }

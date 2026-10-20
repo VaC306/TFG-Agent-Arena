@@ -21,7 +21,7 @@ test('registro, teclado, modal, sesión y recarga', async ({page}) => {
   await page.getByLabel('Contraseña',{exact:true}).fill('Fixture-password-42');
   await expect(page.getByLabel('Usuario',{exact:true})).toHaveValue(username);
   await page.getByLabel('Contraseña',{exact:true}).press('Enter');
-  await expect(page.getByRole('heading',{name:'Perfil',exact:true})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Compara con tus datos.',exact:true})).toBeFocused();
   await page.getByRole('button',{name:'Comparar',exact:true}).click();
   await page.reload();
   await expect(page.getByRole('heading',{name:'Una nueva comparación'})).toBeVisible();

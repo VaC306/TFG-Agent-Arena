@@ -41,6 +41,8 @@ export async function compare(page:Page, name:string, input='saludo', timeout=10
   await expect(page.getByRole('status').filter({hasText:'fixture.csv'})).toContainText('1 casos · 1 con referencia · 2 ejecuciones');
   const conditions=page.locator('details').filter({has:page.getByText('Condiciones de ejecución',{exact:true})});
   if (await conditions.getAttribute('open') === null) await page.getByText('Condiciones de ejecución',{exact:true}).click();
+  const advanced=page.locator('.advanced-settings');
+  if (await advanced.getAttribute('open') === null) await advanced.locator('summary').click();
   await page.getByLabel('Semilla (0–2147483647)',{exact:true}).fill('17');
   await page.getByLabel('Tiempo límite (1–3600 segundos)',{exact:true}).fill(String(timeout));
   const created = page.waitForResponse(response => response.url().endsWith('/api/comparisons') && response.request().method()==='POST');

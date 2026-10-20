@@ -57,7 +57,7 @@ class SavedPrompt(Contract):
 
 class Preferences(Contract):
     name: str = Field(default='Comparación personalizada', max_length=120)
-    adapter: Literal['simulated', 'ollama'] = 'simulated'
+    adapter: Literal['simulated', 'ollama', 'codex'] = 'simulated'
     mode: Literal['same_model', 'different_models'] = 'same_model'
     source: Literal['manual', 'dataset'] = 'manual'
     independentInputs: bool = Field(default=False, strict=True)

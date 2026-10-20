@@ -10,6 +10,10 @@ export class DemoArenaService extends ArenaService {
       .then(response => { if (!response.ok) throw new Error('No se pudieron cargar los resultados guardados.'); return response.json() as Promise<Catalog>; })
       .catch(error => { this.cached = null; throw error; });
   }
+  override async openaiStatus() { return {linked:false}; }
+  override async openaiConnect():Promise<never> { return this.readonlyError(); }
+  override async openaiDisconnect():Promise<never> { return this.readonlyError(); }
+  override async openaiModels():Promise<never> { return this.readonlyError(); }
   override async experiments() { return (await this.catalog()).experiments; }
   override async detail(id:string) { const detail = (await this.catalog()).details[id]; if (!detail) throw new Error('Comparación no incluida en la selección.'); return detail; }
   override async modelResults() { return {entries:(await this.catalog()).entries}; }

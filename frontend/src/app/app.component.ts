@@ -1,4 +1,5 @@
 import { partialAnswer } from './visual-data';
+import { caseInputs, evaluationStatus } from './result-presentation';
 import { ExecutionGuideComponent } from './execution-guide.component';
 import { TermHelpComponent } from './term-help.component';
 import { TimeChartComponent } from './time-chart.component';
@@ -76,6 +77,7 @@ export class AppComponent {
     if (this.selectedRun() && this.view() === 'results' && !document.querySelector('dialog[open]')) { event.preventDefault(); this.closeTrace(true); }
   }
   navigate(view: 'compose' | 'results' | 'profile' | 'guide' | 'contact' | 'models' | 'campaigns', write = true) {
+    if (view !== this.view()) this.notice.set('');
     if (view !== 'results') this.closeTrace();
     this.view.set(view);
     if (write) this.writeRoute();
@@ -103,6 +105,8 @@ export class AppComponent {
   branchFilter = signal('all');
   isTerminal = terminal;
   partialAnswer = partialAnswer;
+  evaluationStatus = evaluationStatus;
+  inputsFor(taskId: string) { return caseInputs(this.detail()?.snapshot, taskId); }
   labels: Record<Status, string> = {
     queued: 'En cola', running: 'En curso', succeeded: 'Correcta', failed: 'Fallida',
     completed: 'Completada · sin evaluar',
@@ -291,6 +295,11 @@ export class AppComponent {
 
   openCampaign(id:string) { this.campaignId.set(id); this.navigate('campaigns'); }
 
+  continueFromCampaigns() {
+    if (this.detail() && !this.loading() && !this.error()) this.navigate('results');
+    else this.clearSelection();
+  }
+
   async createCampaign() {
     if (this.campaignBusy() || this.pending() || !this.detail()) return;
     const invalid = textError(this.campaignName(),'Nombre de campaña',120);
@@ -337,7 +346,7 @@ export class AppComponent {
     this.cancelling.set(run.id);
     try {
       await this.api.cancel(run.id);
-      this.notice.set('Cancelación solicitada. Se conservarán las trazas y el resultado.');
+      this.notice.set(`Cancelación solicitada para ${run.task_id}, variante ${run.branch}. Se conservarán las trazas y el resultado.`);
       await this.refresh();
     } catch { this.error.set('No se pudo confirmar la cancelación. Actualiza el estado antes de volver a intentarlo.'); }
     finally { this.cancelling.set(''); }

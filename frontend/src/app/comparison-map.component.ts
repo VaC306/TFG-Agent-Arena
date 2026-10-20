@@ -17,9 +17,9 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
       <li>{{ independent && !dataset ? '↔ Entradas independientes' : '= Mismos datos y referencias' }}</li>
       <li>{{ modelsEqual ? '= Mismo modelo' : '↔ Modelos distintos' }}</li>
       <li><button class="text-button" type="button" (click)="edit.emit('prompt-b')">{{ promptsEqual ? '= Mismo prompt' : '↔ Prompts diferentes' }}</button></li>
-      <li>= Mismos parámetros</li>
+      <li>{{ remote ? '= Tiempo límite compartido' : '= Mismos parámetros' }}</li>
     </ul>
-    <p class="hint">{{ simulated ? 'Simulación: los nombres representan configuraciones; no se ejecutan modelos reales.' : 'Ollama: se ejecutan los modelos locales seleccionados.' }} El mapa describe lo preparado; los resultados conservarán su propia copia.</p>
+    <p class="hint">{{ simulated ? 'Simulación: los nombres representan configuraciones; no se ejecutan modelos reales.' : remote ? 'ChatGPT: las entradas se envían a OpenAI mediante Codex y consumen los límites de tu cuenta.' : 'Ollama: se ejecutan los modelos locales seleccionados.' }} El mapa describe lo preparado; los resultados conservarán su propia copia.</p>
   </nav>
 `})
 export class ComparisonMapComponent {
@@ -34,5 +34,6 @@ export class ComparisonMapComponent {
   @Input() planned: number | null = 0;
   @Input() evaluation = 'none';
   @Input() simulated = true;
+  @Input() remote = false;
   @Output() edit = new EventEmitter<string>();
 }

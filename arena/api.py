@@ -13,6 +13,7 @@ from .scheduler import submit
 from .export import csv_text
 from .comparisons import ComparisonRequest, PROMPTS, submit_comparison
 from .adapters import Ollama
+from .openai_codex import inspect_session
 from .datasets import DatasetUpload, parse_dataset
 from .accounts import Accounts, COOKIE, SESSION_SECONDS, Credentials, Registration, Preferences, ProfileUpdate
 from .json_input import load_json
@@ -171,13 +172,51 @@ def create_app(db_path=None, root=None):
         except Exception:
             return {'available': False, 'models': [], 'error': 'Ollama no está disponible. Inícialo y actualiza la lista de modelos instalados.'}
 
+    @app.get('/openai/status')
+    async def openai_status(store: Store = Depends(user_store)):
+        return {'linked':store.provider_link() is not None}
+
+    @app.post('/openai/connect')
+    async def openai_connect(store: Store = Depends(user_store)):
+        try:
+            session = await inspect_session()
+            store.link_provider(session['fingerprint'])
+            return {'linked':True,'plan':session['plan'],'models':session['models']}
+        except (ValueError, OSError, TimeoutError):
+            raise HTTPException(422, 'No se pudo conectar ChatGPT. Instala o actualiza Codex e inicia sesión con codex login; después reintenta. No se admiten API keys.')
+
+    @app.post('/openai/disconnect')
+    async def openai_disconnect(store: Store = Depends(user_store)):
+        store.link_provider(None)
+        return {'linked':False}
+
+    @app.get('/openai/models')
+    async def openai_models(store: Store = Depends(user_store)):
+        fingerprint = store.provider_link()
+        if not fingerprint:
+            raise HTTPException(422, 'Vincula primero la sesión de ChatGPT de este equipo.')
+        try:
+            session = await inspect_session(fingerprint)
+            return {'linked':True,'plan':session['plan'],'models':session['models']}
+        except (ValueError, OSError, TimeoutError):
+            raise HTTPException(422, 'No se pudo verificar la sesión vinculada. Comprueba Codex y vuelve a vincular ChatGPT si cambiaste de cuenta.')
+
     @app.post('/comparisons', status_code=201)
     async def create_comparison(request: Request, store: Store = Depends(user_store)):
         comparison = await auth_body(request, ComparisonRequest, 12 * 1024 * 1024)
         try:
+            if comparison.adapter == 'codex':
+                fingerprint = store.provider_link()
+                if not fingerprint:
+                    raise ValueError('Vincula primero ChatGPT para esta cuenta local de Arena.')
+                session = await inspect_session(fingerprint)
+                if any(a.model not in {m['name'] for m in session['models']} for a in comparison.agents.values()):
+                    raise ValueError('Selecciona un modelo del catálogo actual de Codex.')
             return {'id': submit_comparison(store, comparison)}
         except ValidationError as exc:
             raise HTTPException(422, exc.errors(include_input=False, include_context=False))
+        except (OSError, TimeoutError):
+            raise HTTPException(422, 'No se pudo verificar Codex. Comprueba el cliente oficial y reintenta.')
         except ValueError as exc:
             raise HTTPException(422, str(exc)[:500])
 

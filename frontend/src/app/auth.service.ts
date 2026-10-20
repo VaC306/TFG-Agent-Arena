@@ -5,7 +5,7 @@ import { firstValueFrom, tap, timeout } from 'rxjs';
 import { EvaluationMode, InferenceSettings } from './arena.service';
 
 export interface Preferences {
-  name: string; adapter: 'simulated' | 'ollama'; mode: 'same_model' | 'different_models';
+  name: string; adapter: 'simulated' | 'ollama' | 'codex'; mode: 'same_model' | 'different_models';
   source: 'manual' | 'dataset'; repetitions: number; modelA: string; modelB: string;
   promptA: {template: string; text: string}; promptB: {template: string; text: string};
   evaluation?:EvaluationMode; settings?:InferenceSettings;
@@ -46,7 +46,12 @@ export class AuthService {
     if (DEMO_MODE) throw new Error('El acceso lo gestiona Sites. La demo no modifica cuentas ni preferencias.');
     const epoch = ++this.sessionEpoch;
     await firstValueFrom(this.http.post('/api/auth/logout', {}).pipe(timeout(15000)));
-    if (epoch === this.sessionEpoch) this.user.set(null);
+    if (epoch === this.sessionEpoch) {
+      // Explicit logout ends this account's selection, not its saved drafts.
+      // Ordinary login and expired-session recovery still support deep links.
+      window.history.replaceState(null, '', '#/compose');
+      this.user.set(null);
+    }
   }
 
   async savePreferences(preferences: Preferences) {

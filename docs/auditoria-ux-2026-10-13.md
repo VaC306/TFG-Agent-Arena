@@ -409,3 +409,28 @@ físico ni modelos reales. El contraste automático cubre texto renderizado en l
 pantallas comprobadas, no certifica todas las combinaciones ni controles del SO.
 Las validaciones del servidor siguen siendo definitivas y pueden rechazar una
 petición por disponibilidad, permisos o condiciones no conocidas en el borrador.
+
+### Continuación tras exploración con contexto mínimo, 20 de octubre de 2026
+
+El usuario aprobó A–F del plan posterior a una exploración sin leer previamente
+esta auditoría ni componentes/E2E. Implementados entrada por caso junto a las
+respuestas, evaluación coherente en cancelaciones terminales, limpieza de ruta al
+cerrar sesión, identificación del ejemplo simulado de pedidos, separación de
+evaluación/repeticiones y parámetros avanzados, y continuación desde campañas
+vacías con avisos contextuales. Se conservan UX-01 a UX-14, demo estática,
+snapshots, borradores por cuenta, temas y lanzador.
+
+Verificación final: **52 pruebas frontend**, **261 backend**, **64 E2E** (32 por
+viewport), compilaciones local/demo, TypeScript E2E y demo en navegador con
+aislamiento de API aprobados. Una primera pasada tuvo 60 aprobadas y cuatro
+expectativas antiguas de regreso a Perfil; se ajustaron al regreso autorizado a
+Comparar, conservando comprobaciones de sesión/aislamiento. Sin reintentos.
+
+[Registro completo, entorno, capturas y límites](ux-implementacion-2026-10-20.md).
+La reorganización sigue siendo una hipótesis de mejora de comprensión, no un
+resultado medido con personas. No hubo commit, push ni publicación.
+
+Después se revisaron fuentes oficiales de Claude para una posible integración
+local con su cliente original y cuenta de suscripción. [Viabilidad y siguiente
+paso](integracion-claude-suscripcion.md). No se ha instalado ni conectado el
+cliente, implementado ese proveedor o consumido cuota.

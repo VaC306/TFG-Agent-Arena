@@ -7,7 +7,7 @@ import re
 def inference_identity(identifier, metadata):
     model = metadata.get('model')
     model = model if isinstance(model, dict) else {}
-    identity = {'identifier': identifier if ':' in identifier else identifier + ':latest',
+    identity = {'identifier': identifier if metadata.get('adapter') == 'codex' or ':' in identifier else identifier + ':latest',
                 'adapter': metadata.get('adapter', 'ollama'), 'digest': model.get('digest'),
                 'server_version': metadata.get('version', {}).get('version'),
                 'quantization': model.get('details', {}).get('quantization_level')}
@@ -49,6 +49,8 @@ def protocol_report(snapshot, runs):
         models_equal = True
     if config['adapter'] == 'simulated':
         warnings.append('Simulación: tokens y tiempo de generación sintéticos. El tiempo del agente mide el simulador, no un modelo real; no aporta evidencia sobre calidad de modelos reales.')
+    if config['adapter'] == 'codex':
+        warnings.append('ChatGPT mediante Codex: texto sin herramientas. El cliente añade instrucciones internas. Temperatura, semilla, contexto y límite de salida no se aplican; solo se aplica el tiempo límite. No se mide el servidor remoto ni se verifica un digest del modelo. Consume los límites compartidos de Codex y, según la cuenta, créditos.')
     if not shared:
         warnings.append('Entradas independientes: las diferencias no se pueden atribuir solo al prompt o al modelo.')
     if not prompts_equal:
@@ -61,7 +63,7 @@ def protocol_report(snapshot, runs):
         warnings.append('Se detectó un cambio de modelo o servidor. Las ejecuciones afectadas se detuvieron antes de enviar la entrada.')
     if any(t.get('evaluation', 'exact_match') == 'none' or t.get('expected_answer') is None and not t.get('criteria') for t in tasks):
         warnings.append('Hay casos sin evaluación automática de calidad. Las respuestas abiertas requieren revisión humana.')
-    if config['adapter'] != 'simulated' and (set(identities) != {'A', 'B'} or not all(i['verified'] for i in identities.values())):
+    if config['adapter'] == 'ollama' and (set(identities) != {'A', 'B'} or not all(i['verified'] for i in identities.values())):
         warnings.append('La identidad de ambos modelos aún no está verificada. Se registra al ejecutar, no al guardar.')
     if snapshot.get('conditions',{}).get('warmup','none') == 'per_run':
         warnings.append('Calentamiento neutro de un token antes de cada ejecución; tokens y duración separados. El tiempo total del agente lo incluye. No garantiza modelo residente ni un estado térmico estable.')
@@ -73,8 +75,9 @@ def protocol_report(snapshot, runs):
         warnings.append('Orden equilibrado: cada rama ejecuta primero la mitad de las repeticiones de cada caso. Se conserva el orden observado; esto no elimina efectos de caché o carga externa.')
     if snapshot.get('conditions',{}).get('latency_plan'):
         warnings.append('Estudio de tiempo de tarea fijado antes de ejecutar: completa todos los intentos previstos. No amplíes o detengas la muestra según la diferencia observada.')
-    warnings.append('Política de memoria del modelo (keep_alive): ' + snapshot.get('conditions', {}).get('keep_alive', 'no registrada') + '. No se garantiza un inicio en frío si otro programa lo tiene cargado.')
-    warnings.append('Semilla fija no garantiza respuestas idénticas. La carga de otros programas no está aislada.')
+    if config['adapter'] != 'codex':
+        warnings.append('Política de memoria del modelo (keep_alive): ' + snapshot.get('conditions', {}).get('keep_alive', 'no registrada') + '. No se garantiza un inicio en frío si otro programa lo tiene cargado.')
+        warnings.append('Semilla fija no garantiza respuestas idénticas. La carga de otros programas no está aislada.')
     if config['repetitions'] > 1:
         warnings.append('Las repeticiones de un mismo caso no son observaciones independientes.')
     branches = {}

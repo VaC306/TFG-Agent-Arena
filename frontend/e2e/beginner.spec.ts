@@ -44,7 +44,7 @@ test('ayuda opcional ejecuta ejemplo separado y conserva texto, archivos, datase
   await expect(page.locator('.dataset-summary')).toContainText('propio.csv');
   await page.locator('.getting-started > summary').press('Enter');
   const created=page.waitForResponse(r=>r.url().endsWith('/api/experiments')&&r.request().method()==='POST');
-  await page.getByRole('button',{name:'Abrir ejemplo guiado'}).press('Enter');const response=await created;expect(response.status()).toBe(201);const id=(await response.json()).id;
+  await page.locator('.getting-started').getByRole('button',{name:'Probar recorrido simulado de pedidos'}).press('Enter');const response=await created;expect(response.status()).toBe(201);const id=(await response.json()).id;
   await expect(page.getByLabel('Orientación de la ejecución')).toBeVisible();
   await expect.poll(async()=>(await detail(page,id)).runs.every((r:any)=>!['queued','running'].includes(r.status))).toBe(true);
   await page.getByRole('button',{name:'↻ Actualizar',exact:true}).click();

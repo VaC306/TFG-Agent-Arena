@@ -43,6 +43,9 @@ class Store:
                 CREATE INDEX IF NOT EXISTS annotations_experiment ON attempt_annotations(experiment_id);
                 CREATE TABLE IF NOT EXISTS worker_signals(
                     id TEXT PRIMARY KEY, updated_at REAL NOT NULL, state TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS provider_links(
+                    owner_id TEXT NOT NULL, provider TEXT NOT NULL, fingerprint TEXT NOT NULL,
+                    connected_at REAL NOT NULL, PRIMARY KEY(owner_id,provider));
             """)
 
     @contextmanager
@@ -55,6 +58,23 @@ class Store:
                 yield db
         finally:
             db.close()  # sqlite's transaction context does not close the connection.
+
+    def provider_link(self, experiment_id=None):
+        owner = self.owner_id
+        with self.connect() as db:
+            if experiment_id is not None:
+                row = db.execute('SELECT owner_id FROM experiment_owners WHERE experiment_id=?', (experiment_id,)).fetchone()
+                owner = row['owner_id'] if row else None
+            row = db.execute('SELECT fingerprint FROM provider_links WHERE owner_id=? AND provider=?', (owner,'codex')).fetchone()
+            return row['fingerprint'] if row else None
+
+    def link_provider(self, fingerprint):
+        if not self.owner_id:
+            raise ValueError('Se requiere una cuenta local para vincular ChatGPT.')
+        with self.connect() as db:
+            db.execute('DELETE FROM provider_links WHERE owner_id=? AND provider=?', (self.owner_id,'codex'))
+            if fingerprint:
+                db.execute('INSERT INTO provider_links VALUES (?,?,?,?)', (self.owner_id,'codex',fingerprint,self.clock()))
 
     def create(self, experiment_id, snapshot, runs, campaign=None):
         with self.connect() as db:

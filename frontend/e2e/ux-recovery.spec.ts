@@ -28,6 +28,7 @@ test('borrador por cuenta: teclado, recarga, adjuntos, descarte y resultado inmu
   await page.getByText('Editar instrucciones A',{exact:true}).click();
   await page.locator('#prompt-a').fill('Prompt ficticio conservado.');
   await page.getByText('Condiciones de ejecución',{exact:true}).click();
+  await page.getByText('Parámetros avanzados',{exact:true}).click();
   await page.getByLabel('Semilla (0–2147483647)',{exact:true}).fill('321');
   await page.locator('#a-files').setInputFiles({name:'nota.txt',mimeType:'text/plain',buffer:Buffer.from('Adjunto ficticio')});
   await page.locator('#b-files').setInputFiles({name:'otra-nota.txt',mimeType:'text/plain',buffer:Buffer.from('Segundo adjunto ficticio')});
@@ -170,7 +171,7 @@ for (const status of [200,401]) test(`validación tardía ${status} no recupera 
   await page.getByLabel('Usuario',{exact:true}).fill(`ux_${randomUUID().replaceAll('-','').slice(0,24)}`);
   await page.getByLabel('Contraseña',{exact:true}).fill('Fixture-password-42');
   await page.getByRole('button',{name:'Crear cuenta',exact:true}).click();
-  await expect(page.getByRole('heading',{name:'Perfil',exact:true})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Compara con tus datos.',exact:true})).toBeFocused();
   await page.getByRole('button',{name:'Comparar',exact:true}).click();
   await expect(page.getByRole('heading',{name:'Una nueva comparación'})).toBeVisible();
   release(); await completed; await page.unroute('**/api/datasets/validate');

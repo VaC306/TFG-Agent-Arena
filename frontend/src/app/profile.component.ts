@@ -1,3 +1,4 @@
+import { OpenaiConnectionComponent } from './openai-connection.component';
 import { Component, ElementRef, EventEmitter, inject, Output, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService, accountError } from './auth.service';
@@ -6,7 +7,7 @@ import { textError } from './validation';
 import { containDialogFocus } from './info-dialog.component';
 import { LoadingIndicatorComponent } from './loading-indicator.component';
 
-@Component({selector:'arena-profile', standalone:true, imports:[FormsModule,LoadingIndicatorComponent], template:`
+@Component({selector:'arena-profile', standalone:true, imports:[FormsModule,LoadingIndicatorComponent,OpenaiConnectionComponent], template:`
   <section class="profile-view view-enter" aria-labelledby="profile-title">
     <div class="section-header"><div><p class="eyebrow">Tu espacio</p><h1 id="profile-title">Perfil</h1></div><button class="secondary" (click)="closed.emit()">Volver</button></div>
     <div class="profile-columns"><form #form="ngForm" (ngSubmit)="save()" class="profile-form">
@@ -18,11 +19,11 @@ import { LoadingIndicatorComponent } from './loading-indicator.component';
       <button type="button" class="text-button" [disabled]="busy()" (click)="logout()">Cerrar sesión</button>
       @if (message()) { <p class="hint" role="status">{{ message() }}</p> }
       @if (error()) { <p id="profile-error" class="alert error" role="alert">{{ error() }}</p> }
-    </form><section class="connections"><h2>Modelos locales</h2><p class="hint">La ejecución pertenece a esta instalación.</p>
+    </form><section class="connections"><h2>Conexiones de modelos</h2><p class="hint">Gestiona las conexiones disponibles desde esta instalación.</p>
       <div class="connection-row"><div><h3>Ollama</h3><p class="hint">Modelos instalados en esta máquina</p></div><span class="tag">Local</span></div>
-      <details><summary>Conexiones futuras</summary><div class="connection-row"><div><h3>ChatGPT</h3><p class="hint">Vinculación por cuenta en una próxima fase</p></div><span class="tag">Próximamente</span></div>
+      <arena-openai-connection /><details><summary>Conexiones futuras</summary>
       <div class="connection-row"><div><h3>Claude</h3><p class="hint">Vinculación por cuenta en una próxima fase</p></div><span class="tag">Próximamente</span></div>
-      <p class="hint">Todavía no se conectan cuentas externas ni se solicitan claves de estos servicios.</p></details>
+      <p class="hint">Claude todavía no está conectado.</p></details>
     </section></div>
     <section class="profile-history" aria-labelledby="history-settings-title">
       <div><h2 id="history-settings-title">Historial</h2><p class="hint">Elimina las comparaciones, campañas y resultados de esta cuenta. Tus preferencias se conservan.</p></div>

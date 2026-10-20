@@ -21,6 +21,8 @@ export class CampaignsComponent {
   // Preserve the key after an uncertain response so retrying cannot enqueue a duplicate.
   private requests = new Map<string,string>();
   initialId = input('');
+  hasComparison = input(false);
+  continued = output<void>();
   opened = output<string>();
   changed = output<void>();
   campaigns = signal<CampaignSummary[]>([]);
