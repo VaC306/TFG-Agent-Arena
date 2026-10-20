@@ -1,3 +1,4 @@
+import { TermHelpComponent } from './term-help.component';
 import { Component, DestroyRef, Input, Output, EventEmitter, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { InputData, Upload } from './arena.service';
@@ -6,7 +7,7 @@ import { LoadingIndicatorComponent } from './loading-indicator.component';
 import { LoadingService } from './loading.service';
 
 @Component({
-  selector: 'arena-input-editor', standalone: true, imports: [FormsModule,LoadingIndicatorComponent],
+  selector: 'arena-input-editor', standalone: true, imports: [TermHelpComponent,FormsModule,LoadingIndicatorComponent],
   template: `
     <label [for]="slot + '-input'">{{ title }}</label>
     <textarea [id]="slot + '-input'" [(ngModel)]="value.text" [ngModelOptions]="{standalone: true}"
@@ -30,7 +31,7 @@ import { LoadingService } from './loading.service';
         </details>
       }
     </div>
-    <details class="reference-input"><summary>Respuesta esperada (opcional)</summary>
+    <arena-term-help term="reference" /><details class="reference-input"><summary>Respuesta esperada (opcional)</summary>
       <textarea [id]="slot + '-reference'" [attr.aria-invalid]="invalidReference ? 'true' : null" [attr.aria-describedby]="invalidReference ? 'composer-error' : null" [attr.aria-label]="'Respuesta esperada ' + title" [(ngModel)]="value.expected_answer" [ngModelOptions]="{standalone: true}"
         rows="2" maxlength="6000" placeholder="Sin referencia, la calidad aparecerá como no evaluada."></textarea>
       <p class="hint">Se usa con la evaluación de Condiciones de ejecución. La referencia no se envía al modelo. Para JSON equivalente, escribe JSON válido.</p>

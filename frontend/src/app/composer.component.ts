@@ -1,3 +1,5 @@
+import { ComparisonMapComponent } from './comparison-map.component';
+import { TermHelpComponent } from './term-help.component';
 import { Component, DestroyRef, EventEmitter, inject, Input, Output, signal } from '@angular/core';
 import { WorkerStatusComponent } from './worker-status.component';
 import { FormsModule } from '@angular/forms';
@@ -37,11 +39,13 @@ function validDraft(value: unknown, owner: string | undefined): value is Compose
 }
 
 @Component({
-  selector: 'arena-composer', standalone: true, imports: [FormsModule, InputEditorComponent, InfoDialogComponent,LoadingIndicatorComponent,WorkerStatusComponent],
+  selector: 'arena-composer', standalone: true, imports: [ComparisonMapComponent,TermHelpComponent,FormsModule, InputEditorComponent, InfoDialogComponent,LoadingIndicatorComponent,WorkerStatusComponent],
   templateUrl: './composer.component.html',
 })
 export class ComposerComponent {
   @Input() active = true;
+  @Input() exampleBusy = false;
+  @Output() example = new EventEmitter<void>();
   private api = inject(ArenaService);
   private auth = inject(AuthService);
   private activity = inject(LoadingService);
@@ -83,9 +87,10 @@ export class ComposerComponent {
   source: 'manual' | 'dataset' = 'manual';
   independentInputs = false;
   usesIndependentInputs() { return this.mode === 'same_model' && this.independentInputs; }
+  modelsEqual() { return this.mode === 'same_model' || modelIdentity(this.modelA) === modelIdentity(this.modelB); }
   variablesChanged() {
     const changes = [];
-    if (this.mode === 'different_models') changes.push('modelo');
+    if (this.mode === 'different_models' && modelIdentity(this.modelA) !== modelIdentity(this.modelB)) changes.push('modelo');
     if (this.promptA.text !== this.promptB.text) changes.push('prompt');
     if (this.source === 'manual' && this.usesIndependentInputs() && JSON.stringify(this.pack(this.inputA)) !== JSON.stringify(this.pack(this.inputB))) changes.push('datos o referencias');
     return changes.length ? 'Cambia: ' + changes.join(' · ') : 'No cambian las variables configuradas entre A y B.';
@@ -284,11 +289,25 @@ export class ComposerComponent {
       expected_answer:input.expected_answer.trim() ? input.expected_answer : null};
   }
 
-  async submit() {
-    if (this.pendingDraft()) { this.error.set('Recupera o descarta el borrador antes de ejecutar.'); return; }
-    const activeSlots = this.source === 'dataset' ? [] : this.usesIndependentInputs() ? ['inputA','inputB'] : ['shared'];
-    if (this.missingAttachments().some(file => activeSlots.includes(file.slot))) { this.error.set('Reselecciona los adjuntos pendientes o indica que quieres omitirlos antes de ejecutar.'); return; }
-    if (this.busy() || this.modelsBusy() || !this.validModels() || this.datasetBusy() || this.readingA || this.readingB || this.readingShared || (this.source === 'dataset' && !this.dataset())) return;
+  focusField(id: string) {
+    const field = document.getElementById(id);
+    for (let parent = field?.parentElement; parent; parent = parent.parentElement) {
+      if (parent instanceof HTMLDetailsElement) parent.open = true;
+    }
+    field?.focus();
+  }
+
+  preparationIssues() {
+    const issues: {id:string; message:string; group:string}[] = [];
+    if (this.pendingDraft()) issues.push({id:'recover-draft',message:'Recupera o descarta el borrador antes de ejecutar.',group:'data'});
+    const slots = this.source === 'dataset' ? [] : this.usesIndependentInputs() ? ['inputA','inputB'] : ['shared'];
+    for (const file of this.missingAttachments().filter(f => slots.includes(f.slot)))
+      issues.push({id:(file.slot === 'inputA' ? 'a' : file.slot === 'inputB' ? 'b' : 'shared')+'-files',message:'Reselecciona u omite '+file.name+'.',group:'data'});
+    if (this.datasetBusy() || this.readingA || this.readingB || this.readingShared)
+      issues.push({id:'data-source',message:'Espera a que termine la lectura o validación de los datos.',group:'data'});
+    if (this.source === 'dataset' && !this.dataset()) issues.push({id:'dataset-file',message:this.datasetError() || 'Importa un dataset válido para continuar.',group:'data'});
+    if (this.modelsBusy() || !this.validModels()) issues.push({id:'custom-adapter',message:this.modelsBusy() ? 'Consultando modelos instalados…' : 'Revisa el motor y selecciona modelos disponibles.',group:'variants'});
+    if (!this.templates().length) issues.push({id:'retry-templates',message:'Carga las plantillas para continuar.',group:'variants'});
     const fields: [string, string, number, boolean][] = [
       ['comparison-name', this.name, 120, true], ['prompt-a', this.promptA.text, 6000, true], ['prompt-b', this.promptB.text, 6000, true],
       ...(this.source === 'manual' ? (this.usesIndependentInputs() ? [['a', this.inputA], ['b', this.inputB]] as const : [['shared', this.shared]] as const).flatMap(([slot, input]) => [
@@ -296,50 +315,49 @@ export class ComposerComponent {
         [slot + '-reference', input.expected_answer, 6000, false] as [string,string,number,boolean],
       ]) : []),
     ];
-    const badText = fields.find(([, value, max, required]) => textError(value, 'Campo', max, required));
     const labels: Record<string,string> = {'comparison-name':'Nombre', 'prompt-a':'Instrucciones A', 'prompt-b':'Instrucciones B',
       'a-input':'Entrada A', 'b-input':'Entrada B', 'shared-input':'Entrada compartida',
       'a-reference':'Respuesta esperada A', 'b-reference':'Respuesta esperada B', 'shared-reference':'Respuesta esperada'};
-    const invalid = badText ? [badText[0], textError(badText[1], labels[badText[0]], badText[2], badText[3])]
-      : !Number.isInteger(this.repetitions) || this.repetitions < 1 || this.repetitions > 10 ? ['repetitions', 'Elige entre 1 y 10 repeticiones.']
-      : null;
-    if (invalid) {
-      this.invalidField.set(invalid[0]);
-      this.error.set(invalid[1]);
-      const field = document.getElementById(invalid[0]);
-      const details = field?.closest('details');
-      if (details) details.open = true;
-      field?.focus();
-      return;
+    for (const [id,value,max,required] of fields) {
+      const message = textError(value, labels[id], max, required);
+      if (message) issues.push({id,message,group:id.includes('prompt') ? 'variants' : id === 'comparison-name' ? 'conditions' : 'data'});
     }
+    if (!Number.isInteger(this.repetitions) || this.repetitions < 1 || this.repetitions > 10)
+      issues.push({id:'repetitions',message:'Elige entre 1 y 10 repeticiones.',group:'conditions'});
     const parameters: [string, number, number, number, boolean][] = [
       ['temperature',this.settings.temperature,0,2,false], ['seed',this.settings.seed,0,2147483647,true],
       ['context',this.settings.num_ctx,512,131072,true], ['output-limit',this.settings.max_output_tokens,1,16384,true],
       ['timeout',this.settings.timeout_s,1,3600,true],
     ];
     if (this.settings.latency_study) parameters.push(['planned-attempts',this.settings.planned_attempts,2,20,true]);
-    const badParameter = parameters.find(([,n,min,max,integer]) => !Number.isFinite(n) || n < min || n > max || integer && !Number.isInteger(n));
-    if (badParameter) {
-      this.invalidField.set(badParameter[0]); this.error.set('Revisa este parámetro y los límites indicados.');
-      const field = document.getElementById(badParameter[0]); const details = field?.closest('details'); if (details) details.open = true; field?.focus(); return;
+    const parameterLabels: Record<string,string> = {temperature:'Temperatura',seed:'Semilla',context:'Contexto','output-limit':'Máximo de salida',timeout:'Tiempo límite','planned-attempts':'Intentos previstos'};
+    for (const [id,n,min,max,integer] of parameters) {
+      if (!Number.isFinite(n) || n < min || n > max || integer && !Number.isInteger(n))
+        issues.push({id,message:parameterLabels[id]+': revisa el valor y los límites indicados.',group:'conditions'});
     }
     if (this.evaluation === 'json_match') {
-      const references = this.source === 'dataset' ? this.dataset()!.cases.map(c => c.expected_answer) :
-        (this.usesIndependentInputs() ? [this.inputA, this.inputB] : [this.shared]).map(i => i.expected_answer);
-      try { references.filter(r => r?.trim()).forEach(r => JSON.parse(r!)); }
-      catch { this.error.set('Para evaluar JSON, las respuestas esperadas deben contener JSON válido.'); return; }
+      const references = this.source === 'dataset' ? (this.dataset()?.cases ?? []).map(c => ({id:'dataset-file',value:c.expected_answer})) :
+        (this.usesIndependentInputs() ? [{id:'a-reference',value:this.inputA.expected_answer},{id:'b-reference',value:this.inputB.expected_answer}] : [{id:'shared-reference',value:this.shared.expected_answer}]);
+      for (const ref of references) {
+        try { if (ref.value?.trim()) JSON.parse(ref.value); }
+        catch { issues.push({id:ref.id,message:'Para evaluar JSON, las respuestas esperadas deben contener JSON válido.',group:'data'}); }
+      }
     }
-    if (this.settings.max_output_tokens >= this.settings.num_ctx) {
-      this.invalidField.set('output-limit'); this.error.set('El máximo de salida debe ser menor que el contexto para dejar espacio a la entrada.');
-      const field = document.getElementById('output-limit'); const details = field?.closest('details'); if (details) details.open = true; field?.focus(); return;
-    }
-    if (this.settings.order_policy === 'balanced' && this.repetitions % 2 || this.settings.latency_study &&
-        (this.source !== 'dataset' || this.evaluation === 'none' || this.dataset()!.cases.some(c=>c.expected_answer == null))) {
-      this.error.set('El orden equilibrado exige repeticiones pares. Para estudiar tiempos importa un dataset compartido con referencia en todos los casos.');
-      const id = this.settings.order_policy === 'balanced' && this.repetitions % 2 ? 'repetitions' : 'data-source';
-      this.invalidField.set(id);
-      const field = document.getElementById(id); const details = field?.closest('details');if (details) details.open = true;field?.focus();return;
-    }
+    if (this.settings.max_output_tokens >= this.settings.num_ctx)
+      issues.push({id:'output-limit',message:'El máximo de salida debe ser menor que el contexto para dejar espacio a la entrada.',group:'conditions'});
+    if (this.settings.order_policy === 'balanced' && this.repetitions % 2)
+      issues.push({id:'repetitions',message:'El orden equilibrado exige repeticiones pares.',group:'conditions'});
+    if (this.settings.latency_study && (this.source !== 'dataset' || this.evaluation === 'none' || this.dataset()?.cases.some(c=>c.expected_answer == null)))
+      issues.push({id:'data-source',message:'Para estudiar tiempos importa un dataset compartido con referencia en todos los casos y activa su evaluación.',group:'conditions'});
+    return issues;
+  }
+  ready(group:string, issues = this.preparationIssues()) { return !issues.some(issue => issue.group === group); }
+  plannedRuns() { return Number.isInteger(this.repetitions) && this.repetitions > 0 && this.repetitions <= 10 ? (this.source === 'dataset' ? this.dataset()?.count ?? 0 : 1) * this.repetitions * 2 : null; }
+
+  async submit() {
+    if (this.busy()) return;
+    const issue = this.preparationIssues()[0];
+    if (issue) { this.invalidField.set(issue.id); this.error.set(issue.message); this.focusField(issue.id); return; }
     this.busy.set(true);
     this.invalidField.set('');
     this.error.set('');

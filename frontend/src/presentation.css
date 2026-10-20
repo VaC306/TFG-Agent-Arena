@@ -96,3 +96,41 @@
 .chart-denominator strong { display:inline-block; margin-right:10px; color:var(--text); font-size:24px; font-weight:500; }
 .chart-denominator small { margin-top:6px; font-size:12px; }
 .trace-timeline > .trace-empty { display:block; margin:16px 0; }
+/* Navigation map and optional beginner guidance share both semantic palettes. */
+.comparison-map { margin:20px 0; padding:18px; border:1px solid var(--line); border-radius:12px; background:var(--surface-subtle); }
+.map-flow { display:grid; grid-template-columns:1fr 1.4fr 1fr 1fr; gap:22px; list-style:none; padding:0; margin:16px 0; align-items:center; }
+.map-flow > li { position:relative; min-width:0; }
+.map-flow > li + li::before { content:'→'; position:absolute; left:-19px; top:calc(50% - 10px); color:var(--text-secondary); }
+.map-flow button { display:flex; flex-direction:column; justify-content:center; align-items:flex-start; gap:8px; width:100%; padding:14px; border:1px solid var(--control-border); border-radius:8px; background:var(--surface); color:var(--text); text-align:left; }
+.map-flow small { font-size:12px; color:var(--text-secondary); overflow-wrap:anywhere; }
+.map-flow strong { font-size:13px; }
+.map-branches { display:grid; gap:8px; }
+.map-branches strong { display:flex; align-items:center; gap:8px; }
+.map-invariants { display:flex; align-items:center; flex-wrap:wrap; gap:8px 18px; list-style:none; padding:0; font-size:12px; color:var(--text-secondary); }
+.map-invariants .text-button { font-size:inherit; padding:0; }
+.getting-started { margin:16px 0; padding:16px; border:1px solid var(--line); border-radius:10px; }
+.getting-started ol { font-size:14px; line-height:1.8; padding-left:22px; }
+arena-term-help { display:block; }
+.term-help { font-size:12px; margin:10px 0; color:var(--text-secondary); }
+.term-help summary { width:fit-content; }
+.term-help p { max-width:76ch; line-height:1.7; }
+.preparation-status { display:flex; flex-wrap:wrap; gap:12px 20px; margin:16px 0; font-size:13px; }
+.preparation-problems { font-size:13px; }
+.preparation-problems ul { padding-left:20px; }
+.preparation-problems button { text-align:left; }
+.execution-guide { margin-top:20px; padding:16px; border:1px solid var(--line); border-radius:10px; }
+.execution-guide > p { margin:0 0 10px; font-size:13px; }
+.execution-guide summary { font-size:12px; }
+.state-guide { display:grid; grid-template-columns:1fr 2fr; gap:12px; font-size:13px; line-height:1.7; }
+.state-guide dt { font-weight:600; }
+.state-guide dd { margin:0; color:var(--text-secondary); }
+.outcome-symbol { font-size:14px; min-width:12px; text-align:center; }
+@media(max-width:760px) {
+  .map-flow { grid-template-columns:1fr; gap:22px; }
+  .map-flow > li + li::before { content:'↓'; top:-21px; left:calc(50% - 5px); }
+  .map-branches { grid-template-columns:1fr 1fr; }
+  .map-flow button { padding:10px; gap:4px; }
+  .map-flow > li > button { display:grid; grid-template-columns:auto 1fr; align-items:center; }
+  .map-flow > li > button small { grid-column:2; }
+  .state-guide { grid-template-columns:1fr; gap:8px; }
+}

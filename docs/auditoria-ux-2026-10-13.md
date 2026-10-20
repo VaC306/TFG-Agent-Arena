@@ -323,3 +323,89 @@ Capturas nuevas: `runtime/claridad-evidence/{comparar,resultados,campana}-{chrom
 #### Límites
 
 La comprobación técnica y visual no sustituye una prueba de comprensión con personas usuarias; no se afirma haber medido una mejora de usabilidad. No se verificaron lector de pantalla, otros motores de navegador, dispositivo móvil físico ni inferencia real. Los gráficos son descriptivos y conservan los denominadores y condiciones existentes; no aportan una metodología experimental ni conclusiones sobre modelos. Los avisos de compatibilidad y la evidencia completa continúan disponibles.
+
+
+### Orientación para principiantes y mapa navegable, 20 de octubre de 2026
+
+Estado inicial limpio en `main`, commit `64eef23`, con tema `0ec3ce3` ya aplicado.
+No se encontraron archivos AGENTS.md en el proyecto ni en los directorios
+padre consultados. Se conservaron UX-01 a UX-14, el lanzador, los snapshots y
+la separación entre cancelaciones y errores. [Descripción de la interfaz](claridad-visual.md#orientación-para-principiantes-20-de-octubre-de-2026).
+
+Implementado:
+
+- Mapa del borrador con ramas A/B, datos, modelos, prompts, respuestas previstas
+  y evaluación; palabras, símbolos y botones que enfocan controles y abren sus
+  detalles. Adaptación móvil con flechas verticales y ramas paralelas.
+- «Cómo empezar» opcional con ejemplo simulado separado, conservando el borrador,
+  el dataset normalizado y los adjuntos en memoria. Definiciones ampliables de
+  los seis términos solicitados mediante un componente compartido.
+- Resumen de preparación por datos, variantes y condiciones; problemas enlazados
+  y validaciones compartidas con el envío. Mejora del foco en referencias JSON
+  inválidas y campos dentro de detalles. No cambia el cuerpo enviado ni la API.
+- Orientación de ejecución basada en estados conocidos, explicación desplegable
+  de categorías, lectura de las barras con denominadores y símbolos además de
+  color. Respuestas parciales identificadas en resultados y traza; respuestas
+  incorrectas evaluadas permanecen en su categoría.
+- Ayuda sobre fichas de biblioteca y campañas; introducción sencilla de trazas
+  como registros disponibles, con JSON técnico ampliable. Acción directa desde
+  resultados vacíos a Comparar. La demo conserva sus acciones de consulta y
+  declara que no actualiza ni permite nuevas ejecuciones.
+
+Sin nuevas dependencias; se usan HTML/CSS y la paleta semántica existente.
+El contexto TFG/UCM se mantiene. No se define pregunta experimental, método,
+ranking o ganador; no se atribuye causalidad a gráficos descriptivos.
+
+#### Verificación técnica
+
+- Suite completa de navegador: **58 E2E aprobadas**, 29 en escritorio y 29 en
+  móvil, en 3,4 minutos, sin reintentos. Tras afinar la etiqueta de referencias
+  evaluables y alinear el mapa, los **10 recorridos afectados** pasaron de nuevo
+  y se repitieron ambas compilaciones y la suite de demo.
+- Compilaciones local y demo correctas, sin avisos de presupuesto.
+- Frontend: **48 pruebas aprobadas**, incluidas cuatro nuevas sobre validación
+  real compartida, identidad de modelos, orientación de estados y respuestas
+  parciales. TypeScript E2E correcto.
+- Backend: **261 pruebas aprobadas**. Fiabilidad: **72 pruebas aprobadas en cada
+  una de tres combinaciones de semillas**. Sigue el aviso previo de deprecación
+  Starlette/AnyIO.
+- Los cuatro recorridos nuevos de navegador pasan en Chromium escritorio y móvil
+  emulado: mapa adaptable, cambio de modo, prompts iguales/distintos, navegación
+  y apertura con Enter, corrección de referencia JSON con foco, preparación,
+  contraste de texto en Claro/Oscuro, conservación de texto/adjuntos/dataset al
+  abrir el ejemplo y snapshot inmutable al volver al borrador.
+- La demo compilada verifica escritorio/móvil, primer pintado, temas, navegación,
+  referencias/mediciones ausentes, filtros, exportaciones, errores/reintento y
+  recuperación parcial, rechazando peticiones externas o a API.
+
+Las suites de navegador reservan puertos propios y crean una SQLite nueva en
+`arena-e2e-*` bajo la carpeta temporal. API y worker comparten esa base; cuentas,
+entradas y archivos son ficticios. Se usaron simulador y adaptador controlado.
+Puertos API de las pasadas: 56371, 54353, 56882, 49823 y 60424. No se abrió ni modificó
+`runtime/arena.sqlite`, no se borró historial real ni se descargaron modelos.
+
+Capturas en `runtime/beginner-evidence/`: `esquema-{light,dark}-{chromium,mobile}.png`,
+`mapa-{light,dark}-{chromium,mobile}.png` y `resultados-{chromium,mobile}.png`.
+Las de demo están en `frontend/dist/demo-review/`. Son artefactos locales
+excluidos de Git. Se inspeccionaron visualmente el formulario de escritorio,
+el esquema oscuro y resultados móviles; las aserciones complementan la revisión.
+
+Incidencias del arnés: se corrigió una lectura de texto con codificación de Windows
+que alteraba tildes; las pruebas lo detectaron antes de entregar. La primera
+medición de contraste al cambiar de tema coincidió con una transición; se
+repitió con movimiento reducido y tema confirmado sin relajar el umbral AA.
+Una primera suite completa recibió recargas del servidor de desarrollo mientras
+se terminaban cambios: se detuvo y se inició otra con el código definitivo.
+La escritura inicial de un build encontró EPERM en artefactos existentes y se
+repitió con acceso a esos artefactos. Los procesos de pytest sin salida en el
+sandbox se detuvieron; las pasadas completas fuera del sandbox son las contadas.
+
+#### Límites
+
+Esto es verificación técnica y visual, no una prueba de comprensión con personas
+usuarias. Falta comprobar con principiantes si entienden el mapa y pueden elegir
+la siguiente acción. No se verificaron lector de pantalla, Firefox/Safari, móvil
+físico ni modelos reales. El contraste automático cubre texto renderizado en las
+pantallas comprobadas, no certifica todas las combinaciones ni controles del SO.
+Las validaciones del servidor siguen siendo definitivas y pueden rechazar una
+petición por disponibilidad, permisos o condiciones no conocidas en el borrador.

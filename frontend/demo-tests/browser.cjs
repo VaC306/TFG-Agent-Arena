@@ -64,6 +64,11 @@ const server = http.createServer((req,res) => {
       await expect(page.locator('#results-title')).toContainText('Auditoría real');
       await page.goto(base+'#/results?comparison=f9376f27-eeb5-416e-a3a7-eca838fdff56');
       await expect(page.locator('#results-title')).toContainText('text dev');
+      await expect(page.getByLabel('Orientación de la ejecución')).toContainText('Evidencia guardada');
+      await expect(page.getByLabel('Orientación de la ejecución')).toContainText('no se actualiza');
+      await page.getByText('Cómo leer los estados',{exact:true}).press('Enter');
+      await expect(page.locator('.state-guide')).toContainText('Cancelación');
+      await page.getByText('Cómo leer los estados',{exact:true}).press('Enter');
       await expect(page.getByRole('button',{name:'Lanzar comparación',exact:true})).toHaveCount(0);
       await expect(page.locator('.profile-button')).toHaveCount(0);
       await expect(page.locator('.campaign-create')).toHaveCount(0);

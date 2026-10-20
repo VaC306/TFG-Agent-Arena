@@ -30,3 +30,20 @@ export function campaignPoints(campaign: CampaignDetail) {
     }),
   }));
 }
+
+/** Only observed queue/run states; no invented stages, durations or completion ETA. */
+export function executionGuidance(runs: {status:string;result?:{error?:string;answer?:string}|null}[]) {
+  const queued = runs.filter(r=>r.status === 'queued').length;
+  const running = runs.filter(r=>r.status === 'running').length;
+  const errors = runs.filter(r=>['timeout','limit','interrupted'].includes(r.status) || r.status === 'failed' && (!!r.result?.error || r.result?.answer === undefined)).length;
+  return {queued,running,
+    title:!runs.length ? 'Sin ejecuciones registradas' : running ? 'Procesando respuestas' : queued ? 'En espera del worker' : 'Recorrido finalizado',
+    next:!runs.length ? 'Selecciona otra comparación del historial o vuelve a Comparar para preparar una prueba.' : queued || running
+      ? 'Puedes revisar las respuestas disponibles o cancelar una ejecución pendiente. Si todo sigue en cola, comprueba el worker. La actualización es automática; no hay una duración estimada.'
+      : errors ? 'Revisa las respuestas y referencias; si hay un error, abre su traza. Puedes consultar las condiciones antes de repetir el diseño en una campaña.'
+      : 'Revisa una respuesta y su referencia. Abre la traza para entender el recorrido o consulta las condiciones antes de repetir el diseño en una campaña.'};
+}
+
+export function partialAnswer(run: {status:string;result?:{answer?:string;error?:string}|null}) {
+  return !!run.result?.answer && (!!run.result.error || ['cancelled','interrupted','timeout','limit'].includes(run.status));
+}

@@ -75,3 +75,46 @@ conservan sus aserciones y abren explícitamente los nuevos desplegables para
 revisar tablas y exportaciones. No se han añadido reintentos.
 
 Resultados de ejecución, capturas y límites: [registro de la auditoría UX](auditoria-ux-2026-10-13.md).
+
+## Orientación para principiantes (20 de octubre de 2026)
+
+El mapa **Entrada → A/B → Respuestas → Evaluación** representa el borrador actual.
+Indica los datos compartidos o independientes, identidad de modelos (incluido el
+alias `:latest`), igualdad exacta de prompts y parámetros comunes. Cada bloque
+es un botón de teclado: abre los detalles necesarios y enfoca el campo que se
+puede editar. Las respuestas del mapa son ejecuciones previstas, no resultados.
+El modo de simulación se explica junto al mapa.
+
+**Cómo empezar** es opcional. Describe el recorrido y abre el preset simulado de
+pedidos como comparación separada mediante el flujo existente. No reemplaza ni
+envía el formulario preparado. Texto, dataset y adjuntos se mantienen durante la
+visita; tras recargar se aplica la recuperación del borrador por cuenta y la
+reselección habitual de adjuntos. El ejemplo no se presenta como evidencia de
+calidad o velocidad de modelos.
+
+Las ayudas compartidas «Qué es…» definen modelo, prompt, dataset, referencia,
+ejecución y campaña junto a sus controles. Cada explicación se abre a petición.
+«Revisar y ejecutar» agrupa datos, variantes y condiciones y enlaza sus problemas
+con el campo correspondiente. Reutiliza la función de validación del envío,
+incluidos límites, referencias JSON, archivos pendientes y condiciones de orden
+y estudio de tiempos. El servidor conserva sus propias validaciones definitivas.
+La preparación correcta no garantiza que Ollama o el worker estén disponibles.
+
+En resultados, la orientación usa únicamente estados observados: en cola, en
+curso o finalizados. No estima duraciones ni inventa pasos. La leyenda ampliable
+separa completada, evaluada, sin evaluar, cancelación y error. Las respuestas
+conservadas con error, cancelación, interrupción, timeout o límite se señalan como
+parciales tanto en el caso como en la traza; una respuesta incorrecta evaluada no
+se reclasifica como parcial. La demo explica que su evidencia es guardada y no
+ofrece acciones de ejecución. Las barras añaden símbolos y una lectura breve con
+recuentos; mantienen denominadores y datos ausentes. Biblioteca y campañas
+conservan sus advertencias y exclusiones junto a la evidencia, con ayuda opcional
+sobre lo que contiene una ficha o una campaña. La traza explica su recorrido de
+eventos registrados y mantiene el JSON técnico ampliable.
+
+Componentes nuevos: `ComparisonMapComponent`, `TermHelpComponent` y
+`ExecutionGuideComponent`, con HTML/CSS y variables semánticas. Sin dependencias
+nuevas, cambios en cálculos del backend, metodología, rankings ni causalidad.
+Pruebas nuevas: `beginner.spec.ts`, validación real en `workspace.test.cjs`,
+estados y respuestas parciales en `visual-data.test.cjs`, orientación de consulta
+en `demo-tests/browser.cjs`. Resultados y límites en el registro de auditoría.

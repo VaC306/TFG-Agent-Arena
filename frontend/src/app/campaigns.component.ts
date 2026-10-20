@@ -1,3 +1,4 @@
+import { TermHelpComponent } from './term-help.component';
 import { campaignPoints } from './visual-data';
 import { Component, computed, DestroyRef, inject, input, output, signal } from '@angular/core';
 import { DatePipe, DecimalPipe, JsonPipe } from '@angular/common';
@@ -6,7 +7,7 @@ import { ArenaService, CampaignDetail, CampaignSummary, WorkerStatus } from './a
 import { accountError } from './auth.service';
 import { LoadingIndicatorComponent } from './loading-indicator.component';
 
-@Component({selector:'arena-campaigns',standalone:true,imports:[DatePipe,DecimalPipe,JsonPipe,FormsModule,LoadingIndicatorComponent],
+@Component({selector:'arena-campaigns',standalone:true,imports:[TermHelpComponent,DatePipe,DecimalPipe,JsonPipe,FormsModule,LoadingIndicatorComponent],
   templateUrl:'./campaigns.component.html'})
 export class CampaignsComponent {
   evolution = campaignPoints;

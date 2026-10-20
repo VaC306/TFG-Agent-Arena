@@ -6,6 +6,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const ts = require('typescript');
+const validationModule={exports:{}};
+vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.resolve(__dirname,'../src/app/validation.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{module:validationModule,exports:validationModule.exports});
 function deferred() {
   let resolve, reject;
   const promise = new Promise((a,b) => {resolve=a; reject=b;});
@@ -22,7 +24,7 @@ function fixture(filename, api, options={}) {
   const module = {exports:{}};
   const source = fs.readFileSync(path.resolve(__dirname,'../src/app/',filename),'utf8');
   vm.runInNewContext(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,experimentalDecorators:true}}).outputText,
-    {module,exports:module.exports, require:name => name === '@angular/core' ? core : name === './arena.service' ? {ArenaService,defaultSettings:()=>({}),terminal:r=>!['queued','running'].includes(r.status)} : name === './auth.service' ? {AuthService,accountError:error=>error.message} : name === './validation' ? {modelIdentity:m=>m,textError:()=>'',filenameError:()=>''} : {},
+    {module,exports:module.exports, require:name => name === '@angular/core' ? core : name === './arena.service' ? {ArenaService,defaultSettings:()=>({}),terminal:r=>!['queued','running'].includes(r.status)} : name === './auth.service' ? {AuthService,accountError:error=>error.message} : name === './validation' ? options.realValidation ? validationModule.exports : {modelIdentity:m=>m,textError:()=>'',filenameError:()=>''} : {},
       window:{location:{hash:''},history:{pushState(){},replaceState(){}}}, URLSearchParams, queueMicrotask, TextDecoder, localStorage:storage, document:{querySelector:()=>null,title:'',getElementById:()=>null,activeElement:null}, HTMLElement:class {},crypto:require('node:crypto'), requestAnimationFrame:fn=>fn(),setInterval:()=>1,clearInterval(){},setTimeout:()=>1,clearTimeout(){}});
   return {exports:module.exports,auth,destroy:()=>destroy.forEach(fn=>fn())};
 }
@@ -231,4 +233,28 @@ test('discard invalidates an in-flight normalized dataset without recreating its
   await new Promise(resolve=>setImmediate(resolve));assert.equal(calls,1);
   composer.discardDraft();response.resolve({cases:[{id:'a',input:'hola',expected_answer:null}],count:1,scored:0});await importing;
   assert.equal(composer.dataset(),null);assert.equal(composer.datasetBusy(),false);assert.match(composer.draftNotice(),/descartado/);
+});
+
+test('preparation review and submit use the same real validators, active inputs and references',async()=>{
+  let posts=0;
+  const f=fixture('composer.component.ts',{prompts:async()=>[{id:'general',text:'Instrucciones'},{id:'analyst',text:'Otras instrucciones'}],compare:async()=>{posts++;return {id:'new'};}},{realValidation:true});
+  const c=new f.exports.ComposerComponent();await new Promise(resolve=>setImmediate(resolve));
+  c.settings={temperature:0,seed:42,num_ctx:16384,max_output_tokens:4096,timeout_s:120,warmup:'none',order_policy:'random',latency_study:false,planned_attempts:2};
+  assert.equal(c.preparationIssues()[0].id,'shared-input');
+  await c.submit();assert.equal(posts,0);assert.match(c.error(),/obligatorio/);
+  c.shared.text='saludo';c.shared.expected_answer='{invalid';c.evaluation='json_match';
+  assert.equal(c.preparationIssues()[0].id,'shared-reference');await c.submit();assert.equal(c.invalidField(),'shared-reference');
+  c.shared.expected_answer='"hola"';c.missingFiles.set({inputA:['inactive.txt'],shared:['active.txt']});
+  assert.equal(c.preparationIssues().length,1);assert.equal(c.preparationIssues()[0].id,'shared-files');
+  c.missingFiles.set({inputA:['inactive.txt']});assert.equal(c.preparationIssues().length,0);
+  c.settings.order_policy='balanced';assert.equal(c.preparationIssues()[0].id,'repetitions');
+  c.repetitions=2;assert.equal(c.plannedRuns(),4);assert.equal(c.preparationIssues().length,0);
+  c.settings.max_output_tokens=16384;assert.equal(c.preparationIssues()[0].id,'output-limit');
+  c.settings.max_output_tokens=4096;await c.submit();assert.equal(posts,1);
+});
+
+test('map model equality uses actual identities and ignores inactive B in one-model mode',()=>{
+  const f=fixture('composer.component.ts',{prompts:async()=>[]},{realValidation:true}),c=new f.exports.ComposerComponent();
+  c.modelA='example';c.modelB='example:latest';c.mode='different_models';assert.equal(c.modelsEqual(),true);
+  c.modelB='other';assert.equal(c.modelsEqual(),false);c.mode='same_model';assert.equal(c.modelsEqual(),true);
 });

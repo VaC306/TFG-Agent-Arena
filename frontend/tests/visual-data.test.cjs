@@ -41,3 +41,25 @@ test('campaign plot preserves reference denominators and does not plot excluded 
   assert.equal(points[2].included,false);assert.match(points[2].reason,/En curso/);
   assert.equal(JSON.stringify(campaign),before);
 });
+
+test('execution orientation describes only observed states and separates incorrect answers from execution failures',()=>{
+  const guide=mod.exports.executionGuidance;
+  assert.match(guide([]).title,/Sin ejecuciones/);
+  const queued=guide([{status:'queued'},{status:'cancelled'}]);
+  assert.equal(queued.queued,1);assert.equal(queued.running,0);assert.match(queued.title,/En espera/);
+  assert.match(guide([{status:'running'},{status:'queued'}]).title,/Procesando/);
+  assert.match(guide([{status:'failed',result:{answer:'no',success:false}}]).next,/Revisa una respuesta/);
+  assert.match(guide([{status:'failed',result:{error:'offline'}}]).next,/si hay un error/);
+  assert.match(guide([{status:'cancelled',result:{error:'cancelled'}}]).next,/Revisa una respuesta/);
+  assert.match(guide([{status:'timeout'}]).next,/si hay un error/);
+});
+
+test('partial answers retain their category without treating an incorrect evaluated answer as interrupted',()=>{
+  const partial=mod.exports.partialAnswer;
+  assert.equal(partial({status:'cancelled',result:{answer:'late answer'}}),true);
+  assert.equal(partial({status:'failed',result:{answer:'partial',error:'offline'}}),true);
+  assert.equal(partial({status:'timeout',result:{answer:'partial'}}),true);
+  assert.equal(partial({status:'failed',result:{answer:'wrong'}}),false);
+  assert.equal(partial({status:'completed',result:{answer:'unscored'}}),false);
+  assert.equal(partial({status:'cancelled',result:null}),false);
+});

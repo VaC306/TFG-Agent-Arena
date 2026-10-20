@@ -1,6 +1,7 @@
 <section class="campaigns-view view-enter" aria-labelledby="campaigns-title">
   <header class="page-header"><div><p class="eyebrow">EXPERIMENTOS / CAMPAÑAS</p><h1 id="campaigns-title" tabindex="-1">Repite. Conserva. Comprueba.</h1><p class="subheading">Un diseño fijado, un historial de intentos.</p></div><button class="secondary" (click)="refresh()" [disabled]="loading() || busy()">Actualizar</button></header>
   <p class="hint">Crea una campaña desde una comparación terminada en Resultados. Cada intento conserva sus propios resultados y trazas.</p>
+  <arena-term-help term="campaign" />
   @if (listError()) { <p class="alert error" role="alert">{{ listError() }} <button class="text-button" (click)="initialize()">Reintentar</button></p> }
   @if (loadingList()) { <arena-loading label="Cargando campañas…" /> }
   <details class="panel campaign-worker"><summary>Estado del worker</summary><section class="campaign-worker-content" aria-labelledby="worker-title"><div class="section-header"><h2 id="worker-title">Estado del worker</h2><button class="text-button" (click)="checkWorker()">Comprobar</button></div>

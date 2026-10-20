@@ -18,6 +18,8 @@ Reproducibilidad no significa garantizar respuestas idénticas en cualquier máq
 ## Funcionalidades
 
 - Comparaciones A/B de modelos o configuraciones de prompt.
+- Mapa navegable de la comparación, ayuda opcional para principiantes y revisión
+  de datos, variantes y condiciones antes de ejecutar.
 - Entradas, adjuntos y datasets CSV/JSONL con evaluación automática.
 - Borradores por cuenta recuperables en el mismo navegador; los adjuntos requieren
   reselección tras recargar. Sección y comparación seleccionada en la URL.

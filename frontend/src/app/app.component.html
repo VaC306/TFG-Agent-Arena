@@ -38,7 +38,7 @@
     @if (demo) { <arena-demo-overview (opened)="openModelResult($event)" /> } @else {
     <header class="page-header"><div><p class="eyebrow">Tu espacio de experimentación</p><h1 id="page-title" tabindex="-1">Compara con tus datos.</h1><p class="subheading">Elige los modelos, añade una entrada y explora sus respuestas.</p></div><button class="secondary" (click)="simulatedExample()" [disabled]="creating() || !presets().length">Probar ejemplo simulado</button></header>
 
-    <arena-composer [active]="view() === 'compose'" (created)="customCreated($event)" />
+    <arena-composer [exampleBusy]="creating() || !presets().length" (example)="simulatedExample()" [active]="view() === 'compose'" (created)="customCreated($event)" />
     <details class="benchmark-toggle"><summary>Benchmark de pedidos · tareas con evaluación automática</summary>
     <section class="launch panel" aria-labelledby="launch-title">
       <div><span class="step">01</span><h2 id="launch-title">{{ preset === 'simulated' ? 'Simulador · preset de pedidos' : 'Benchmark de pedidos' }}</h2><p>Ejecuta A y B de forma secuencial sobre pedidos ficticios.</p></div>
@@ -67,6 +67,7 @@
         <div class="experiment-meta"><span class="tag">{{ experiment.snapshot.config.adapter === 'simulated' ? 'SIMULACIÓN' : 'OLLAMA' }}</span><span>A: {{ experiment.snapshot.config.agents.A.model }}</span><span>B: {{ experiment.snapshot.config.agents.B.model }}</span><details><summary>Ver contexto de ejecución</summary><div class="execution-context"><span class="tag">{{ experiment.snapshot.config.adapter === 'simulated' ? 'SIMULACIÓN' : 'OLLAMA' }}</span><span>Secuencial A/B</span><span>Motor: {{ experiment.snapshot.config.adapter === 'simulated' ? 'simulador' : 'Ollama' }}</span><span>Configurado A: {{ experiment.snapshot.config.agents.A.model }}</span><span>Configurado B: {{ experiment.snapshot.config.agents.B.model }}</span><span>{{ completed() }}/{{ experiment.runs.length }} finalizadas</span></div><p class="run-id">ID: {{ selectedId() }}</p></details></div>
         <progress class="sr-only" [value]="completed()" [max]="experiment.runs.length" aria-label="Ejecuciones finalizadas"></progress>@if (!demo && view() === 'results') { <arena-worker-status /> }
         @if (executionCounts().total; as total) { <div class="execution-strip" role="img" [attr.aria-label]="executionCounts().finishedWithoutError + ' finalizadas sin error de ejecución, ' + executionCounts().errors + ' errores de ejecución, ' + executionCounts().cancelled + ' canceladas, ' + executionCounts().pending + ' pendientes'"><span class="outcome-finished" [style.width.%]="100 * executionCounts().finishedWithoutError / total"></span><span class="outcome-execution_errors" [style.width.%]="100 * executionCounts().errors / total"></span><span class="outcome-cancelled" [style.width.%]="100 * executionCounts().cancelled / total"></span><span class="outcome-pending" [style.width.%]="100 * executionCounts().pending / total"></span></div> }
+        <arena-execution-guide [readOnly]="demo" [runs]="experiment.runs" />
         <div class="quick-stats" aria-label="Resumen de ejecución">
           <div><strong>{{ completed() }}/{{ executionCounts().total }}</strong><span>Finalizadas</span></div><div><strong>{{ executionCounts().pending }}</strong><span>Pendientes</span></div><div><strong>{{ executionCounts().errors }}</strong><span>Errores de ejecución</span></div><div><strong>{{ executionCounts().cancelled }}</strong><span>Canceladas</span></div>
         </div>
@@ -78,7 +79,7 @@
               @for (branch of ['A','B']; track branch) {
                 @if (item.runs[branch === 'A' ? 'A' : 'B']; as run) {
                   <section class="case-branch" [attr.aria-label]="item.task + ', rama ' + branch + ', repetición ' + (item.repetition + 1)"><h4><span class="branch" [class.branch-b]="branch === 'B'">{{ branch }}</span> {{ runLabel(run) }}</h4>
-                    <pre class="case-answer">{{ run.result?.answer ?? (isTerminal(run) ? 'No hay respuesta final.' : 'Respuesta pendiente de ejecución.') }}</pre>
+                    @if (partialAnswer(run)) { <p class="hint">◐ Respuesta parcial · conservada antes de finalizar normalmente.</p> }<pre class="case-answer">{{ run.result?.answer ?? (isTerminal(run) ? 'No hay respuesta final.' : 'Respuesta pendiente de ejecución.') }}</pre>
                     @if (run.result?.error) { <p class="alert error">{{ traceFailure(run.result!.error!) }}</p> }
                     <button class="text-button" (click)="showTrace(run)" [attr.aria-label]="'Ver traza de ' + run.task_id + ', rama ' + run.branch + ', repetición ' + (run.repetition + 1)">Ver traza ↗</button>
                     @if (!demo && !isTerminal(run)) { <button class="text-button danger" (click)="cancel(run)" [disabled]="!!cancelling()" [attr.aria-label]="'Cancelar ' + run.task_id + ', rama ' + run.branch + ', repetición ' + (run.repetition + 1)">Cancelar ejecución</button> }
@@ -143,7 +144,7 @@
           @if (experiment.campaign; as campaign) {
             <p class="hint">Intento {{ campaign.sequence }} de una campaña con diseño fijado.</p><button class="secondary" (click)="openCampaign(campaign.id)">Ver campaña y evolución ↗</button>
           } @else {
-            <div><h3>Repetir este diseño</h3><p class="hint">Fija datos, referencias, prompts y parámetros en una campaña. Cada intento tendrá resultados nuevos.</p></div>
+            <div><h3>Repetir este diseño</h3><arena-term-help term="campaign" /><p class="hint">Fija datos, referencias, prompts y parámetros en una campaña. Cada intento tendrá resultados nuevos.</p></div>
             <form (ngSubmit)="createCampaign()"><label for="campaign-name">Nombre de campaña</label><input id="campaign-name" name="campaignName" [ngModel]="campaignName()" (ngModelChange)="campaignName.set($event); campaignError.set('')" maxlength="120" required [disabled]="campaignBusy()" [attr.aria-describedby]="campaignError() ? 'campaign-error' : 'campaign-create-help'" [attr.aria-invalid]="campaignError() ? 'true' : null"><button class="secondary" type="submit" [disabled]="campaignBusy() || pending()">{{ campaignBusy() ? 'Fijando diseño…' : 'Crear campaña' }}</button></form>
             <p class="hint" id="campaign-create-help">La comparación debe estar terminada. Para modelos reales, las identidades deben estar verificadas.</p>
             @if (campaignError()) { <p id="campaign-error" class="alert error" role="alert">{{ campaignError() }}</p> }
@@ -157,13 +158,14 @@
           </tbody></table></div><p class="table-footnote">E / S: tokens de entrada / salida acumulados. * Uso parcial; una llamada no devolvió contadores completos.</p>
         </section></details>
       </section>
-    } @else { <section class="empty panel"><span class="empty-symbol">A ⇄ B</span><h2>{{ demo ? 'No hay una comparacion seleccionada.' : 'Tu primera comparacion empieza aqui' }}</h2><p>{{ demo ? 'Abre una comparacion guardada desde el historial o Comparar.' : 'Lanza el simulador para explorar resultados y trazas sin instalar un modelo.' }}</p></section> }
+    } @else { <section class="empty panel"><span class="empty-symbol">A ⇄ B</span><h2>{{ demo ? 'No hay una comparacion seleccionada.' : 'Tu primera comparacion empieza aqui' }}</h2><p>{{ demo ? 'Abre una comparacion guardada desde el historial o Comparar.' : 'Lanza el simulador para explorar resultados y trazas sin instalar un modelo.' }}</p><button class="secondary" (click)="navigate('compose')">{{ demo ? 'Abrir recorrido' : 'Preparar una comparación' }}</button></section> }
 
     @if (selectedRun(); as run) {
       <section class="panel trace-panel" aria-labelledby="trace-title"><div class="section-header"><div><p class="eyebrow">TRAZA DE EJECUCIÓN / {{ run.branch }}</p><h2 id="trace-title" tabindex="-1">{{ run.task_id }}</h2><p class="hint">Repetición {{ run.repetition + 1 }} · {{ runLabel(run) }}</p></div><button class="secondary" (click)="closeTrace(true)">Cerrar traza</button></div>
+        <p class="hint">Una traza es el recorrido de eventos registrados: qué pidió el agente, qué herramientas utilizó y qué ocurrió. El orden muestra registros disponibles, no pasos previstos. Abre un evento para leer su explicación y el JSON técnico.</p>
         @if (run.result?.error) { <p class="alert error">{{ traceFailure(run.result!.error!) }}</p> }
         @if (run.result?.reason) { <p class="hint">Evaluación: {{ run.result?.reason }}</p> }
-        @if (run.result?.answer) { <h3>Respuesta final</h3><pre>{{ run.result?.answer }}</pre> }
+        @if (run.result?.answer) { <h3>{{ partialAnswer(run) ? 'Respuesta parcial conservada' : 'Respuesta final' }}</h3><pre>{{ run.result?.answer }}</pre> }
         @if (traceError()) { <div role="alert" class="alert error">{{ traceError() }} <button class="text-button" (click)="showTrace(run)">Reintentar</button></div> }
         @if (traceLoading()) { <arena-loading label="Cargando eventos…" /> }
         <ol class="events trace-timeline" aria-label="Pasos registrados de la ejecución">@for (event of events(); track event.seq) { <li><span class="trace-step" aria-hidden="true">{{ $index + 1 }}</span><details><summary><span class="event-kind">{{ eventLabel(event.kind) }}</span><time>{{ event.at * 1000 | date:'HH:mm:ss.SSS' }}</time></summary><p class="trace-description">{{ eventSummary(event) }}</p><p class="hint">Registro {{ event.seq }}</p><details><summary>JSON técnico · {{ event.kind }}</summary><pre>{{ event.payload | json }}</pre></details></details></li> } @empty { @if (!traceLoading() && !traceError()) { <li class="hint trace-empty">{{ demo ? 'No se exportaron eventos del worker para esta ejecución. Las trazas de diagnóstico guardadas están en Comparar.' : 'Todavía no hay eventos para esta ejecución.' }}</li> } }</ol>

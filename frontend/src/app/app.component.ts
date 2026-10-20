@@ -1,3 +1,6 @@
+import { partialAnswer } from './visual-data';
+import { ExecutionGuideComponent } from './execution-guide.component';
+import { TermHelpComponent } from './term-help.component';
 import { TimeChartComponent } from './time-chart.component';
 import { OutcomeChartComponent } from './outcome-chart.component';
 import { ThemePickerComponent } from './theme-picker.component';
@@ -24,7 +27,7 @@ import { ArenaService, ArenaEvent, ExperimentDetail, ExperimentSummary, Preset, 
 
 @Component({
   selector: 'arena-workspace', standalone: true,
-  imports: [TimeChartComponent, OutcomeChartComponent, ThemePickerComponent, WorkerStatusComponent, DemoOverviewComponent, DemoGuideComponent, ContactComponent, DatePipe, DecimalPipe, JsonPipe, FormsModule, ComposerComponent, ProfileComponent, InfoDialogComponent, GuideComponent, BrandMarkComponent, ModelLibraryComponent, CampaignsComponent, LoadingIndicatorComponent],
+  imports: [ExecutionGuideComponent, TermHelpComponent, TimeChartComponent, OutcomeChartComponent, ThemePickerComponent, WorkerStatusComponent, DemoOverviewComponent, DemoGuideComponent, ContactComponent, DatePipe, DecimalPipe, JsonPipe, FormsModule, ComposerComponent, ProfileComponent, InfoDialogComponent, GuideComponent, BrandMarkComponent, ModelLibraryComponent, CampaignsComponent, LoadingIndicatorComponent],
   templateUrl: './app.component.html',
 })
 export class AppComponent {
@@ -99,6 +102,7 @@ export class AppComponent {
   preset: PresetId = 'simulated';
   branchFilter = signal('all');
   isTerminal = terminal;
+  partialAnswer = partialAnswer;
   labels: Record<Status, string> = {
     queued: 'En cola', running: 'En curso', succeeded: 'Correcta', failed: 'Fallida',
     completed: 'Completada · sin evaluar',
