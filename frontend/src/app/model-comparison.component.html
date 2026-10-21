@@ -1,0 +1,38 @@
+<section class="metrics-dashboard panel" aria-labelledby="metrics-title">
+  <div class="dashboard-heading"><div><p class="eyebrow">COMPARATIVA VISUAL</p><h2 id="metrics-title">Calidad, rendimiento y coste</h2><p class="hint">Cada barra representa una ficha, sin mezclar pruebas ni versiones. Todas las escalas empiezan en cero.</p></div>
+    <label>Mostrar en los gráficos<select [ngModel]="selectionOnly()" (ngModelChange)="selectionOnly.set($event)"><option [ngValue]="false">Resultados del filtro</option><option [ngValue]="true">Fichas seleccionadas</option></select></label>
+  </div>
+  <p class="hint" role="status">{{ shown().length }} fichas en los gráficos · {{ selectionOnly() ? 'Selección manual, incluidos resultados fuera del filtro' : 'Filtros de modelo, tipo de prueba y ejecución aplicados' }}.</p>
+  @if (stale()) { <p class="alert">No se pudo actualizar la evidencia. Los gráficos muestran la última carga disponible.</p> }
+  @if (shown().length > 1) { <p [class]="compatible() && !stale() ? 'hint' : 'alert'">{{ compatible() && !stale() ? 'Las condiciones registradas coinciden entre modelos o versiones diferentes. Los tiempos son observaciones de un equipo compartido.' : 'Vista descriptiva: las condiciones no permiten comparar directamente todos estos resultados. Selecciona dos fichas para revisar las diferencias. No se asigna un ganador.' }}</p> }
+  @if (shown().length) {
+    <details class="cost-settings"><summary>Configurar tarifas para estimar el coste</summary>
+      <p class="hint">Introduce euros. Ollama puede estimarse con el coste de uso del equipo por hora; una suscripción necesita un coste por hora asignado por ti. Las tarifas por tokens solo se aplican si hay uso completo registrado. Estos valores se conservan mientras esta vista esté abierta.</p>
+      @for (entry of pricedModels(); track entry.adapter + ':' + entry.model) {
+        <fieldset><legend>{{ entry.model }} · {{ entry.adapter }}</legend>
+          <label>Base del coste<select [ngModel]="rate(entry).basis" (ngModelChange)="setBasis(entry,$event)"><option value="hour">Tiempo de ejecución</option><option value="tokens">Tokens de entrada y salida</option></select></label>
+          @if (rate(entry).basis === 'hour') {
+            <label>Coste asignado (€/hora)<input type="number" min="0" step="any" placeholder="Sin configurar" [ngModel]="rate(entry).hour" (ngModelChange)="setRate(entry,'hour',$event)"></label>
+          } @else {
+            <label>Entrada (€/millón de tokens)<input type="number" min="0" step="any" placeholder="Sin configurar" [ngModel]="rate(entry).input" (ngModelChange)="setRate(entry,'input',$event)"></label>
+            <label>Salida (€/millón de tokens)<input type="number" min="0" step="any" placeholder="Sin configurar" [ngModel]="rate(entry).output" (ngModelChange)="setRate(entry,'output',$event)"></label>
+          }
+        </fieldset>
+      } @empty { <p class="hint">Las simulaciones no estiman costes de modelos reales.</p> }
+    </details>
+    <div class="metric-charts">@for (chart of charts(); track chart.key) {
+      <figure class="metric-chart" [attr.data-metric]="chart.key">
+        <figcaption><h3>{{ chart.title }}</h3><span class="hint">{{ chart.direction }}</span></figcaption>
+        <p class="hint metric-note">{{ chart.note }}</p>
+        <div class="metric-scale" aria-hidden="true"><span>0 {{ chart.unit }}</span><span>{{ chart.maximum | number:'1.0-4' }} {{ chart.unit }}</span></div>
+        @for (row of chart.rows; track row.id) {
+          <div class="metric-row">
+            <div class="metric-row-heading"><span>{{ row.model }} · {{ row.branch }}</span><strong>{{ row.value === null ? 'Sin datos' : (row.value | number:(chart.key === 'cost' ? '1.2-6' : '1.0-2')) + ' ' + chart.unit }}</strong></div>
+            <div class="metric-track" aria-hidden="true">@if (row.value !== null) { <span class="metric-fill" [class.zero]="row.value === 0" [style.width.%]="row.width"></span> }</div>
+            <small>{{ row.kind }} · {{ row.sample }}</small>
+          </div>
+        }
+      </figure>
+    }</div>
+  } @else { <p class="hint">{{ selectionOnly() ? 'Selecciona fichas en la biblioteca para incluirlas aquí.' : 'No hay resultados para estos filtros.' }}</p> }
+</section>

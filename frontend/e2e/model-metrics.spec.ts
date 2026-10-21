@@ -1,0 +1,37 @@
+import {test,expect,register,compare,finished} from './helpers';
+import path from 'node:path';
+
+test('modelos: gráficos medidos, coste configurable, filtros y selección',async({page},info)=>{
+  await register(page);
+  const id=await compare(page,'Métricas visuales');
+  await finished(page,id);
+  await page.getByRole('button',{name:'Modelos',exact:true}).click();
+  const dashboard=page.locator('arena-model-comparison');
+  await expect(dashboard.getByRole('heading',{name:'Calidad, rendimiento y coste'})).toBeVisible();
+  await expect(dashboard.locator('.metric-chart')).toHaveCount(8);
+  await expect(dashboard.locator('[data-metric="quality"] .metric-row').first()).toContainText('100 %');
+  await expect(dashboard.locator('[data-metric="tokens"] .metric-row').first()).toContainText('13 tok');
+  await expect(dashboard.locator('[data-metric="cost"] .metric-row').first()).toContainText('Sin datos');
+  await dashboard.locator('.cost-settings > summary').press('Enter');
+  await dashboard.getByLabel('Base del coste').selectOption('tokens');
+  await dashboard.getByLabel('Entrada (€/millón de tokens)').fill('2');
+  await dashboard.getByLabel('Salida (€/millón de tokens)').fill('4');
+  await expect(dashboard.locator('[data-metric="cost"] .metric-row').first()).toContainText('0.00003 €');
+  await dashboard.getByLabel('Entrada (€/millón de tokens)').fill('0');
+  await dashboard.getByLabel('Salida (€/millón de tokens)').fill('0');
+  await expect(dashboard.locator('[data-metric="cost"] .metric-row').first()).toContainText('0.00 €');
+  await dashboard.getByLabel('Entrada (€/millón de tokens)').fill('');
+  await expect(dashboard.locator('[data-metric="cost"] .metric-row').first()).toContainText('Sin datos');
+  await dashboard.getByLabel('Mostrar en los gráficos').selectOption({label:'Fichas seleccionadas'});
+  await expect(dashboard).toContainText('Selecciona fichas en la biblioteca');
+  await page.locator('.library-card input[type="checkbox"]').first().check();
+  await expect(dashboard.locator('[data-metric="quality"] .metric-row')).toHaveCount(1);
+  await dashboard.getByLabel('Mostrar en los gráficos').selectOption({label:'Resultados del filtro'});
+  await page.locator('.model-library').getByLabel('Ejecución',{exact:true}).selectOption('simulated');
+  await expect(dashboard).toContainText('No hay resultados para estos filtros');
+  await page.locator('.model-library').getByLabel('Ejecución',{exact:true}).selectOption('ollama');
+  await expect(dashboard.locator('.metric-chart')).toHaveCount(8);
+  await page.emulateMedia({colorScheme:'dark'});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await dashboard.screenshot({path:path.resolve('..','runtime','model-metrics-evidence',`models-${info.project.name}.png`)});
+});

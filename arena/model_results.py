@@ -48,6 +48,32 @@ def fingerprint(value):
     return hashlib.sha256(json.dumps(value,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
 
 
+def comparison_metrics(runs):
+    """Measured samples and coverage; incomplete usage must not become free usage."""
+    def valid(value):
+        return type(value) in (int, float) and math.isfinite(value) and value >= 0
+
+    results = [r.get('result') or {} for r in runs]
+    answers = [r.get('result') or {} for r in runs
+               if outcome(r) not in ('execution_error', 'cancelled', 'pending')
+               and 'answer' in (r.get('result') or {})]
+    times = sorted(r['agent_s'] for r in answers if valid(r.get('agent_s')))
+    speeds = [r['server_tps'] for r in answers if r.get('usage_complete') is True
+              and valid(r.get('server_tps'))]
+    usage = [r for r in results if r.get('usage_complete') is True
+             and all(valid(r.get(k)) for k in ('input_tokens', 'output_tokens'))]
+    durations = [r['agent_s'] for r in results if valid(r.get('agent_s'))]
+    complete = bool(results) and len(usage) == len(results)
+    return {'p95_answer_s':times[math.ceil(.95 * len(times))-1] if times else None,
+            'latency_samples':len(times),
+            'mean_server_tps':sum(speeds)/len(speeds) if speeds else None,
+            'speed_samples':len(speeds), 'usage_samples':len(usage),
+            'input_tokens':sum(r['input_tokens'] for r in usage) if complete else None,
+            'output_tokens':sum(r['output_tokens'] for r in usage) if complete else None,
+            'total_run_s':sum(durations) if durations and len(durations) == len(results) else None,
+            'duration_samples':len(durations)}
+
+
 def test_kind(task):
     evaluation = 'order_benchmark' if task.get('criteria') else task.get('evaluation','exact_match') if task.get('expected_answer') is not None else 'none'
     files = task.get('attachments') or []
@@ -98,6 +124,7 @@ def latest_model_results(store):
                           'kind':kind,'experiment_id':eid,'experiment_name':config['name'],'branch':branch,
                           'updated_at':timestamp,'split':config['split'],'repetitions':config['repetitions'],
                           'summary':summarize(chosen,cases),'cohort_key':fingerprint(cohort),'comparison_conditions':cohort,
+                          'metrics':comparison_metrics(chosen),
                           'measurements':measurement_records(chosen),
                           'conditions':{'system_prompt':agent['system_prompt'],'temperature':agent.get('temperature'),
                                         'seed':agent.get('seed'),'num_ctx':agent.get('num_ctx'),'limits':agent.get('limits'),

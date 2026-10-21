@@ -4,7 +4,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 from arena.api import create_app
 from arena.comparisons import ComparisonRequest, submit_comparison
-from arena.model_results import latest_model_results, outcome, summarize
+from arena.model_results import comparison_metrics, latest_model_results, outcome, summarize
 from arena.store import Store
 from conftest import register_client
 from test_comparisons import request_data
@@ -46,6 +46,7 @@ def test_latest_completed_model_results_do_not_pool_prompts_or_partial_runs(tmp_
     assert len(entries) == 2
     assert entries[0]['cohort_key'] == entries[1]['cohort_key']
     assert all(e['verified'] and e['summary']['correct'] == 1 for e in entries)
+    assert all(e['metrics']['p95_answer_s'] == 2 and e['metrics']['input_tokens'] is None for e in entries)
     changed = copy.deepcopy(data)
     changed['agents']['A']['system_prompt'] = 'Different prompt'
     second = submit_comparison(store,ComparisonRequest.model_validate(changed))
@@ -177,3 +178,30 @@ def test_legacy_failure_without_answer_is_never_quality_evaluated():
     run = {'status':'failed','result':{'success':False}}
     assert outcome(run) == 'execution_error'
     assert quality_value(run) is None
+
+
+def test_comparison_metrics_include_failed_usage_without_polluting_answer_latency():
+    runs = [
+        {'status':'completed','result':{'answer':'ok','success':True,'agent_s':2,'usage_complete':True,'input_tokens':10,'output_tokens':4,'server_tps':8}},
+        {'status':'timeout','result':{'error':'timeout','agent_s':8,'usage_complete':True,'input_tokens':20,'output_tokens':2,'server_tps':100}},
+    ]
+    metrics = comparison_metrics(runs)
+    assert metrics['p95_answer_s'] == 2 and metrics['latency_samples'] == 1
+    assert metrics['mean_server_tps'] == 8 and metrics['speed_samples'] == 1
+    assert metrics['input_tokens'] == 30 and metrics['output_tokens'] == 6
+    assert metrics['total_run_s'] == 10
+    runs[1]['result']['usage_complete'] = False
+    assert comparison_metrics(runs)['input_tokens'] is None
+    assert comparison_metrics(runs)['usage_samples'] == 1
+
+
+def test_comparison_metrics_p95_and_missing_zero_invalid_measurements():
+    runs = [{'status':'completed','result':{'answer':'ok','agent_s':n}} for n in range(1,21)]
+    assert comparison_metrics(runs)['p95_answer_s'] == 19
+    assert comparison_metrics([])['total_run_s'] is None
+    for invalid in (None, -1, float('nan'), float('inf'), True):
+        metrics = comparison_metrics([{'status':'completed','result':{'answer':'ok','agent_s':invalid,'usage_complete':True,'input_tokens':invalid,'output_tokens':0,'server_tps':invalid}}])
+        assert metrics['p95_answer_s'] is None and metrics['total_run_s'] is None
+        assert metrics['input_tokens'] is None and metrics['mean_server_tps'] is None
+    metrics = comparison_metrics([{'status':'completed','result':{'answer':'','agent_s':0,'usage_complete':True,'input_tokens':0,'output_tokens':0,'server_tps':0}}])
+    assert metrics['p95_answer_s'] == metrics['input_tokens'] == metrics['mean_server_tps'] == 0

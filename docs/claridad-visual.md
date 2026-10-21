@@ -50,6 +50,30 @@ limitación de la ejecución secuencial, sin declarar ganadores.
 
 ## Biblioteca, campañas y trazas
 
+La biblioteca incluye ocho gráficos de barras: aciertos sobre ejecuciones con
+referencia, cobertura de evaluación, errores, tiempo medio, P95, velocidad de
+generación del servidor, tokens y coste estimado por ejecución. Se pueden mostrar
+las fichas del filtro o solo las seleccionadas. Cada métrica comparte escala desde
+cero entre las fichas; los porcentajes usan 0–100 %. La vista no mezcla resultados
+ni declara ganadores si las condiciones difieren. Las simulaciones no representan
+mediciones de modelos reales.
+
+El P95 utiliza el rango más próximo sobre tiempos de respuestas sin error; la
+velocidad muestra la media de tokens/s del servidor con uso completo. Se indica
+el número de muestras. La ausencia de medidas aparece como «Sin datos», también
+en exports antiguos que todavía no incluyen las nuevas métricas.
+
+En **Configurar tarifas para estimar el coste** se introducen euros por hora de
+ejecución o euros por millón de tokens de entrada y salida, por modelo y motor.
+Las tarifas se mantienen mientras la vista esté abierta. La estimación por hora
+usa la suma de tiempos registrados; la de tokens exige uso completo de todas las
+ejecuciones. Ambas incluyen errores y cancelaciones con mediciones completas y
+dividen por el número de ejecuciones programadas. Son costes asignados por el
+usuario, no facturación ni precios de catálogo; los tokens son los de tarea y
+excluyen el calentamiento. No incluyen tiempos de cola ni
+inactividad del equipo. No se presupone que una suscripción o ejecución local sea
+gratuita. Los valores cero explícitos se distinguen de los datos ausentes.
+
 - **Biblioteca**: fichas compactas con tipo, fecha y distribución visual. Métricas,
   parámetros, identidad y evidencia completa están en «Ver métricas y condiciones».
   La selección se conserva frente a filtros; «Restablecer filtros» facilita salir

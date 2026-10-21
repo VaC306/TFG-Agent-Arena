@@ -26,7 +26,8 @@ Reproducibilidad no significa garantizar respuestas idénticas en cualquier máq
 - Borradores por cuenta recuperables en el mismo navegador; los adjuntos requieren
   reselección tras recargar. Sección y comparación seleccionada en la URL.
 - Respuestas A/B, gráficos de estados y tiempos y detalles desplegables.
-- Biblioteca visual de modelos y evolución de campañas con diseño fijado.
+- Biblioteca de modelos con gráficos de calidad, cobertura, errores, tiempos,
+  tokens y coste estimado con tarifas configurables; evolución de campañas con diseño fijado.
 - Análisis por tarea, cobertura, errores y estabilidad; incertidumbre exploratoria
   solo cuando la evidencia cumple las condiciones del método.
 - Anotaciones de condiciones externas, estado del worker y exportación CSV,

@@ -1,4 +1,5 @@
 import { OutcomeChartComponent } from './outcome-chart.component';
+import { ModelComparisonComponent } from './model-comparison.component';
 import { Component, computed, DestroyRef, inject, output, signal } from '@angular/core';
 import { DEMO_MODE } from './runtime-mode';
 import { DatePipe, DecimalPipe } from '@angular/common';
@@ -6,7 +7,7 @@ import { FormsModule } from '@angular/forms';
 import { ArenaService, ModelResult } from './arena.service';
 import { LoadingIndicatorComponent } from './loading-indicator.component';
 
-@Component({selector:'arena-model-library',standalone:true,imports:[OutcomeChartComponent, DatePipe,DecimalPipe,FormsModule,LoadingIndicatorComponent],
+@Component({selector:'arena-model-library',standalone:true,imports:[ModelComparisonComponent,OutcomeChartComponent, DatePipe,DecimalPipe,FormsModule,LoadingIndicatorComponent],
   templateUrl:'./model-library.component.html'})
 export class ModelLibraryComponent {
   demo = DEMO_MODE;

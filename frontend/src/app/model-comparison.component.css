@@ -1,0 +1,26 @@
+:host { display:block; margin:24px 0; }
+.metrics-dashboard { padding:28px; min-width:0; }
+.dashboard-heading { display:flex; justify-content:space-between; align-items:start; flex-wrap:wrap; gap:20px; }
+.dashboard-heading h2 { margin:8px 0 12px; }
+label { display:flex; flex-direction:column; gap:8px; font-size:13px; }
+select,input { width:100%; min-width:0; }
+.metric-charts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; margin-top:24px; }
+.metric-chart { margin:0; padding:20px; border:1px solid var(--line); border-radius:12px; min-width:0; background:var(--surface); }
+figcaption { display:flex; justify-content:space-between; flex-wrap:wrap; align-items:baseline; gap:8px; }
+h3 { margin:0; font-size:16px; }
+.metric-note { font-size:12px; line-height:1.6; margin:12px 0 20px; }
+.metric-scale { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); }
+.metric-row { margin-top:16px; }
+.metric-row-heading { display:flex; justify-content:space-between; gap:12px; font-size:13px; }
+.metric-row-heading span { overflow-wrap:anywhere; min-width:0; }
+.metric-row-heading strong { white-space:nowrap; font-weight:600; }
+.metric-track { height:10px; border-radius:4px; background:var(--progress-track); margin:8px 0 6px; }
+.metric-fill { display:block; height:100%; border-radius:4px; background:var(--chart-correct); }
+.metric-fill.zero { width:2px !important; }
+.metric-row small { display:block; font-size:11px; color:var(--muted); overflow-wrap:anywhere; }
+.cost-settings { border-top:1px solid var(--line); border-bottom:1px solid var(--line); margin-top:20px; padding:8px 0; }
+summary { cursor:pointer; min-height:44px; display:list-item; align-content:center; }
+fieldset { display:flex; align-items:start; flex-wrap:wrap; gap:16px; margin:16px 0; padding:16px; border:1px solid var(--line); border-radius:8px; min-width:0; }
+legend { font-size:13px; padding:0 6px; overflow-wrap:anywhere; max-width:100%; }
+fieldset label { flex:1 1 160px; min-width:0; }
+@media(max-width:760px) { .metrics-dashboard { padding:18px; } .metric-charts { grid-template-columns:minmax(0,1fr); } .metric-chart { padding:16px; } .dashboard-heading label { width:100%; } }
