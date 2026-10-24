@@ -7,10 +7,11 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from arena.store import Store
 from arena.worker import work
+from arena.database import database_target
 
 
 async def main(database: str, directory: Path):
-    pending = asyncio.create_task(work(Store(database)))
+    pending = asyncio.create_task(work(Store(database_target(database))))
     try:
         await asyncio.sleep(0)
         if pending.done():

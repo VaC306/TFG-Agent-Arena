@@ -15,6 +15,7 @@ param(
     [ValidateRange(1024,65535)][int]$ApiPort = 8000,
     [ValidateRange(1024,65535)][int]$UiPort = 4200,
     [string]$Database = 'runtime\dev\arena.sqlite',
+    [string]$Python = '.venv\Scripts\python.exe',
     [switch]$Setup,
     [switch]$NoBrowser,
     [switch]$Check
@@ -22,7 +23,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-$python = Join-Path $projectRoot '.venv\Scripts\python.exe'
+$python = if ([IO.Path]::IsPathRooted($Python)) { $Python } else { Join-Path $projectRoot $Python }
 $frontend = Join-Path $projectRoot 'frontend'
 $angular = Join-Path $frontend 'node_modules\@angular\cli\bin\ng.js'
 $databasePath = if ([IO.Path]::IsPathRooted($Database)) { [IO.Path]::GetFullPath($Database) } else { [IO.Path]::GetFullPath((Join-Path $projectRoot $Database)) }
@@ -105,6 +106,7 @@ try {
     $env:ARENA_DB = $databasePath
     $env:ARENA_ROOT = $projectRoot
     $processes += Start-DevProcess 'api' $python @('-m','uvicorn','arena.api:app','--host','127.0.0.1','--port',"$ApiPort")
+    # The cloud URL is inherited through the environment, never exposed in process arguments.
     $workerProcess = Start-DevProcess 'worker' $python @((Join-Path $PSScriptRoot 'dev_worker.py'),'--db',$databasePath,'--session-directory',$sessionDirectory)
     $processes += $workerProcess
     $processes += Start-DevProcess 'frontend' $node @($angular,'serve','--host','127.0.0.1','--port',"$UiPort",'--proxy-config',$proxyPath)
@@ -115,7 +117,8 @@ try {
     if (!(Test-Path -LiteralPath (Join-Path $sessionDirectory 'worker-ready'))) { throw 'Worker did not become ready. Check worker.error.log.' }
     $url = "http://127.0.0.1:$UiPort/"
     Write-Host "Agent Arena ready: $url"
-    Write-Host "Development SQLite: $databasePath"
+    if ($env:ARENA_DATABASE_URL) { Write-Host 'Database: PostgreSQL (private arena schema)' }
+    else { Write-Host "Development SQLite: $databasePath" }
     Write-Host "Logs: $sessionDirectory"
     Write-Host 'Use the simulator; no model download or Ollama startup is required.'
     if ($Check) { Write-Host 'Startup check passed; stopping the test services.'; return }

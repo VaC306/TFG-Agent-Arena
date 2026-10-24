@@ -1,10 +1,8 @@
 import json
 import hashlib
-import sqlite3
 import time
-from contextlib import contextmanager
-from pathlib import Path
 from .contracts import Event
+from .database import connect, is_postgres, initialize_postgres
 
 
 class Store:
@@ -12,7 +10,8 @@ class Store:
         self.path = str(path)
         self.owner_id = owner_id
         self.clock = clock or time.time
-        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        if is_postgres(self.path):
+            initialize_postgres(self.path)
         with self.connect() as db:
             db.executescript("""
                 PRAGMA journal_mode=WAL;
@@ -48,16 +47,14 @@ class Store:
                     connected_at REAL NOT NULL, PRIMARY KEY(owner_id,provider));
             """)
 
-    @contextmanager
     def connect(self):
-        db = sqlite3.connect(self.path, timeout=30)
-        try:
-            with db:
-                db.row_factory = sqlite3.Row
-                db.execute("PRAGMA foreign_keys=ON")
-                yield db
-        finally:
-            db.close()  # sqlite's transaction context does not close the connection.
+        return connect(self.path)
+
+    def for_owner(self, owner_id):
+        # Scoping a request must not reconnect/recreate PostgreSQL's schema.
+        scoped = object.__new__(type(self))
+        scoped.path, scoped.owner_id, scoped.clock = self.path, owner_id, self.clock
+        return scoped
 
     def provider_link(self, experiment_id=None):
         owner = self.owner_id
@@ -94,7 +91,7 @@ class Store:
                 if plan.get('latency_study') and sequence > plan['planned_attempts']:
                     raise ValueError('El estudio ya alcanzó los intentos previstos. Fija un nuevo diseño para ampliarlo, sin detener o ampliar la muestra según el resultado.')
                 snapshot['campaign'] = {k:v for k,v in campaign.items() if k != 'request_id'} | {'sequence':sequence}
-            db.execute("INSERT INTO experiments VALUES (?,?)", (experiment_id, json.dumps(snapshot)))
+            db.execute("INSERT INTO experiments(id,snapshot) VALUES (?,?)", (experiment_id, json.dumps(snapshot)))
             if self.owner_id is not None:
                 db.execute('INSERT INTO experiment_owners VALUES (?,?)', (experiment_id, self.owner_id))
             for run in runs:
@@ -127,7 +124,7 @@ class Store:
                 return previous[0]  # Retrying creation after a lost response cannot duplicate a campaign.
             if db.execute("SELECT 1 FROM runs WHERE experiment_id=? AND status IN ('queued','running')",(source_id,)).fetchone():
                 raise ValueError('Finaliza o cancela la comparación antes de crear una campaña.')
-            db.execute('INSERT INTO campaigns VALUES (?,?,?,?,?,?)',
+            db.execute('INSERT INTO campaigns(id,owner_id,name,created_at,source_id,data) VALUES (?,?,?,?,?,?)',
                        (campaign_id,self.owner_id,name,time.time(),source_id,json.dumps(data)))
             db.execute('INSERT INTO campaign_attempts VALUES (?,?,1,NULL)',(source_id,campaign_id))
             return campaign_id
@@ -176,7 +173,7 @@ class Store:
                 if (previous['experiment_id'],previous['kind'],previous['text']) != (experiment_id,kind,text):
                     raise ValueError('La clave de anotación ya corresponde a otro contenido.')
                 return request_id
-            db.execute('INSERT INTO attempt_annotations VALUES (?,?,?,?,?)',(request_id,experiment_id,time.time(),kind,text))
+            db.execute('INSERT INTO attempt_annotations(id,experiment_id,created_at,kind,text) VALUES (?,?,?,?,?)',(request_id,experiment_id,time.time(),kind,text))
             return request_id
 
     def worker_signal(self, worker_id, state):
@@ -241,7 +238,7 @@ class Store:
                        json_extract(e.snapshot, '$.config.split') AS split,
                        COUNT(r.id) AS total,
                        SUM(CASE WHEN r.status NOT IN ('queued','running') THEN 1 ELSE 0 END) AS completed,
-                       MIN(json_extract(r.data, '$.queued_at')) AS created_at
+                       MIN(CAST(json_extract(r.data, '$.queued_at') AS DOUBLE PRECISION)) AS created_at
                 FROM experiments e LEFT JOIN runs r ON r.experiment_id=e.id
                 WHERE (? IS NULL OR EXISTS (SELECT 1 FROM experiment_owners o WHERE o.experiment_id=e.id AND o.owner_id=?))
                 GROUP BY e.id ORDER BY e.rowid DESC LIMIT ?

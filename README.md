@@ -122,6 +122,8 @@ conclusiones sobre modelos requieren experimentos reales y casos revisados.
 
 ## Documentación
 
+- [PostgreSQL en Supabase: conexión e importación desde SQLite](docs/supabase.md).
+
 - [Operación local y CLI](docs/operacion-local.md).
 - [Datasets y evaluación](docs/datasets.md) · [Protocolo reproducible](docs/protocolo-evaluacion.md).
 - [Campañas](docs/campanas.md) · [Análisis por tarea](docs/analisis-por-tarea.md) · [Estudios de latencia](docs/estudios-de-latencia.md).
