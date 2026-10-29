@@ -1,4 +1,5 @@
 import { partialAnswer } from './visual-data';
+import { ResearchToolsComponent } from './research-tools.component';
 import { caseInputs, evaluationStatus } from './result-presentation';
 import { ExecutionGuideComponent } from './execution-guide.component';
 import { TermHelpComponent } from './term-help.component';
@@ -28,7 +29,7 @@ import { ArenaService, ArenaEvent, ExperimentDetail, ExperimentSummary, Preset, 
 
 @Component({
   selector: 'arena-workspace', standalone: true,
-  imports: [ExecutionGuideComponent, TermHelpComponent, TimeChartComponent, OutcomeChartComponent, ThemePickerComponent, WorkerStatusComponent, DemoOverviewComponent, DemoGuideComponent, ContactComponent, DatePipe, DecimalPipe, JsonPipe, FormsModule, ComposerComponent, ProfileComponent, InfoDialogComponent, GuideComponent, BrandMarkComponent, ModelLibraryComponent, CampaignsComponent, LoadingIndicatorComponent],
+  imports: [ResearchToolsComponent, ExecutionGuideComponent, TermHelpComponent, TimeChartComponent, OutcomeChartComponent, ThemePickerComponent, WorkerStatusComponent, DemoOverviewComponent, DemoGuideComponent, ContactComponent, DatePipe, DecimalPipe, JsonPipe, FormsModule, ComposerComponent, ProfileComponent, InfoDialogComponent, GuideComponent, BrandMarkComponent, ModelLibraryComponent, CampaignsComponent, LoadingIndicatorComponent],
   templateUrl: './app.component.html',
 })
 export class AppComponent {
@@ -89,6 +90,30 @@ export class AppComponent {
     });
   }
   experiments = signal<ExperimentSummary[]>([]);
+  historySearch = '';
+  historyAdapter = '';
+  historyStatus = '';
+  historySince = '';
+  historyUntil = '';
+  historyBusy = signal(false);
+  historyMore = signal(false);
+  private historyVersion = 0;
+  private historyOptions(offset=0) {
+    return {offset,search:this.historySearch,adapter:this.historyAdapter,status:this.historyStatus,
+      since:this.historySince ? String(new Date(this.historySince+'T00:00:00').getTime()/1000) : undefined,
+      until:this.historyUntil ? String(new Date(this.historyUntil+'T23:59:59').getTime()/1000) : undefined};
+  }
+  async searchHistory(more=false) {
+    const version = ++this.historyVersion;
+    this.historyBusy.set(true);
+    try {
+      const rows = await this.api.experiments(this.historyOptions(more?this.experiments().length:0));
+      if (!this.destroyed && version===this.historyVersion) {
+        this.experiments.set(more?[...this.experiments(),...rows]:rows); this.historyMore.set(rows.length===50);
+      }
+    } catch { if (version===this.historyVersion) this.error.set('No se pudo consultar el historial.'); }
+    finally { if (version===this.historyVersion) this.historyBusy.set(false); }
+  }
   presets = signal<Preset[]>([]);
   selectedId = signal('');
   detail = signal<ExperimentDetail | null>(null);
@@ -102,6 +127,7 @@ export class AppComponent {
   traceLoading = signal(false);
   cancelling = signal('');
   preset: PresetId = 'simulated';
+  private presetKeys:Partial<Record<PresetId,string>>={};
   branchFilter = signal('all');
   isTerminal = terminal;
   partialAnswer = partialAnswer;
@@ -121,6 +147,8 @@ export class AppComponent {
   pending = computed(() => this.detail()?.runs.some(r => !terminal(r)) ?? false);
   visibleRuns = computed(() => this.detail()?.runs.filter(r => this.branchFilter() === 'all' || r.branch === this.branchFilter()) ?? []);
   allCases = signal(false);
+  caseSearch = signal('');
+  caseFilter = signal('all');
   resultCases = computed(() => {
     const cases = new Map<string,{key:string;task:string;repetition:number;runs:Partial<Record<'A'|'B',Run>>}>();
     for (const run of this.detail()?.runs ?? []) {
@@ -128,7 +156,20 @@ export class AppComponent {
       const item = cases.get(key) ?? {key,task:run.task_id,repetition:run.repetition,runs:{}};
       item.runs[run.branch] = run; cases.set(key,item);
     }
-    return [...cases.values()];
+    return [...cases.values()].filter(item => {
+      const a = item.runs.A, b = item.runs.B;
+      const correct = (run:Run|undefined) => !!run && terminal(run) && run.status!=='cancelled' && !run.result?.error && run.result?.success===true;
+      const incorrect = (run:Run|undefined) => !!run && terminal(run) && !['cancelled','interrupted','timeout','limit'].includes(run.status) && !run.result?.error && run.result?.answer!==undefined && run.result?.success===false;
+      const filter = this.caseFilter();
+      const matches = filter==='all' || filter==='a_only' && correct(a) && incorrect(b) || filter==='b_only' && correct(b) && incorrect(a)
+        || filter==='different' && a?.result?.answer!==undefined && b?.result?.answer!==undefined && a.result.answer!==b.result.answer
+        || filter==='invalid' && [a,b].some(r=>r && incorrect(r) && r.result?.format_ok===false)
+        || filter==='timeout' && [a,b].some(r=>r?.status==='timeout')
+        || filter==='errors' && [a,b].some(r=>r && (r.result?.error || ['timeout','limit','interrupted'].includes(r.status)))
+        || filter==='unscored' && [a,b].some(r=>r && r.status==='completed' && r.result?.success==null);
+      const search = this.caseSearch().trim().toLocaleLowerCase();
+      return matches && (!search || [item.task,...this.inputsFor(item.task).map(i=>i.text ?? ''),a?.result?.answer ?? '',b?.result?.answer ?? ''].some(v=>v.toLocaleLowerCase().includes(search)));
+    });
   });
   summaries = computed(() => (['A', 'B'] as const).map(branch => {
     return {branch,...(this.detail()?.overviews?.[branch] ?? {total:0,finished:0,evaluated:0,planned_evaluable:0,correct:0,incorrect:0,invalid_format:0,execution_errors:0,cancelled:0,unscored:0,pending:0,mean_answer_s:null,timed_answers:0})};
@@ -169,6 +210,7 @@ export class AppComponent {
       if (this.destroyed || version !== this.initializationVersion) return;
       this.presets.set(presets);
       this.experiments.set(experiments);
+      this.historyMore.set(experiments.length===50);
       if (selection === this.selectionVersion) {
         if (this.selectedId()) await this.select(this.selectedId(), false);
         else if (experiments.length) { await this.select(experiments[0].id, false); if (!this.destroyed) this.writeRoute(true); }
@@ -184,6 +226,7 @@ export class AppComponent {
     this.detail.set(null);
     this.closeTrace();
     this.branchFilter.set('all'); this.allCases.set(false);
+    this.caseFilter.set('all'); this.caseSearch.set('');
     this.loading.set(true);
     this.error.set('');
     this.campaignError.set('');
@@ -200,11 +243,14 @@ export class AppComponent {
     this.refreshing = true;
     const id = this.selectedId();
     const version = this.selectionVersion;
+    const historyVersion=this.historyVersion;
     try {
-      const [experiments, detail] = await Promise.all([this.api.experiments(), id ? this.api.detail(id) : Promise.resolve(null)]);
+      const [experiments, update] = await Promise.all([this.api.experiments(this.historyOptions()), id ?
+        (this.detail() ? this.api.progress?.(id) ?? this.api.detail(id) : this.api.detail(id)) : Promise.resolve(null)]);
+      const detail = update && this.detail() && !('snapshot' in update) ? {...this.detail()!,...update} : update as ExperimentDetail|null;
       if (this.destroyed) return;
       if (version === this.selectionVersion) {
-        this.experiments.set(experiments);
+        if(historyVersion===this.historyVersion) this.experiments.update(old => [...experiments,...old.filter(e=>!experiments.some(n=>n.id===e.id))]);
         this.detail.set(detail);
         this.error.set('');
         const selected = this.selectedRun();
@@ -224,9 +270,16 @@ export class AppComponent {
     this.error.set('');
     this.notice.set('');
     const selection = this.selectionVersion;
+    const preset=this.preset;
+    const owner=this.auth.user()?.id;
+    const keyName=`arena.preset-request.${owner}.${preset}`;
     try {
-      const { id } = await this.api.create(this.preset);
-      if (this.destroyed) return;
+      try { const saved=localStorage.getItem(keyName);if(saved && /^[A-Za-z0-9_-]{8,100}$/.test(saved))this.presetKeys[preset]=saved; } catch {}
+      const key=this.presetKeys[preset] ??= crypto.randomUUID();
+      try {localStorage.setItem(keyName,key);} catch {}
+      const { id } = await this.api.create(preset,key);
+      delete this.presetKeys[preset];try {localStorage.removeItem(keyName);} catch {}
+      if (this.destroyed || this.auth.user()?.id!==owner) return;
       if (this.view() !== 'compose' || selection !== this.selectionVersion) { this.notice.set('Comparación guardada. Puedes abrirla desde el historial.'); await this.refresh(); return; }
       this.selectedId.set(id); this.navigate('results');
       this.notice.set('Comparación creada. El worker procesará las ejecuciones en cola.');

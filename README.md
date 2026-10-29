@@ -32,6 +32,12 @@ Reproducibilidad no significa garantizar respuestas idénticas en cualquier máq
   solo cuando la evidencia cumple las condiciones del método.
 - Anotaciones de condiciones externas, estado del worker y exportación CSV,
   Markdown y JSON. Las diferencias incompatibles se advierten sin elegir ganadores.
+- Filtros de errores y diferencias por caso, revisión humana ciega y contraste
+  con una comparación anterior bajo condiciones compatibles.
+- Biblioteca personal versionada de datasets/prompts, ejecución por lotes,
+  historial con búsqueda y paginación y envíos sin duplicados.
+- PDF de texto con vista previa, streaming de texto en Ollama, diagnóstico previo,
+  recuperación controlada y copias SQLite verificadas.
 
 ## Inicio rápido
 
@@ -122,6 +128,7 @@ conclusiones sobre modelos requieren experimentos reales y casos revisados.
 
 ## Documentación
 
+- [Nuevas herramientas de análisis, fiabilidad y copias de seguridad](docs/mejoras-investigacion.md).
 - [Operación local y CLI](docs/operacion-local.md).
 - [Datasets y evaluación](docs/datasets.md) · [Protocolo reproducible](docs/protocolo-evaluacion.md).
 - [Campañas](docs/campanas.md) · [Análisis por tarea](docs/analisis-por-tarea.md) · [Estudios de latencia](docs/estudios-de-latencia.md).

@@ -124,8 +124,9 @@ def test_library_comparison_fingerprint_changes_with_conditions(tmp_path,conditi
     # Read-only snapshot substitution: leave the persisted experiment intact.
     store.result_experiments = lambda: [(eid,snapshot)]
     if condition == 'server':
-        original = store.list_runs
-        store.list_runs = lambda eid: [r | {'result':r['result'] | {'inference_identity':r['result']['inference_identity'] | {'server_version':'2'}}} for r in original(eid)]
+        original_evidence = store.result_evidence
+        original_runs, original_notes = original_evidence()
+        store.result_evidence = lambda: ({eid:[r | {'result':r['result'] | {'inference_identity':r['result']['inference_identity'] | {'server_version':'2'}}} for r in original_runs[eid]]}, original_notes)
     after = {e['branch']:e for e in latest_model_results(store)}
     assert after['A']['cohort_key'] != before['A']['cohort_key']
     if condition in ('prompt','parameters'):

@@ -14,6 +14,7 @@ from .json_input import load_json
 MAX_FILE_BYTES = 1024 * 1024
 MAX_TEXT_CHARS = 20000
 MEDIA = {'.txt': 'text/plain', '.json': 'application/json', '.csv': 'text/csv',
+         '.pdf': 'application/pdf',
          '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp'}
 
 
@@ -28,7 +29,7 @@ def prepare_attachment(upload: AttachmentUpload) -> Attachment:
         raise ValueError('El nombre del archivo no puede contener rutas ni caracteres de control')
     extension = PurePosixPath(name).suffix.lower()
     if extension not in MEDIA:
-        raise ValueError('Formatos admitidos: TXT, JSON, CSV, PNG, JPG y WebP')
+        raise ValueError('Formatos admitidos: TXT, JSON, CSV, PDF de texto, PNG, JPG y WebP')
     try:
         raw = base64.b64decode(upload.data_base64, validate=True)
     except (ValueError, binascii.Error) as exc:
@@ -47,6 +48,22 @@ def prepare_attachment(upload: AttachmentUpload) -> Attachment:
                 image.verify()
         except (UnidentifiedImageError, OSError, SyntaxError, Image.DecompressionBombError) as exc:
             raise ValueError('Imagen no válida') from exc
+    elif extension == '.pdf':
+        import subprocess
+        import sys
+        if not raw.startswith(b'%PDF-'):
+            raise ValueError('El archivo no contiene un PDF válido')
+        try:
+            parsed = subprocess.run([sys.executable,'-m','arena.pdf_input'],input=raw,capture_output=True,timeout=10,
+                                    cwd=str(__import__('pathlib').Path(__file__).resolve().parent.parent))
+            data = json.loads(parsed.stdout.decode('utf-8'))
+            if parsed.returncode or data.get('error') or not isinstance(data.get('text'),str):
+                raise ValueError(data.get('error','No se pudo extraer el texto PDF'))
+            text = data['text']
+        except (subprocess.TimeoutExpired,UnicodeError,json.JSONDecodeError) as exc:
+            raise ValueError('No se pudo procesar el PDF en el tiempo permitido') from exc
+        if len(text)>MAX_TEXT_CHARS or '\x00' in text:
+            raise ValueError('Texto PDF inválido o superior a 20.000 caracteres')
     else:
         try:
             text = raw.decode('utf-8-sig')

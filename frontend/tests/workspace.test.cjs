@@ -16,7 +16,7 @@ function deferred() {
 function fixture(filename, api, options={}) {
   const destroy = [];
   const signal = value => Object.assign(() => value, {set:next => {value=next;}, update:fn => {value=fn(value);}});
-  class ArenaService {} class AuthService {} class DestroyRef {}
+  class ArenaService {} class AuthService {} class DestroyRef {} class HttpErrorResponse extends Error {}
   const core = {Component:() => target => target, Input:() => () => {}, Output:() => () => {}, HostListener:() => () => {}, EventEmitter:class {emit(){}}, signal, input:signal, computed:fn => fn, output:() => ({emit(){}}), DestroyRef,
     inject:token => token === ArenaService ? api : token === AuthService ? auth : {onDestroy:fn=>destroy.push(fn),begin:()=>()=>{}}};
   const auth = {user:signal(options.user ?? {id:'test'}),savePreferences:async()=>{}};
@@ -24,7 +24,7 @@ function fixture(filename, api, options={}) {
   const module = {exports:{}};
   const source = fs.readFileSync(path.resolve(__dirname,'../src/app/',filename),'utf8');
   vm.runInNewContext(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,experimentalDecorators:true}}).outputText,
-    {module,exports:module.exports, require:name => name === '@angular/core' ? core : name === './arena.service' ? {ArenaService,defaultSettings:()=>({}),terminal:r=>!['queued','running'].includes(r.status)} : name === './auth.service' ? {AuthService,accountError:error=>error.message} : name === './validation' ? options.realValidation ? validationModule.exports : {modelIdentity:m=>m,textError:()=>'',filenameError:()=>''} : {},
+    {module,exports:module.exports, require:name => name === '@angular/core' ? core : name === '@angular/common/http' ? {HttpErrorResponse} : name === './arena.service' ? {ArenaService,defaultSettings:()=>({}),terminal:r=>!['queued','running'].includes(r.status)} : name === './auth.service' ? {AuthService,accountError:error=>error.message} : name === './validation' ? options.realValidation ? validationModule.exports : {modelIdentity:m=>m,textError:()=>'',filenameError:()=>''} : {},
       window:{location:{hash:''},history:{pushState(){},replaceState(){}}}, URLSearchParams, queueMicrotask, TextDecoder, localStorage:storage, document:{querySelector:()=>null,title:'',getElementById:()=>null,activeElement:null}, HTMLElement:class {},crypto:require('node:crypto'), requestAnimationFrame:fn=>fn(),setInterval:()=>1,clearInterval(){},setTimeout:()=>1,clearTimeout(){}});
   return {exports:module.exports,auth,destroy:()=>destroy.forEach(fn=>fn())};
 }
@@ -294,4 +294,50 @@ test('ChatGPT does not send invalid hidden Ollama settings after switching provi
   c.settings={temperature:NaN,seed:-1,num_ctx:NaN,max_output_tokens:NaN,timeout_s:120,order_policy:'balanced',latency_study:false};
   await c.submit();assert.equal(sent.adapter,'codex');assert.equal(sent.settings.timeout_s,120);
   assert.equal(sent.settings.order_policy,'random');assert.notEqual(sent.settings.seed,-1);
+});
+
+
+test('comparison retries reuse the request key after a lost response and rotate it after success',async()=>{
+  const sent=[];let fail=true;const stored=new Map();
+  const storage={getItem:k=>stored.get(k) ?? null,setItem:(k,v)=>stored.set(k,v),removeItem:k=>stored.delete(k)};
+  const api={prompts:async()=>[],preflight:async()=>({ready:true,errors:[],warnings:[]}),compare:async body=>{sent.push({...body});if(fail)throw new Error('lost response');return {id:'saved'};}};
+  const f=fixture('composer.component.ts',api,{storage});const c=new f.exports.ComposerComponent();
+  c.preparationIssues=()=>[];c.shared.text='Same input';c.promptA.text=c.promptB.text='Brief';
+  await c.submit();assert.equal(c.submissionPending(),true);assert.equal(sent.length,1);
+  const recoveredFixture=fixture('composer.component.ts',api,{storage});const recovered=new recoveredFixture.exports.ComposerComponent();
+  recovered.recoverDraft();recovered.preparationIssues=()=>[];fail=false;
+  await recovered.submit();assert.equal(sent[0].request_id,sent[1].request_id);assert.equal(recovered.submissionPending(),false);
+  await recovered.submit();assert.notEqual(sent[1].request_id,sent[2].request_id);
+});
+
+test('case filters separate incorrect answers from errors and keep global summaries intact',async()=>{
+  const {app}=await workspace();app.inputsFor=()=>[];
+  const run=(branch,status,result)=>({id:branch,task_id:'case',repetition:0,branch,status,result});
+  app.detail.set({snapshot:{},runs:[run('A','succeeded',{success:true,answer:'ok'}),run('B','failed',{success:false,answer:'wrong'})]});
+  app.caseFilter.set('a_only');assert.equal(app.resultCases().length,1);
+  app.caseFilter.set('b_only');assert.equal(app.resultCases().length,0);
+  app.caseFilter.set('different');assert.equal(app.resultCases().length,1);
+  app.detail().runs[1]=run('B','timeout',{success:false,error:'timeout'});
+  app.caseFilter.set('a_only');assert.equal(app.resultCases().length,0);
+  app.caseFilter.set('timeout');assert.equal(app.resultCases().length,1);
+  app.caseSearch.set('not present');assert.equal(app.resultCases().length,0);
+  assert.equal(app.detail().runs.length,2);
+});
+
+test('batch configurations are copied and uncertain retries preserve their keys',async()=>{
+  let fail=true;const sent=[];
+  const f=fixture('composer.component.ts',{prompts:async()=>[],batch:async items=>{sent.push(JSON.parse(JSON.stringify(items)));if(fail)throw new Error('lost');return {ids:['first','second']};}});
+  const c=new f.exports.ComposerComponent();c.preparationIssues=()=>[];c.shared.text='First';c.addToBatch();
+  c.shared.text='Second';c.addToBatch();assert.equal(c.batchItems()[0].shared_input.text,'First');
+  await c.runBatch();assert.equal(c.batchItems().length,2);fail=false;await c.runBatch();
+  assert.equal(sent[0][0].request_id,sent[1][0].request_id);assert.equal(c.batchItems().length,0);
+});
+
+
+test('dataset editor validates a copy without changing a saved library version',async()=>{
+  const entry={id:'version-1',kind:'dataset',name:'Original',version:1,content:{cases:[{id:'one',input:'Original',expected_answer:null}],tags:[]}};
+  const f=fixture('composer.component.ts',{prompts:async()=>[],validateDataset:async(_name,text)=>{const cases=text.split('\n').map(line=>JSON.parse(line));return {cases,count:cases.length,scored:0};}});
+  const c=new f.exports.ComposerComponent();c.useLibrary(entry);c.prepareDatasetEdit();
+  c.datasetEditor=c.datasetEditor.replace('Original','Edited');await c.applyDatasetEdit();
+  assert.equal(c.dataset().cases[0].input,'Edited');assert.equal(entry.content.cases[0].input,'Original');
 });

@@ -26,6 +26,7 @@ export interface ExperimentSummary {
   total: number; completed: number; created_at: number;
 }
 export interface Result {
+  first_visible_token_s?:number;
   success: boolean | null; format_ok?: boolean | null; agent_s?: number; queue_s?: number;
   input_tokens?: number | null; output_tokens?: number | null; usage_complete?: boolean;
   tool_calls?: number; tool_errors?: number; server_tps?: number | null;
@@ -62,6 +63,7 @@ export interface PromptTemplate { id: string; name: string; text: string }
 export interface Upload { name: string; data_base64: string; preview: string; image: boolean; size: number }
 export interface InputData { text: string; files: Upload[]; expected_answer: string }
 export interface ComparisonBody {
+  request_id?:string;
   name: string; adapter: PresetId; comparison: 'same_model' | 'different_models'; repetitions: number;
   agents: Record<string, {model: string; system_prompt: string; prompt_template: string}>;
   shared_input?: unknown; branch_inputs?: Record<string, unknown>;
@@ -73,6 +75,11 @@ export interface DatasetCase { id: string; input: string; expected_answer: strin
 export interface DatasetPreview { cases: DatasetCase[]; count: number; scored: number }
 export interface ArenaEvent { seq: number; kind: string; at: number; payload: unknown }
 export interface HistoryState { count: number; pending: number; revision: string }
+export interface LibraryEntry {id:string;kind:'dataset'|'prompt';name:string;version:number;sha256:string;content:{text:string|null;cases:DatasetCase[]|null;tags:string[]}}
+export interface Preflight {ready:boolean;errors:string[];warnings:string[];planned_runs:number}
+export interface BlindPair {id:string;task_id:string;input:string;left:string;right:string;rubric:string}
+export interface ReviewResult {task_id:string;repetition:number;mapping:Record<string,string>;score:unknown}
+export interface BaselineReport {compatible:boolean;reasons:string[];note:string;cases:{task_id:string;branch:string;repetition:number;before:string;after:string;change:string;before_answer:string|null;after_answer:string|null}[]}
 export const terminal = (run: Run) => !['queued', 'running'].includes(run.status);
 
 @Injectable({ providedIn: 'root' })
@@ -83,7 +90,22 @@ export class ArenaService {
   openaiConnect() { return firstValueFrom(this.http.post<OpenaiSession>('/api/openai/connect',{}).pipe(timeout(30000))); }
   openaiDisconnect() { return firstValueFrom(this.http.post<OpenaiSession>('/api/openai/disconnect',{}).pipe(timeout(15000))); }
   openaiModels() { return firstValueFrom(this.http.get<OpenaiSession>('/api/openai/models').pipe(timeout(30000))); }
-  experiments() { return this.get<ExperimentSummary[]>('/experiments'); }
+  experiments(options?:{offset?:number;search?:string;adapter?:string;status?:string;since?:string;until?:string}) {
+    const query = new URLSearchParams();
+    for (const [key,value] of Object.entries(options ?? {})) if (value !== undefined && value !== '') query.set(key,String(value));
+    return this.get<ExperimentSummary[]>('/experiments'+(query.size?'?'+query:''));
+  }
+  progress(id:string) { return this.get<Pick<ExperimentDetail,'runs'|'overviews'|'protocol'|'campaign'>>(`/experiments/${encodeURIComponent(id)}/progress`); }
+  recoverWorker() { return firstValueFrom(this.http.post<{recovered:number}>('/api/worker/recover',{workers_stopped:true}).pipe(timeout(15000))); }
+  library() { return this.get<LibraryEntry[]>('/library'); }
+  saveLibrary(body:{kind:'dataset'|'prompt';name:string;text?:string;cases?:DatasetCase[];tags?:string[]}) { return firstValueFrom(this.http.post<{id:string;version:number}>('/api/library',body).pipe(timeout(30000))); }
+  preflight(body:ComparisonBody) { return firstValueFrom(this.http.post<Preflight>('/api/comparisons/preflight',body).pipe(timeout(90000))); }
+  batch(comparisons:ComparisonBody[]) { return firstValueFrom(this.http.post<{ids:string[]}>('/api/comparisons/batch',{comparisons}).pipe(timeout(120000))); }
+  attachmentPreview(body:{name:string;data_base64:string}) { return firstValueFrom(this.http.post<{text:string;sha256:string}>('/api/attachments/preview',body).pipe(timeout(20000))); }
+  startReview(id:string,task_id:string,repetition:number) { return firstValueFrom(this.http.post<BlindPair>(`/api/experiments/${encodeURIComponent(id)}/reviews`,{task_id,repetition}).pipe(timeout(15000))); }
+  scoreReview(id:string,body:unknown) { return firstValueFrom(this.http.post<ReviewResult>(`/api/reviews/${encodeURIComponent(id)}`,body).pipe(timeout(15000))); }
+  reviews(id:string) { return this.get<ReviewResult[]>(`/experiments/${encodeURIComponent(id)}/reviews`); }
+  baseline(id:string,baseline:string) { return this.get<BaselineReport>(`/experiments/${encodeURIComponent(id)}/baseline/${encodeURIComponent(baseline)}`); }
   modelResults() { return this.get<{entries:ModelResult[]}>('/model-results'); }
   workerStatus() { return this.get<WorkerStatus>('/worker/status'); }
   annotateAttempt(id:string,experiment_id:string,body:{request_id:string;kind:string;text:string}) {
@@ -111,10 +133,10 @@ export class ArenaService {
   compare(body: ComparisonBody) {
     return firstValueFrom(this.http.post<{id: string}>('/api/comparisons', body).pipe(timeout(30000)));
   }
-  detail(id: string) { return this.get<ExperimentDetail>(`/experiments/${encodeURIComponent(id)}`); }
+  detail(id: string) { return this.get<ExperimentDetail>(`/experiments/${encodeURIComponent(id)}?compact=true`); }
   events(id: string) { return this.get<ArenaEvent[]>(`/runs/${encodeURIComponent(id)}/events`); }
-  create(config: PresetId) {
-    return firstValueFrom(this.http.post<{id: string}>('/api/experiments', { config }).pipe(timeout(30000)));
+  create(config: PresetId,request_id?:string) {
+    return firstValueFrom(this.http.post<{id: string}>('/api/experiments', { config,request_id }).pipe(timeout(30000)));
   }
   cancel(id: string) {
     return firstValueFrom(this.http.post(`/api/runs/${encodeURIComponent(id)}/cancel`, {}).pipe(timeout(15000)));

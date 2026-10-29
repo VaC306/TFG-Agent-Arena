@@ -452,3 +452,22 @@ pre, code { color: inherit; }
   .topbar arena-theme-picker { order: 5; }
   .auth-top { gap: 16px; flex-wrap: wrap; }
 }
+
+/* Research controls share the existing semantic palette in both themes. */
+.history-search { display:grid; gap:6px; padding:12px 0; max-width:100%; }
+.history-search input, .history-search select { width:100%; min-width:0; box-sizing:border-box; }
+.case-filters { display:grid; grid-template-columns:auto minmax(140px,1fr) auto minmax(150px,1fr); gap:10px; align-items:center; padding:18px 0; }
+.case-filters p { grid-column:1/-1; margin:0; }
+.workspace-library, .batch-panel, .research-tools { margin:16px 0; padding:18px; border:1px solid var(--line); border-radius:12px; background:var(--surface); }
+.workspace-library summary, .batch-panel summary, .research-tools summary { cursor:pointer; padding:5px 0; }
+.workspace-library button, .batch-panel button, .research-tools button { margin:8px 8px 8px 0; }
+.workspace-library input, .research-tools input, .research-tools select { max-width:100%; box-sizing:border-box; }
+.research-tools pre, .review-dialog pre { white-space:pre-wrap; overflow-wrap:anywhere; max-height:300px; overflow:auto; }
+.review-dialog { width:min(960px,calc(100vw - 48px)); max-height:calc(100dvh - 48px); overflow:auto; border:1px solid var(--line); border-radius:16px; padding:24px; background:var(--surface); color:var(--text); }
+.review-dialog::backdrop { background:rgba(0,0,0,.6); }
+.review-dialog label { display:block; margin-top:10px; }
+.review-dialog textarea { width:100%; box-sizing:border-box; }
+@media(max-width:760px) { .case-filters { grid-template-columns:1fr; } .review-dialog { padding:16px; } .review-dialog .answer-grid { grid-template-columns:1fr; } }
+
+.case-filters input, .research-tools input { border:1px solid var(--control-border); border-radius:8px; padding:10px 12px; font:inherit; }
+.history-filters > summary { cursor:pointer; padding:10px; color:var(--text-secondary); }

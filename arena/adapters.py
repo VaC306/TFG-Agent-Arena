@@ -8,6 +8,7 @@ class Ollama:
     def __init__(self, url, keep_alive='5m'):
         self.url = url.rstrip("/")
         self.keep_alive = keep_alive
+        self.on_chunk = None
 
     async def models(self):
         async with httpx.AsyncClient(timeout=5, trust_env=False) as client:
@@ -33,7 +34,7 @@ class Ollama:
         if config.seed is not None:
             options["seed"] = config.seed
         payload = {"model": config.model, "messages": messages,
-                   "stream": False, "options": options, "keep_alive": self.keep_alive}
+                   "stream": self.on_chunk is not None, "options": options, "keep_alive": self.keep_alive}
         if config.tools_enabled:
             payload['tools'] = SCHEMAS
         return payload
@@ -41,9 +42,36 @@ class Ollama:
     async def chat(self, messages, config, remaining):
         async with httpx.AsyncClient(timeout=None, trust_env=False) as client:
             payload = self.payload(messages, config, remaining)
-            response = await client.post(self.url + "/api/chat", json=payload)
-            response.raise_for_status()
-            data = response.json()
+            if payload['stream']:
+                text, calls, data = '', [], {}
+                async with client.stream('POST',self.url+'/api/chat',json=payload) as response:
+                    response.raise_for_status()
+                    async for line in response.aiter_lines():
+                        if not line.strip():
+                            continue
+                        chunk = json.loads(line)
+                        if chunk.get('error'):
+                            raise ValueError(str(chunk['error'])[:500])
+                        message = chunk.get('message',{})
+                        token = message.get('content','')
+                        if not isinstance(token,str):
+                            raise ValueError('Fragmento de respuesta inválido')
+                        text += token
+                        if len(text)>1024*1024:
+                            raise ValueError('La respuesta supera el límite de 1 MiB de texto')
+                        if token:
+                            self.on_chunk(text)
+                        calls.extend(message.get('tool_calls') or [])
+                        data = chunk
+                        if chunk.get('done'):
+                            break
+                data['message'] = {'role':'assistant','content':text}
+                if calls:
+                    data['message']['tool_calls'] = calls
+            else:
+                response = await client.post(self.url + "/api/chat", json=payload)
+                response.raise_for_status()
+                data = response.json()
         # Never require or persist the model's private thinking field.
         data["message"].pop("thinking", None)
         return data

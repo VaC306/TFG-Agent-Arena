@@ -71,6 +71,9 @@
   --chart-invalid: #ad783c;
   --chart-error: #904e50;
   --chart-neutral: #aaaaa2;
+  --provider-openai: #168473;
+  --provider-ollama: #7c61c4;
+  --provider-simulated: #b77b24;
   --shadow: #2222200b;
   --shadow-2: #22222012;
   --shadow-3: #0002;
@@ -151,6 +154,9 @@
   --chart-invalid: #efb770;
   --chart-error: #e9a0a4;
   --chart-neutral: #a4a799;
+  --provider-openai: #56cbb3;
+  --provider-ollama: #b49aef;
+  --provider-simulated: #edb960;
   --shadow: #00000055;
   --shadow-2: #00000055;
   --shadow-3: #00000055;

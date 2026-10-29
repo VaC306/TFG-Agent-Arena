@@ -17,7 +17,7 @@
         }</div>
       </section>
     }
-    <arena-model-comparison [entries]="visible()" [selected]="compared()" [stale]="!!error()" />
+    <arena-model-comparison [entries]="visible()" [selected]="compared()" [stale]="!!error()" (opened)="opened.emit($event)" />
     <div class="library-grid">@for (entry of visible(); track entry.id) {
       <article class="panel library-card" [class.library-selected]="selected().includes(entry.id)">
         <div class="library-card-heading"><span class="tag">{{ entry.adapter === 'simulated' ? 'SIMULACIÓN' : entry.adapter === 'codex' ? 'ChatGPT · Codex' : 'OLLAMA' }}</span><label class="library-check"><input type="checkbox" [checked]="selected().includes(entry.id)" (change)="toggle(entry.id)" [disabled]="!!error() || !selected().includes(entry.id) && selected().length === 2" [attr.aria-label]="'Seleccionar ' + entry.model + ', ' + kindLabel(entry.kind) + ', versión ' + (entry.digest?.slice(0,12) ?? 'sin verificar')"> Comparar</label></div>

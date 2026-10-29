@@ -50,13 +50,32 @@ limitación de la ejecución secuencial, sin declarar ganadores.
 
 ## Biblioteca, campañas y trazas
 
-La biblioteca incluye ocho gráficos de barras: aciertos sobre ejecuciones con
+La biblioteca incluye ocho gráficos de barras verticales: aciertos sobre ejecuciones con
 referencia, cobertura de evaluación, errores, tiempo medio, P95, velocidad de
 generación del servidor, tokens y coste estimado por ejecución. Se pueden mostrar
 las fichas del filtro o solo las seleccionadas. Cada métrica comparte escala desde
 cero entre las fichas; los porcentajes usan 0–100 %. La vista no mezcla resultados
 ni declara ganadores si las condiciones difieren. Las simulaciones no representan
 mediciones de modelos reales.
+
+Los colores identifican el proveedor: OpenAI en turquesa, Ollama local en violeta
+y simulaciones en ámbar, con variantes para claro y oscuro. Los modelos de un
+mismo proveedor comparten color y mantienen sus nombres bajo las barras. Una
+leyenda identifica los proveedores visibles. Al pasar el cursor, enfocar con Tab
+o tocar una barra aparece su valor, muestras, tipo de prueba, variante, experimento,
+fecha y fase. Escape cierra el detalle. El panel permanece visible al pasar el
+cursor sobre él. Un cero conserva una marca en la base; los valores ausentes
+usan un marcador discontinuo con «Sin datos», sin una altura que simule medición.
+Con muchas fichas se desplaza el área de modelos dentro del gráfico.
+
+La comparativa permite alternar **Gráficos/Tabla**, ordenar las fichas por nombre
+o valores observados y elegir qué métricas mostrar. Las columnas de la tabla y el
+CSV siguen la misma selección y orden. La tabla mantiene visibles las muestras y
+permite abrir la evidencia de origen. **Descargar comparativa CSV** exporta las
+fichas del ámbito mostrado, con unidades y tarifas asignadas; un dato ausente no
+se convierte en cero. Los controles permanecen durante la visita a la biblioteca.
+La [revisión de prácticas de otras herramientas](practicas-comparacion-2026-10-21.md)
+documenta las fuentes y los límites de esta adaptación.
 
 El P95 utiliza el rango más próximo sobre tiempos de respuestas sin error; la
 velocidad muestra la media de tokens/s del servidor con uso completo. Se indica

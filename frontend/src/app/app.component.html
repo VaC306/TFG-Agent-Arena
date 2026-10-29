@@ -5,8 +5,15 @@
     <nav class="workspace-nav" aria-label="Secciones"><button [class.current]="view() === 'compose'" [attr.aria-current]="view() === 'compose' ? 'page' : null" (click)="navigate('compose')">Comparar</button><button [class.current]="view() === 'results'" [attr.aria-current]="view() === 'results' ? 'page' : null" (click)="navigate('results')">Resultados</button><button [class.current]="view() === 'models'" [attr.aria-current]="view() === 'models' ? 'page' : null" (click)="navigate('models')">Modelos</button><button [class.current]="view() === 'campaigns'" [attr.aria-current]="view() === 'campaigns' ? 'page' : null" (click)="campaignId.set(''); navigate('campaigns')">Campañas</button><button class="secondary-nav-button" [class.current]="view() === 'guide'" [attr.aria-current]="view() === 'guide' ? 'page' : null" (click)="navigate('guide')">Guía</button><button class="secondary-nav-button" [class.current]="view() === 'contact'" [attr.aria-current]="view() === 'contact' ? 'page' : null" (click)="navigate('contact')">Contacto</button><details class="secondary-menu" #moreMenu (keydown.escape)="$event.stopPropagation(); moreMenu.open = false; moreSummary.focus()"><summary #moreSummary>Más</summary><nav aria-label="Información del proyecto"><button (click)="navigate('guide'); moreMenu.open = false">Guía</button><button (click)="navigate('contact'); moreMenu.open = false">Contacto</button></nav></details></nav>
     <details class="history-menu" #historyMenu (keydown.escape)="$event.stopPropagation(); historyMenu.open = false; historySummary.focus()"><summary #historySummary>Historial <span class="count">{{ experiments().length }}</span></summary>
     <div class="history-popover">
-    <div class="history-heading">Tus experimentos <span>Últimos 50</span></div>
+    <div class="history-heading">Tus experimentos <span>{{ experiments().length }} cargados</span></div>
     <nav aria-label="Historial de comparaciones">
+      @if (!demo) { <details class="history-filters"><summary>Buscar y filtrar historial</summary><form (ngSubmit)="searchHistory()" class="history-search">
+        <label for="history-search">Buscar nombre o modelo</label><input id="history-search" name="historySearch" [(ngModel)]="historySearch" maxlength="120">
+        <label for="history-adapter">Motor</label><select id="history-adapter" name="historyAdapter" [(ngModel)]="historyAdapter"><option value="">Todos</option><option value="simulated">Simulado</option><option value="ollama">Ollama</option><option value="codex">ChatGPT</option></select>
+        <label for="history-status">Estado</label><select id="history-status" name="historyStatus" [(ngModel)]="historyStatus"><option value="">Todos</option><option value="pending">Pendientes</option><option value="finished">Finalizadas</option></select>
+        <label for="history-since">Desde</label><input id="history-since" type="date" name="historySince" [(ngModel)]="historySince"><label for="history-until">Hasta</label><input id="history-until" type="date" name="historyUntil" [(ngModel)]="historyUntil">
+        <button class="secondary" type="submit" [disabled]="historyBusy()">Buscar historial</button></form></details> }
+
       @for (experiment of experiments(); track experiment.id) {
         <button class="history-item" [class.selected]="selectedId() === experiment.id" [attr.aria-current]="selectedId() === experiment.id ? 'true' : null" (click)="openModelResult(experiment.id); historyMenu.open = false">
           <span class="history-title">{{ experiment.name }}</span>
@@ -14,6 +21,7 @@
           <span class="history-progress">{{ experiment.completed }}/{{ experiment.total }} finalizadas</span>
         </button>
       } @empty { <p class="sidebar-empty">Tus comparaciones aparecerán aquí.</p> }
+    @if (!demo && historyMore()) { <button class="secondary" type="button" (click)="searchHistory(true)" [disabled]="historyBusy()">Cargar más comparaciones</button> }
     </nav>
     </div>
     </details>
@@ -73,6 +81,9 @@
         </div>
         @if (experiment.snapshot.conditions?.inputs_shared === false) { <p class="alert">Entradas independientes: las diferencias no pueden atribuirse únicamente al prompt. No se calcula un contraste emparejado.</p> }
         @if (experiment.snapshot.config.adapter === 'simulated') { <p class="hint simulation-warning">Simulación de plataforma: no mide calidad ni velocidad de modelos reales.</p> }
+        @if (!demo) { <arena-research-tools [experimentId]="selectedId()" [detail]="experiment" [history]="experiments()" /> }
+        <div class="case-filters"><label for="case-search">Buscar en casos y respuestas</label><input id="case-search" [ngModel]="caseSearch()" (ngModelChange)="caseSearch.set($event); allCases.set(false)">
+        <label for="case-filter">Filtrar resultados</label><select id="case-filter" [ngModel]="caseFilter()" (ngModelChange)="caseFilter.set($event); allCases.set(false)"><option value="all">Todos</option><option value="a_only">A acierta y B falla</option><option value="b_only">B acierta y A falla</option><option value="different">Respuestas distintas</option><option value="invalid">Formato inválido</option><option value="timeout">Tiempo agotado</option><option value="errors">Errores de ejecución</option><option value="unscored">Sin evaluar</option></select><p class="hint">Una respuesta distinta no implica un error. Los filtros no cambian las métricas globales.</p></div>
         <section class="case-responses" aria-label="Respuestas por caso"><div class="section-header"><h3>Respuestas A/B</h3><span class="hint">{{ allCases() ? resultCases().length : (resultCases().length > 3 ? 3 : resultCases().length) }} de {{ resultCases().length }} casos y repeticiones</span></div>
           @for (item of (allCases() ? resultCases() : resultCases().slice(0,3)); track item.key) {
             <article class="case-result panel"><h3 [id]="'response-case-' + $index" tabindex="-1">{{ item.task }} · Repetición {{ item.repetition + 1 }}</h3>
@@ -86,11 +97,11 @@
               @for (branch of ['A','B']; track branch) {
                 @if (item.runs[branch === 'A' ? 'A' : 'B']; as run) {
                   <section class="case-branch" [attr.aria-label]="item.task + ', rama ' + branch + ', repetición ' + (item.repetition + 1)"><h4><span class="branch" [class.branch-b]="branch === 'B'">{{ branch }}</span> {{ runLabel(run) }}</h4>
-                    @if (partialAnswer(run)) { <p class="hint">◐ Respuesta parcial · conservada antes de finalizar normalmente.</p> }<pre class="case-answer">{{ run.result?.answer ?? (isTerminal(run) ? 'No hay respuesta final.' : 'Respuesta pendiente de ejecución.') }}</pre>
+                    @if (run.status === 'running' && run.result?.answer) { <p class="hint">Respuesta en curso · fragmento parcial.</p> }@if (partialAnswer(run)) { <p class="hint">◐ Respuesta parcial · conservada antes de finalizar normalmente.</p> }<pre class="case-answer" [attr.aria-label]="run.status === 'running' ? 'Respuesta parcial en curso' : null">{{ run.result?.answer ?? (isTerminal(run) ? 'No hay respuesta final.' : 'Respuesta pendiente de ejecución.') }}</pre>
                     @if (run.result?.error) { <p class="alert error">{{ traceFailure(run.result!.error!) }}</p> }
                     <button class="text-button" (click)="showTrace(run)" [attr.aria-label]="'Ver traza de ' + run.task_id + ', rama ' + run.branch + ', repetición ' + (run.repetition + 1)">Ver traza ↗</button>
                     @if (!demo && !isTerminal(run)) { <button class="text-button danger" (click)="cancel(run)" [disabled]="!!cancelling()" [attr.aria-label]="'Cancelar ' + run.task_id + ', rama ' + run.branch + ', repetición ' + (run.repetition + 1)">Cancelar ejecución</button> }
-                    <details><summary>Referencia y métricas de {{ branch }}</summary><h5>Referencia</h5><pre>{{ referenceFor(run) ?? 'Sin referencia: calidad sin evaluar.' }}</pre><p class="hint">{{ evaluationStatus(run) }}</p>@if (run.status === 'cancelled' && run.result?.reason) { <p class="hint">Motivo registrado: {{ run.result?.reason }}</p> }<p class="hint">Tiempo total: {{ run.result?.agent_s == null ? '—' : (run.result?.agent_s | number:'1.2-2') + ' s' }} · Tokens E/S: {{ run.result?.input_tokens ?? '—' }}/{{ run.result?.output_tokens ?? '—' }}{{ run.result?.usage_complete === false ? ' (parcial)' : '' }} · Herramientas: {{ run.result?.tool_calls ?? '—' }}</p></details>
+                    <details><summary>Referencia y métricas de {{ branch }}</summary><h5>Referencia</h5><pre>{{ referenceFor(run) ?? 'Sin referencia: calidad sin evaluar.' }}</pre><p class="hint">{{ evaluationStatus(run) }}</p>@if (run.status === 'cancelled' && run.result?.reason) { <p class="hint">Motivo registrado: {{ run.result?.reason }}</p> }@if (run.result?.first_visible_token_s != null) { <p class="hint">Primer fragmento visible: {{ run.result?.first_visible_token_s | number:'1.3-3' }} s desde la petición de inferencia. No incluye preparación ni mide razonamiento interno.</p> }<p class="hint">Tiempo total: {{ run.result?.agent_s == null ? '—' : (run.result?.agent_s | number:'1.2-2') + ' s' }} · Tokens E/S: {{ run.result?.input_tokens ?? '—' }}/{{ run.result?.output_tokens ?? '—' }}{{ run.result?.usage_complete === false ? ' (parcial)' : '' }} · Herramientas: {{ run.result?.tool_calls ?? '—' }}</p></details>
                   </section>
                 }
               }

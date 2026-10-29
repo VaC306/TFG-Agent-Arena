@@ -2,6 +2,11 @@ import type { ModelResult } from './arena.service';
 
 export interface CostRate { basis:'tokens'|'hour'; input:number|null; output:number|null; hour:number|null }
 export const rateKey = (entry:ModelResult) => `${entry.adapter}:${entry.model}`;
+export function modelProvider(entry:ModelResult) {
+  if (entry.adapter === 'codex') return {key:'openai',label:'OpenAI'};
+  if (entry.adapter === 'ollama') return {key:'ollama',label:'Ollama · local'};
+  return {key:'simulated',label:'Simulación'};
+}
 const valid = (n:unknown):n is number => typeof n === 'number' && Number.isFinite(n) && n >= 0;
 const percent = (n:number,d:number) => d > 0 ? 100*n/d : null;
 function kindLabel(kind:string) {
@@ -53,9 +58,46 @@ export function modelComparisonCharts(entries:ModelResult[], rates:Record<string
     const rows=entries.map(entry=>{
       const raw=def.value(entry);
       const value=entry.adapter==='simulated'||!valid(raw)?null:raw;
-      return {id:entry.id,model:entry.model,branch:entry.branch,kind:kindLabel(entry.kind),value,sample:def.sample(entry)};
+      return {id:entry.id,model:entry.model,branch:entry.branch,kind:kindLabel(entry.kind),value,sample:def.sample(entry),
+        provider:modelProvider(entry),adapter:entry.adapter,experiment:entry.experiment_name,experimentId:entry.experiment_id,updatedAt:entry.updated_at,split:entry.split};
     });
     const maximum=def.fixed??Math.max(0,...rows.map(r=>r.value??0));
-    return {...def,maximum,rows:rows.map(row=>({...row,width:row.value!==null && maximum>0?100*row.value/maximum:0}))};
+    return {...def,maximum,rows:rows.map(row=>({...row,height:row.value!==null && maximum>0?100*row.value/maximum:0}))};
   });
+}
+
+export function orderComparisonCharts(charts:ReturnType<typeof modelComparisonCharts>,order:string) {
+  const first=charts[0]?.rows??[];
+  const metric=charts.find(c=>c.key===order);
+  const rows=[...first].sort((a,b)=>{
+    if (order==='model') return a.model.localeCompare(b.model);
+    if (!metric) return 0;
+    const av=metric.rows.find(r=>r.id===a.id)?.value??null;
+    const bv=metric.rows.find(r=>r.id===b.id)?.value??null;
+    if (av===null) return bv===null?0:1;
+    if (bv===null) return -1;
+    return order==='quality'?bv-av:av-bv;
+  });
+  const positions=new Map(rows.map((r,i)=>[r.id,i]));
+  return charts.map(chart=>({...chart,rows:[...chart.rows].sort((a,b)=>positions.get(a.id)!-positions.get(b.id)!)}));
+}
+
+/** Export precisely the displayed scope and units, preserving missing values. */
+export function comparisonCsv(charts:ReturnType<typeof modelComparisonCharts>,rates:Record<string,CostRate>={}) {
+  const cell=(value:string|number|null)=>{
+    let text=value===null?'Sin datos':String(value);
+    if (typeof value==='string' && /^\s*[=+@-]/.test(text)) text="'"+text;
+    return '"'+text.replace(/"/g,'""')+'"';
+  };
+  const header=['Ficha','Modelo','Proveedor','Variante','Prueba','Experimento','ID experimento','Fase',
+    ...charts.flatMap(c=>[`${c.title} (${c.unit})`,`${c.title} · muestra`]),
+    'Base del coste','Entrada (EUR/millón de tokens)','Salida (EUR/millón de tokens)','Coste asignado (EUR/hora)','Lectura'];
+  const rows=(charts[0]?.rows??[]).map(row=>{
+    const rate=rates[`${row.adapter}:${row.model}`];
+    return [row.id,row.model,row.provider.label,row.branch,row.kind,row.experiment,row.experimentId,row.split,
+      ...charts.flatMap(c=>{const point=c.rows.find(r=>r.id===row.id);return [point?.value??null,point?.sample??''];}),
+      rate?.basis??'',rate?.input??null,rate?.output??null,rate?.hour??null,
+      'Valores descriptivos; revisar condiciones y evidencia de origen. Coste estimado, no facturado.'];
+  });
+  return [header,...rows].map(row=>row.map(cell).join(',')).join('\r\n')+'\r\n';
 }

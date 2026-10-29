@@ -1,4 +1,5 @@
 import os
+import asyncio
 from pathlib import Path
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, Response
@@ -28,6 +29,7 @@ import json
 
 class Submission(Contract):
     config: Literal["simulated", "ollama"] = "simulated"
+    request_id: str | None = Field(default=None,min_length=8,max_length=100,pattern=r'^[A-Za-z0-9_-]+$')
 
 
 class ClearHistory(Contract):
@@ -63,7 +65,7 @@ def create_app(db_path=None, root=None):
         return response
 
     def user_store(request: Request):
-        return Store(store.path, owner_id=request.state.user['id'])
+        return Store(store.path, owner_id=request.state.user['id'],initialize=False)
 
     async def bounded_body(request, limit):
         body = bytearray()
@@ -205,6 +207,11 @@ def create_app(db_path=None, root=None):
     async def create_comparison(request: Request, store: Store = Depends(user_store)):
         comparison = await auth_body(request, ComparisonRequest, 12 * 1024 * 1024)
         try:
+            identity = comparison.submission()
+            if identity:
+                previous = store.submission(identity['key'],identity['fingerprint'])
+                if previous:
+                    return {'id':previous}
             if comparison.adapter == 'codex':
                 fingerprint = store.provider_link()
                 if not fingerprint:
@@ -212,7 +219,7 @@ def create_app(db_path=None, root=None):
                 session = await inspect_session(fingerprint)
                 if any(a.model not in {m['name'] for m in session['models']} for a in comparison.agents.values()):
                     raise ValueError('Selecciona un modelo del catálogo actual de Codex.')
-            return {'id': submit_comparison(store, comparison)}
+            return {'id': await asyncio.to_thread(submit_comparison,store,comparison)}
         except ValidationError as exc:
             raise HTTPException(422, exc.errors(include_input=False, include_context=False))
         except (OSError, TimeoutError):
@@ -221,8 +228,11 @@ def create_app(db_path=None, root=None):
             raise HTTPException(422, str(exc)[:500])
 
     @app.get("/experiments")
-    def list_experiments(limit: int = Query(default=50, ge=1, le=200), store: Store = Depends(user_store)):
-        return store.list_experiments(limit)
+    def list_experiments(limit: int = Query(default=50, ge=1, le=200), offset:int=Query(default=0,ge=0),
+                         search:str=Query(default='',max_length=120), adapter:Literal['simulated','ollama','codex']|None=None,
+                         status:Literal['pending','finished']|None=None, since:float|None=None, until:float|None=None,
+                         store: Store = Depends(user_store)):
+        return store.list_experiments(limit,offset,search,adapter,status,since,until)
 
     @app.get("/presets")
     def presets():
@@ -316,15 +326,25 @@ def create_app(db_path=None, root=None):
     @app.post("/experiments", status_code=201)
     async def create(request: Request, store: Store = Depends(user_store)):
         body = await auth_body(request, Submission, 1024)
-        return {"id": submit(store, root / "configs" / f"{body.config}.json", root / "data/tasks.jsonl")}
+        try:
+            return {"id": await asyncio.to_thread(submit,store,root / "configs" / f"{body.config}.json",root / "data/tasks.jsonl",request_id=body.request_id)}
+        except ValueError as exc:
+            raise HTTPException(422,str(exc)[:500])
 
     @app.get("/experiments/{experiment_id}")
-    def get(experiment_id: str, store: Store = Depends(user_store)):
+    def get(experiment_id: str, compact:bool=False, store: Store = Depends(user_store)):
         try:
             snapshot, runs = store.snapshot(experiment_id), store.list_runs(experiment_id)
             overviews = {b:summarize([r for r in runs if r['branch'] == b],
                 [snapshot['branch_tasks'][b]] if snapshot.get('branch_tasks') else snapshot['tasks']) for b in ('A','B')}
             annotations = store.annotations(experiment_id)
+            if compact:
+                snapshot = {key:value for key,value in snapshot.items() if key != 'source'}
+                def lightweight(task):
+                    return task | {'attachments':[{k:v for k,v in a.items() if k not in ('data_base64','text')} for a in task.get('attachments',[])]}
+                snapshot['tasks'] = [lightweight(t) for t in snapshot['tasks']]
+                if snapshot.get('branch_tasks'):
+                    snapshot['branch_tasks'] = {b:lightweight(t) for b,t in snapshot['branch_tasks'].items()}
             return {"snapshot": snapshot, "runs": runs, 'annotations':annotations,
                     "protocol":protocol_report(snapshot | {'operator_annotations':annotations}, runs),'overviews':overviews,
                     'campaign':store.experiment_campaign(experiment_id)}
@@ -379,6 +399,8 @@ def create_app(db_path=None, root=None):
         except KeyError:
             raise HTTPException(404, "Ejecución inexistente")
 
+    from .workspace import register_workspace
+    register_workspace(app,user_store,auth_body)
     return app
 
 

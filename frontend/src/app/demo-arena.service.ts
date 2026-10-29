@@ -34,4 +34,15 @@ export class DemoArenaService extends ArenaService {
   override async compare():Promise<{id:string}> { return this.readonlyError(); }
   override async create():Promise<{id:string}> { return this.readonlyError(); }
   override async cancel():Promise<never> { return this.readonlyError(); }
+  override async progress(id:string) { const d = await this.detail(id); return {runs:d.runs,overviews:d.overviews}; }
+  override async recoverWorker():Promise<never> { return this.readonlyError(); }
+  override async library():Promise<never> { return this.readonlyError(); }
+  override async saveLibrary():Promise<never> { return this.readonlyError(); }
+  override async preflight():Promise<never> { return this.readonlyError(); }
+  override async batch():Promise<never> { return this.readonlyError(); }
+  override async attachmentPreview():Promise<never> { return this.readonlyError(); }
+  override async startReview():Promise<never> { return this.readonlyError(); }
+  override async scoreReview():Promise<never> { return this.readonlyError(); }
+  override async reviews():Promise<never> { return this.readonlyError(); }
+  override async baseline():Promise<never> { return this.readonlyError(); }
 }

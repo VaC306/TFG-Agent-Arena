@@ -14,7 +14,7 @@ FIELDS = ["id", "experiment_id", "task_id", "branch", "repetition", "position", 
           "calls", "tool_calls", "tool_errors", "tool_s", "server_eval_s", "server_tps", "agent_output_tps", "error",
           "evaluator_version", "quality_evaluated", "model_digest", "server_version", "answer", "outcome", "has_reference", "reference",
           "agent_config", "split", "repetitions", "order_seed", "data_sha256", "source_sha256", "conditions", "operator_annotations",
-          "preparation_s", "task_s", "warmup_policy", "warmup_status", "warmup_s", "warmup_usage", "failure_phase", "resource_summary"]
+          "preparation_s", "task_s", "warmup_policy", "warmup_status", "warmup_s", "warmup_usage", "failure_phase", "resource_summary", "first_visible_token_s"]
 
 
 def csv_text(store, experiment_id):

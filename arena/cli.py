@@ -12,6 +12,11 @@ def main():
     parser = argparse.ArgumentParser(description="Agent Arena Local")
     parser.add_argument("--db", default="runtime/arena.sqlite")
     commands = parser.add_subparsers(dest="command", required=True)
+    backup = commands.add_parser('backup',help='Copia consistente de toda la base local, incluidas cuentas')
+    backup.add_argument('--output',required=True)
+    restore = commands.add_parser('restore',help='Verifica y restaura a una base nueva; no sobrescribe datos')
+    restore.add_argument('--source',required=True)
+    restore.add_argument('--output',required=True)
     for command in ("submit", "demo"):
         sub = commands.add_parser(command)
         sub.add_argument("--config", default="configs/simulated.json")
@@ -44,8 +49,11 @@ def main():
     recover = commands.add_parser("recover")
     recover.add_argument("--workers-stopped", action="store_true", required=True)
     args = parser.parse_args()
-    store = Store(args.db) if args.command not in ('benchmark','diagnose-tools') else None
-    if args.command == 'benchmark':
+    store = Store(args.db) if args.command not in ('benchmark','diagnose-tools','backup','restore') else None
+    if args.command in ('backup','restore'):
+        from .backups import copy_database
+        print(copy_database(args.source if args.command=='restore' else args.db,args.output,restore=args.command=='restore'))
+    elif args.command == 'benchmark':
         from .benchmarks import run_benchmark
         asyncio.run(run_benchmark(args.root,args.output,args.model_a,args.model_b,args.split,args.suites,args.repetitions))
     elif args.command == 'diagnose-tools':

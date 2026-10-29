@@ -83,9 +83,10 @@ def test_kind(task):
 
 def latest_model_results(store):
     latest = {}
+    evidence, notes = store.result_evidence()
     for eid,snapshot in store.result_experiments():
-        runs = store.list_runs(eid)
-        annotations = store.annotations(eid)
+        runs = evidence.get(eid,[])
+        annotations = notes.get(eid,[])
         deviations = [a for a in annotations if a['kind'] == 'deviation']
         config = snapshot['config']
         for branch in ('A','B'):

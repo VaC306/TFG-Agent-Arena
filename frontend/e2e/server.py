@@ -40,10 +40,10 @@ if __name__ == '__main__':
     import json
     os.environ['ARENA_CODEX_COMMAND'] = json.dumps([sys.executable,str(ROOT/'tests/fake_codex.py')])
     os.environ.pop('ARENA_OLLAMA_URL', None)
-    from arena import api, worker, resources, runner, codex_runner
+    from arena import api, worker, resources, runner, codex_runner, workspace
     from arena.store import Store
     import uvicorn
-    api.Ollama = worker.Ollama = ControlledAdapter
+    api.Ollama = worker.Ollama = workspace.Ollama = ControlledAdapter
     # Browser tests must not wait for a host GPU driver. Sensor integration has
     # dedicated Python coverage; keep the real monitor lifecycle and persistence.
     def sample():

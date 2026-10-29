@@ -1,0 +1,56 @@
+import {test,expect,register,compare,finished} from './helpers';
+
+test('filtros, revisión ciega y referencia anterior conservan evidencia',async({page},info)=>{
+  await register(page);
+  const first=await compare(page,'Referencia anterior');await finished(page,first);
+  const current=await compare(page,'Prueba actual');await finished(page,current);
+  await page.getByLabel('Filtrar resultados',{exact:true}).selectOption('different');
+  await expect(page.locator('.case-result')).toHaveCount(0);
+  await page.getByLabel('Filtrar resultados',{exact:true}).selectOption('all');
+  await expect(page.locator('.case-result')).toHaveCount(1);
+  await page.getByText('Revisión humana y comparación con una referencia anterior',{exact:true}).click();
+  await page.getByLabel('Comparación de referencia',{exact:true}).selectOption(first);
+  await page.getByRole('button',{name:'Analizar cambios por caso'}).click();
+  await expect(page.locator('arena-research-tools')).toContainText('0 mejoras · 0 regresiones');
+  await page.getByLabel('Caso y repetición',{exact:true}).selectOption('case|0');
+  await page.getByRole('button',{name:'Abrir revisión ciega'}).click();
+  const dialog=page.locator('.review-dialog');await expect(dialog).toBeVisible();
+  await expect(dialog).not.toContainText('fixture:latest');
+  await page.screenshot({path:info.outputPath('blind-review.png'),fullPage:true});
+  for(const side of ['left','right'])for(const criterion of ['correctness','clarity','usefulness'])await dialog.locator('#'+side+'-'+criterion).selectOption('4');
+  await dialog.getByLabel('Comentario',{exact:true}).fill('Valoración humana de prueba');
+  await dialog.getByRole('button',{name:'Guardar y revelar identidad'}).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(page.locator('arena-research-tools')).toContainText('1 revisiones guardadas');
+  await expect(page.locator('.quick-stats')).toContainText('2/2');
+  await page.reload();
+  await page.getByText('Revisión humana y comparación con una referencia anterior',{exact:true}).click();
+  await expect(page.locator('arena-research-tools')).toContainText('1 revisiones guardadas');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});
+
+test('biblioteca versionada y lote usan copias independientes',async({page},info)=>{
+  await register(page);
+  await page.getByLabel('Nombre',{exact:true}).fill('Lote uno');
+  await page.getByLabel('Entrada compartida',{exact:true}).fill('Entrada inicial');
+  await page.getByText('Biblioteca personal de datasets y prompts',{exact:true}).click();
+  await page.getByLabel('Nombre para guardar',{exact:true}).fill('Prompt reutilizable');
+  await page.getByRole('button',{name:'Guardar prompt A',exact:true}).click();
+  await expect(page.locator('.workspace-library')).toContainText('Versión 1 guardada');
+  await page.getByText(/Ejecutar varias configuraciones por lotes/).click();
+  await page.getByRole('button',{name:'Añadir configuración actual al lote'}).click();
+  await page.getByLabel('Nombre',{exact:true}).fill('Lote dos');
+  await page.getByLabel('Entrada compartida',{exact:true}).fill('Entrada diferente');
+  await page.getByRole('button',{name:'Añadir configuración actual al lote'}).click();
+  await page.screenshot({path:info.outputPath('library-batch.png'),fullPage:true});
+  const response=page.waitForResponse(r=>r.url().endsWith('/api/comparisons/batch') && r.request().method()==='POST');
+  await page.getByRole('button',{name:'Comprobar y ejecutar lote'}).click();
+  const result=await response;expect(result.status()).toBe(201);const {ids}=await result.json();expect(ids).toHaveLength(2);
+  const one=await (await page.request.get('/api/experiments/'+ids[0])).json();
+  const two=await (await page.request.get('/api/experiments/'+ids[1])).json();
+  expect(one.snapshot.tasks[0].input).toBe('Entrada inicial');expect(two.snapshot.tasks[0].input).toBe('Entrada diferente');
+  await page.getByRole('button',{name:'Comparar',exact:true}).click();
+  await page.getByRole('button',{name:'Actualizar biblioteca',exact:true}).click();
+  await expect(page.locator('.workspace-library')).toContainText('Prompt reutilizable · v1');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});

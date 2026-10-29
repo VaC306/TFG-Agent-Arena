@@ -1,7 +1,7 @@
 import { TermHelpComponent } from './term-help.component';
 import { Component, DestroyRef, Input, Output, EventEmitter, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { InputData, Upload } from './arena.service';
+import { ArenaService, InputData, Upload } from './arena.service';
 import { textError, filenameError, csvError } from './validation';
 import { LoadingIndicatorComponent } from './loading-indicator.component';
 import { LoadingService } from './loading.service';
@@ -14,10 +14,11 @@ import { LoadingService } from './loading.service';
       [attr.aria-invalid]="invalid ? 'true' : null" [attr.aria-describedby]="invalid ? 'composer-error' : null"
       rows="4" maxlength="6000" placeholder="¿Qué quieres que haga el modelo con esta entrada y sus archivos?" required></textarea>
     @if (attachmentsEnabled) { <details class="upload-zone"><summary>Adjuntos (opcional) · {{ value.files.length }} archivos</summary>
-      <label [for]="slot + '-files'">Adjuntar archivos <span>TXT · JSON · CSV · PNG · JPG · WebP</span></label>
-      <input [id]="slot + '-files'" type="file" multiple accept=".txt,.json,.csv,.png,.jpg,.jpeg,.webp"
+      <label [for]="slot + '-files'">Adjuntar archivos <span>TXT · JSON · CSV · PDF de texto · PNG · JPG · WebP</span></label>
+      <input [id]="slot + '-files'" type="file" multiple accept=".txt,.json,.csv,.pdf,.png,.jpg,.jpeg,.webp"
         [attr.aria-describedby]="slot + '-file-help'" [disabled]="reading()" (change)="addFiles($event)">
       <p class="hint" [id]="slot + '-file-help'">Hasta 4 archivos, 1 MiB cada uno. Texto UTF-8; máximo conjunto: 20.000 caracteres.</p>
+      <p class="hint">PDF: hasta 20 páginas, solo texto extraíble, sin OCR. Revisa la extracción antes de ejecutar.</p>
     </details> }
     @if (reading()) { <arena-loading label="Preparando vista previa…" /> }
     @if (error()) { <p class="alert error" role="alert">{{ error() }}</p> }
@@ -39,6 +40,7 @@ import { LoadingService } from './loading.service';
   `,
 })
 export class InputEditorComponent {
+  private api = inject(ArenaService);
   private activity = inject(LoadingService);
   private destroyed = false;
   private endReading?: () => void;
@@ -75,7 +77,7 @@ export class InputEditorComponent {
       for (const file of files) {
         if (filenameError(file.name)) throw new Error(filenameError(file.name));
         const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
-        if (!['txt','json','csv','png','jpg','jpeg','webp'].includes(extension)) throw new Error('Formato no admitido: ' + file.name);
+        if (!['txt','json','csv','pdf','png','jpg','jpeg','webp'].includes(extension)) throw new Error('Formato no admitido: ' + file.name);
         if (!file.size || file.size > 1024 * 1024) throw new Error(file.name + ': el tamaño debe estar entre 1 byte y 1 MiB.');
         if ([...this.value.files, ...prepared].some(f => f.name === file.name)) throw new Error('Nombre duplicado: ' + file.name);
         const image = ['png','jpg','jpeg','webp'].includes(extension);
@@ -102,6 +104,9 @@ export class InputEditorComponent {
             decoded.onerror = () => reject(new Error(file.name + ': imagen dañada o no válida.'));
             decoded.src = preview;
           });
+        } else if (extension === 'pdf') {
+          try { preview = (await this.api.attachmentPreview({name:file.name,data_base64})).text; }
+          catch (error) { throw new Error((error as {error?:{detail?:string}}).error?.detail || 'No se pudo extraer el texto PDF.'); }
         } else {
           preview = new TextDecoder('utf-8', {fatal:true}).decode(await file.arrayBuffer());
           if (textError(preview, file.name, 20000, false)) throw new Error(textError(preview, file.name, 20000, false));

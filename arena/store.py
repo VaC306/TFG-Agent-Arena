@@ -8,10 +8,13 @@ from .contracts import Event
 
 
 class Store:
-    def __init__(self, path, owner_id=None,*,clock=None):
+    def __init__(self, path, owner_id=None,*,clock=None,initialize=True):
         self.path = str(path)
         self.owner_id = owner_id
         self.clock = clock or time.time
+        self._transaction = None
+        if not initialize:
+            return
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as db:
             db.executescript("""
@@ -46,10 +49,32 @@ class Store:
                 CREATE TABLE IF NOT EXISTS provider_links(
                     owner_id TEXT NOT NULL, provider TEXT NOT NULL, fingerprint TEXT NOT NULL,
                     connected_at REAL NOT NULL, PRIMARY KEY(owner_id,provider));
+                CREATE TABLE IF NOT EXISTS submissions(
+                    owner_id TEXT NOT NULL, request_id TEXT NOT NULL, fingerprint TEXT NOT NULL,
+                    experiment_id TEXT NOT NULL REFERENCES experiments(id) ON DELETE CASCADE,
+                    PRIMARY KEY(owner_id,request_id));
+                CREATE TABLE IF NOT EXISTS run_workers(
+                    run_id TEXT PRIMARY KEY REFERENCES runs(id) ON DELETE CASCADE,
+                    worker_id TEXT NOT NULL);
+                CREATE INDEX IF NOT EXISTS runs_experiment ON runs(experiment_id);
+                CREATE INDEX IF NOT EXISTS runs_status ON runs(status);
+                CREATE TABLE IF NOT EXISTS library_items(
+                    id TEXT PRIMARY KEY, owner_id TEXT NOT NULL, kind TEXT NOT NULL,
+                    name TEXT NOT NULL, version INTEGER NOT NULL, created_at REAL NOT NULL,
+                    content TEXT NOT NULL, sha256 TEXT NOT NULL,
+                    UNIQUE(owner_id,kind,name,version));
+                CREATE INDEX IF NOT EXISTS library_owner ON library_items(owner_id,kind);
+                CREATE TABLE IF NOT EXISTS human_reviews(
+                    id TEXT PRIMARY KEY, owner_id TEXT NOT NULL,
+                    experiment_id TEXT NOT NULL REFERENCES experiments(id) ON DELETE CASCADE,
+                    data TEXT NOT NULL, created_at REAL NOT NULL);
             """)
 
     @contextmanager
     def connect(self):
+        if self._transaction is not None:
+            yield self._transaction
+            return
         db = sqlite3.connect(self.path, timeout=30)
         try:
             with db:
@@ -58,6 +83,26 @@ class Store:
                 yield db
         finally:
             db.close()  # sqlite's transaction context does not close the connection.
+
+    @contextmanager
+    def atomic(self):
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            self._transaction = db
+            try:
+                yield
+            finally:
+                self._transaction = None
+
+    def submission(self, request_id, fingerprint):
+        if not request_id:
+            return None
+        with self.connect() as db:
+            row = db.execute('SELECT * FROM submissions WHERE owner_id=? AND request_id=?',
+                             (self.owner_id or '', request_id)).fetchone()
+            if row and row['fingerprint'] != fingerprint:
+                raise ValueError('La clave de envío corresponde a otro contenido. Crea un envío nuevo.')
+            return row['experiment_id'] if row else None
 
     def provider_link(self, experiment_id=None):
         owner = self.owner_id
@@ -76,9 +121,17 @@ class Store:
             if fingerprint:
                 db.execute('INSERT INTO provider_links VALUES (?,?,?,?)', (self.owner_id,'codex',fingerprint,self.clock()))
 
-    def create(self, experiment_id, snapshot, runs, campaign=None):
+    def create(self, experiment_id, snapshot, runs, campaign=None, submission=None):
         with self.connect() as db:
-            db.execute('BEGIN IMMEDIATE')
+            if self._transaction is None:
+                db.execute('BEGIN IMMEDIATE')
+            if submission:
+                row = db.execute('SELECT * FROM submissions WHERE owner_id=? AND request_id=?',
+                                 (self.owner_id or '', submission['key'])).fetchone()
+                if row:
+                    if row['fingerprint'] != submission['fingerprint']:
+                        raise ValueError('La clave de envío corresponde a otro contenido.')
+                    return row['experiment_id']
             if campaign:
                 self._campaign_row(db,campaign['id'])
                 previous = db.execute('SELECT experiment_id FROM campaign_attempts WHERE campaign_id=? AND request_id=?',
@@ -103,6 +156,9 @@ class Store:
             if campaign:
                 db.execute('INSERT INTO campaign_attempts VALUES (?,?,?,?)',
                            (experiment_id,campaign['id'],sequence,campaign['request_id']))
+            if submission:
+                db.execute('INSERT INTO submissions VALUES (?,?,?,?)',
+                           (self.owner_id or '', submission['key'], submission['fingerprint'], experiment_id))
             return experiment_id
 
     def _campaign_row(self, db, campaign_id):
@@ -233,7 +289,7 @@ class Store:
                               "ORDER BY rowid", (experiment_id,) if experiment_id else ()).fetchall()
             return [json.loads(r[0]) for r in rows]
 
-    def list_experiments(self, limit=50):
+    def list_experiments(self, limit=50, offset=0, search='', adapter=None, status=None, since=None, until=None):
         with self.connect() as db:
             rows = db.execute("""
                 SELECT e.id, json_extract(e.snapshot, '$.config.name') AS name,
@@ -244,8 +300,16 @@ class Store:
                        MIN(json_extract(r.data, '$.queued_at')) AS created_at
                 FROM experiments e LEFT JOIN runs r ON r.experiment_id=e.id
                 WHERE (? IS NULL OR EXISTS (SELECT 1 FROM experiment_owners o WHERE o.experiment_id=e.id AND o.owner_id=?))
-                GROUP BY e.id ORDER BY e.rowid DESC LIMIT ?
-            """, (self.owner_id, self.owner_id, limit)).fetchall()
+                  AND (?='' OR instr(lower(json_extract(e.snapshot,'$.config.name')),lower(?))>0
+                    OR instr(lower(json_extract(e.snapshot,'$.config.agents.A.model')),lower(?))>0
+                    OR instr(lower(json_extract(e.snapshot,'$.config.agents.B.model')),lower(?))>0)
+                  AND (? IS NULL OR json_extract(e.snapshot,'$.config.adapter')=?)
+                GROUP BY e.id
+                HAVING (? IS NULL OR (?='pending' AND completed<total) OR (?='finished' AND completed=total))
+                  AND (? IS NULL OR created_at>=?) AND (? IS NULL OR created_at<=?)
+                ORDER BY e.rowid DESC LIMIT ? OFFSET ?
+            """, (self.owner_id, self.owner_id, search,search,search,search,adapter,adapter,
+                  status,status,status,since,since,until,until,limit,offset)).fetchall()
             return [dict(row) for row in rows]
 
     def result_experiments(self):
@@ -258,6 +322,20 @@ class Store:
                 WHERE o.experiment_id=e.id AND o.owner_id=?)) ORDER BY e.rowid DESC''',
                 (self.owner_id,self.owner_id)).fetchall()
             return [(r['id'],{field:json.loads(r[field]) if r[field] is not None else None for field in fields}) for r in rows]
+
+    def result_evidence(self):
+        """Two bounded-query-count reads instead of queries per experiment."""
+        runs, notes = {}, {}
+        with self.connect() as db:
+            for row in db.execute('''SELECT r.experiment_id,r.data FROM runs r
+                WHERE (? IS NULL OR EXISTS (SELECT 1 FROM experiment_owners o WHERE o.experiment_id=r.experiment_id AND o.owner_id=?)) ORDER BY r.rowid''',
+                (self.owner_id,self.owner_id)):
+                runs.setdefault(row['experiment_id'],[]).append(json.loads(row['data']))
+            for row in db.execute('''SELECT a.* FROM attempt_annotations a
+                WHERE (? IS NULL OR EXISTS (SELECT 1 FROM experiment_owners o WHERE o.experiment_id=a.experiment_id AND o.owner_id=?)) ORDER BY a.created_at,a.rowid''',
+                (self.owner_id,self.owner_id)):
+                notes.setdefault(row['experiment_id'],[]).append(dict(row))
+        return runs,notes
 
     def _history_state(self, db):
         if self.owner_id is None:
@@ -308,7 +386,7 @@ class Store:
                 raise KeyError(run_id)
             self.check_experiment(row[0])
 
-    def claim(self):
+    def claim(self, worker_id=None):
         with self.connect() as db:
             db.execute("BEGIN IMMEDIATE")
             # A single active run globally preserves sequential resource conditions even with two workers.
@@ -320,6 +398,8 @@ class Store:
             run = json.loads(row["data"])
             run.update(status="running", started_at=time.time())
             db.execute("UPDATE runs SET status='running',data=? WHERE id=?", (json.dumps(run), run["id"]))
+            if worker_id:
+                db.execute('INSERT OR REPLACE INTO run_workers VALUES (?,?)',(run['id'],worker_id))
             return run
 
     def event(self, run_id, kind, payload):

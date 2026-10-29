@@ -11,7 +11,7 @@ from .resources import provenance
 from .evaluator import EVALUATOR_VERSION
 
 
-def submit(store, config_path, tasks_path):
+def submit(store, config_path, tasks_path,request_id=None):
     config_path, tasks_path = Path(config_path), Path(tasks_path)
     config = Experiment.model_validate_json(config_path.read_text(encoding="utf-8"))
     tasks = [Task.model_validate_json(line) for line in tasks_path.read_text(encoding="utf-8").splitlines() if line.strip()]
@@ -21,10 +21,18 @@ def submit(store, config_path, tasks_path):
     if not tasks:
         raise ValueError("No hay tareas para el split seleccionado")
     environments = {t.environment: json.loads((tasks_path.parent / t.environment).read_text(encoding="utf-8")) for t in tasks}
-    return schedule(store, config, tasks, environments)
+    submission = None
+    if request_id:
+        value = {'config':config.model_dump(),'tasks':[t.model_dump() for t in tasks],'environments':environments}
+        digest = hashlib.sha256(json.dumps(value,sort_keys=True).encode()).hexdigest()
+        submission = {'key':request_id,'fingerprint':digest}
+        previous = store.submission(request_id,digest)
+        if previous:
+            return previous
+    return schedule(store, config, tasks, environments,submission=submission)
 
 
-def schedule(store, config, tasks, environments, branch_tasks=None, benchmark=None, campaign=None, conditions=None):
+def schedule(store, config, tasks, environments, branch_tasks=None, benchmark=None, campaign=None, conditions=None, submission=None):
     if config.adapter == 'codex':
         if not store.provider_link():
             raise ValueError('Vincula primero ChatGPT para esta cuenta local de Arena.')
@@ -91,4 +99,4 @@ def schedule(store, config, tasks, environments, branch_tasks=None, benchmark=No
             for branch in branches:
                 runs.append(Run(id=str(uuid.uuid4()), experiment_id=experiment_id, task_id=task.id,
                                 branch=branch, repetition=repetition, position=len(runs), queued_at=time.time()))
-    return store.create(experiment_id, snapshot, runs, campaign=campaign)
+    return store.create(experiment_id, snapshot, runs, campaign=campaign, submission=submission)

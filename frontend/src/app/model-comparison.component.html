@@ -6,6 +6,27 @@
   @if (stale()) { <p class="alert">No se pudo actualizar la evidencia. Los gráficos muestran la última carga disponible.</p> }
   @if (shown().length > 1) { <p [class]="compatible() && !stale() ? 'hint' : 'alert'">{{ compatible() && !stale() ? 'Las condiciones registradas coinciden entre modelos o versiones diferentes. Los tiempos son observaciones de un equipo compartido.' : 'Vista descriptiva: las condiciones no permiten comparar directamente todos estos resultados. Selecciona dos fichas para revisar las diferencias. No se asigna un ganador.' }}</p> }
   @if (shown().length) {
+    <div class="comparison-controls">
+      <div class="view-switch" role="group" aria-label="Vista de la comparativa">
+        <button type="button" class="secondary" [attr.aria-pressed]="viewMode() === 'charts'" (click)="viewMode.set('charts'); activeDetail.set(null)">Gráficos</button>
+        <button type="button" class="secondary" [attr.aria-pressed]="viewMode() === 'table'" (click)="viewMode.set('table'); activeDetail.set(null)">Tabla</button>
+      </div>
+      <label>Ordenar modelos por<select [ngModel]="order()" (ngModelChange)="order.set($event); activeDetail.set(null)">
+        <option value="original">Orden de las fichas</option><option value="model">Nombre · A–Z</option>
+        <option value="quality">Aciertos · mayor primero</option><option value="latency">Tiempo medio · menor primero</option><option value="cost">Coste estimado · menor primero</option>
+      </select></label>
+      <button type="button" class="secondary export-comparison" (click)="downloadComparison()">Descargar comparativa CSV</button>
+    </div>
+    <details class="metric-settings"><summary>Métricas visibles · {{ visibleKeys().length }}/8</summary>
+      <fieldset><legend>Elige las métricas de los gráficos, la tabla y el CSV</legend>
+        @for (chart of charts(); track chart.key) { <label><input type="checkbox" [checked]="visibleKeys().includes(chart.key)" [disabled]="visibleKeys().length === 1 && visibleKeys().includes(chart.key)" (change)="toggleMetric(chart.key)">{{ chart.title }}</label> }
+      </fieldset>
+    </details>
+    @if (order() !== 'original' && order() !== 'model') { <p class="hint">Orden por valores observados; los datos ausentes van al final. Este orden no establece un ranking de modelos ni corrige diferencias de condiciones.</p> }
+    <div class="provider-legend" aria-label="Colores por proveedor">@for (provider of providers(); track provider.key) {
+      <span [attr.data-provider]="provider.key"><i aria-hidden="true"></i>{{ provider.label }}</span>
+    }</div>
+    @if (viewMode() === 'charts') { <p class="hint interaction-help">Pasa el cursor, enfoca una barra con Tab o tócala para ver los detalles. Pulsa Escape para cerrarlos. Los modelos del mismo proveedor comparten color.</p> }
     <details class="cost-settings"><summary>Configurar tarifas para estimar el coste</summary>
       <p class="hint">Introduce euros. Ollama puede estimarse con el coste de uso del equipo por hora; una suscripción necesita un coste por hora asignado por ti. Las tarifas por tokens solo se aplican si hay uso completo registrado. Estos valores se conservan mientras esta vista esté abierta.</p>
       @for (entry of pricedModels(); track entry.adapter + ':' + entry.model) {
@@ -20,19 +41,56 @@
         </fieldset>
       } @empty { <p class="hint">Las simulaciones no estiman costes de modelos reales.</p> }
     </details>
-    <div class="metric-charts">@for (chart of charts(); track chart.key) {
-      <figure class="metric-chart" [attr.data-metric]="chart.key">
+    @if (viewMode() === 'table') {
+      <div class="summary-heading"><h3>Resumen de la comparativa</h3><p class="hint">{{ tableRows().length }} fichas · {{ visibleCharts().length }} métricas · CSV con los mismos filtros, columnas y orden.</p></div>
+      <div class="comparison-table-scroll" role="region" aria-label="Tabla de métricas de modelos, área desplazable" tabindex="0">
+        <table class="comparison-table"><caption class="sr-only">Métricas observadas por modelo, con muestras y acceso al resultado de origen.</caption>
+          <thead><tr><th scope="col">Modelo y evidencia</th>@for (chart of visibleCharts(); track chart.key) { <th scope="col">{{ chart.title }}<small>{{ chart.unit }} · {{ chart.direction }}</small></th> }</tr></thead>
+          <tbody>@for (row of tableRows(); track row.id) {
+            <tr><th scope="row"><strong>{{ row.model }}</strong><span class="table-provider" [attr.data-provider]="row.provider.key"><i aria-hidden="true"></i>{{ row.provider.label }} · {{ row.branch }}</span><small>{{ row.kind }} · {{ row.split === 'eval' ? 'Evaluación' : 'Desarrollo' }}</small><button type="button" class="text-button" (click)="opened.emit(row.experimentId)" [attr.aria-label]="'Abrir evidencia de ' + row.model + ', variante ' + row.branch">Abrir evidencia ↗</button></th>
+              @for (cell of row.values; track cell.key) { <td><strong>{{ cell.value === null ? 'Sin datos' : (cell.value | number:(cell.key === 'cost' ? '1.2-6' : '1.0-2')) + ' ' + cell.unit }}</strong><small>{{ cell.sample }}</small></td> }
+            </tr>
+          }</tbody>
+        </table>
+      </div>
+    } @else {
+    <div class="metric-charts">@for (chart of visibleCharts(); track chart.key) {
+      <figure class="metric-chart" [attr.data-metric]="chart.key" (mouseleave)="activeDetail.set(null)" (keydown.escape)="dismissDetail($event)">
         <figcaption><h3>{{ chart.title }}</h3><span class="hint">{{ chart.direction }}</span></figcaption>
         <p class="hint metric-note">{{ chart.note }}</p>
-        <div class="metric-scale" aria-hidden="true"><span>0 {{ chart.unit }}</span><span>{{ chart.maximum | number:'1.0-4' }} {{ chart.unit }}</span></div>
-        @for (row of chart.rows; track row.id) {
-          <div class="metric-row">
-            <div class="metric-row-heading"><span>{{ row.model }} · {{ row.branch }}</span><strong>{{ row.value === null ? 'Sin datos' : (row.value | number:(chart.key === 'cost' ? '1.2-6' : '1.0-2')) + ' ' + chart.unit }}</strong></div>
-            <div class="metric-track" aria-hidden="true">@if (row.value !== null) { <span class="metric-fill" [class.zero]="row.value === 0" [style.width.%]="row.width"></span> }</div>
-            <small>{{ row.kind }} · {{ row.sample }}</small>
+        <div class="metric-plot" role="group" [attr.aria-label]="chart.title + ', barras verticales'">
+          <div class="metric-axis" aria-hidden="true"><span>{{ chart.maximum | number:'1.0-4' }}</span><span>{{ chart.maximum / 2 | number:'1.0-4' }}</span><span>0</span></div>
+          <div class="metric-columns" tabindex="0" [attr.aria-label]="'Modelos de ' + chart.title + ', área desplazable'">
+            @for (row of chart.rows; track row.id) {
+              <div class="metric-row" [attr.data-provider]="row.provider.key">
+                <strong class="metric-value">{{ row.value === null ? 'Sin datos' : (row.value | number:(chart.key === 'cost' ? '1.2-6' : '1.0-2')) + ' ' + chart.unit }}</strong>
+                <button type="button" class="metric-bar" [class.missing]="row.value === null"
+                  [attr.aria-label]="row.model + ', ' + row.provider.label + ', ' + chart.title + ': ' + (row.value === null ? 'Sin datos' : (row.value | number:(chart.key === 'cost' ? '1.2-6' : '1.0-2')) + ' ' + chart.unit)"
+                  [attr.aria-describedby]="activeDetail() === chart.key + ':' + row.id ? 'metric-tooltip-' + chart.key : null"
+                  (mouseenter)="showDetail(chart.key,row.id)"
+                  (focus)="showDetail(chart.key,row.id)" (blur)="hideDetail(chart.key,row.id)"
+                  (click)="showDetail(chart.key,row.id)" (keydown.escape)="dismissDetail($event)">
+                  @if (row.value !== null) { <span class="metric-fill" [class.zero]="row.value === 0" [style.height.%]="row.height" aria-hidden="true"></span> }
+                  @else { <span class="missing-mark" aria-hidden="true">—</span> }
+                </button>
+                <span class="metric-model">{{ row.model }} <small>Variante {{ row.branch }}</small></span>
+                <small class="metric-provider">{{ row.provider.label }}</small>
+              </div>
+            }
           </div>
-        }
+        </div>
+        @for (row of chart.rows; track row.id) { @if (activeDetail() === chart.key + ':' + row.id) {
+          <div class="metric-tooltip" role="tooltip" [id]="'metric-tooltip-' + chart.key" (keydown.escape)="dismissDetail($event)">
+            <span class="tooltip-provider" [attr.data-provider]="row.provider.key"><i aria-hidden="true"></i>{{ row.provider.label }} · Variante {{ row.branch }}</span>
+            <strong>{{ row.model }}</strong>
+            <span class="tooltip-value">{{ chart.title }}: {{ row.value === null ? 'Sin datos' : (row.value | number:(chart.key === 'cost' ? '1.2-6' : '1.0-2')) + ' ' + chart.unit }}</span>
+            <span>{{ row.kind }} · {{ row.sample }}</span>
+            <span>{{ row.experiment }}</span>
+            <small>{{ row.updatedAt * 1000 | date:'dd/MM/yyyy · HH:mm' }} · {{ row.split === 'eval' ? 'Evaluación' : 'Desarrollo' }}</small>
+          </div>
+        } }
       </figure>
     }</div>
+    }
   } @else { <p class="hint">{{ selectionOnly() ? 'Selecciona fichas en la biblioteca para incluirlas aquí.' : 'No hay resultados para estos filtros.' }}</p> }
 </section>

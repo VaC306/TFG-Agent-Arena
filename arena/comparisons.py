@@ -69,6 +69,7 @@ class InferenceSettings(Contract):
 
 
 class ComparisonRequest(Contract):
+    request_id: str | None = Field(default=None, min_length=8, max_length=100, pattern=r'^[A-Za-z0-9_-]+$')
     name: str = Field(min_length=1, max_length=120)
     adapter: Literal['simulated', 'ollama', 'codex']
     comparison: Literal['same_model', 'different_models']
@@ -136,16 +137,30 @@ class ComparisonRequest(Contract):
                               limits={'max_output_tokens':self.settings.max_output_tokens, 'timeout_s':self.settings.timeout_s},
                           ) for branch, agent in self.agents.items()})
 
+    def submission(self):
+        import hashlib
+        import json
+        if not self.request_id:
+            return None
+        value = json.dumps(self.model_dump(exclude={'request_id'}),sort_keys=True,ensure_ascii=False,separators=(',',':'))
+        digest = hashlib.sha256(value.encode()).hexdigest()
+        return {'key':self.request_id,'fingerprint':digest}
+
 
 def submit_comparison(store, request):
+    submission = request.submission()
+    if submission:
+        previous = store.submission(submission['key'],submission['fingerprint'])
+        if previous:
+            return previous
     config = request.config()
     if request.dataset is not None:
         tasks = [case.task().model_copy(update={'evaluation':request.evaluation, 'split':request.split}) for case in request.dataset]
-        return schedule(store, config, tasks, {'empty': {'orders': []}})
+        return schedule(store, config, tasks, {'empty': {'orders': []}}, submission=submission)
     if request.shared_input:
         tasks = [request.shared_input.task().model_copy(update={'evaluation':request.evaluation, 'split':request.split})]
         branch_tasks = None
     else:
         branch_tasks = {branch: bundle.task().model_copy(update={'evaluation':request.evaluation, 'split':request.split}).model_dump() for branch, bundle in request.branch_inputs.items()}
         tasks = [Task.model_validate(branch_tasks['A'])]
-    return schedule(store, config, tasks, {'empty': {'orders': []}}, branch_tasks)
+    return schedule(store, config, tasks, {'empty': {'orders': []}}, branch_tasks, submission=submission)

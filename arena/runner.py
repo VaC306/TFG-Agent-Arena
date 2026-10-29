@@ -99,6 +99,19 @@ async def execute(run, task, environment, config, adapter, store, measurement=No
             if remaining <= 0:
                 raise LimitReached("output_tokens")
             metrics["calls"] += 1
+            call_start = time.perf_counter()
+            last_chunk = [0.0]
+            def visible_chunk(text):
+                now = time.perf_counter()
+                metrics['answer'] = text
+                if 'first_visible_token_s' not in metrics:
+                    metrics['first_visible_token_s'] = now-call_start
+                if now-last_chunk[0]>=0.4:
+                    store.event(run['id'],'answer_chunk',{'text':text,'call':metrics['calls'],'partial':True})
+                    last_chunk[0] = now
+            # Only text-only comparisons opt in. Tool-call transport remains unchanged.
+            if hasattr(adapter,'on_chunk') and not config.tools_enabled:
+                adapter.on_chunk = visible_chunk
             request = {"messages": copy.deepcopy(messages), "max_output_tokens": remaining}
             if callable(getattr(adapter, 'payload', None)):
                 request['payload'] = copy.deepcopy(adapter.payload(messages, config, remaining))

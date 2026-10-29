@@ -67,7 +67,8 @@ test('navegación y selección durante cargas descartan respuestas anteriores', 
   const observed=new Promise<void>(resolve=>{entered=resolve;});
   let fulfilled!:()=>void;
   const drained=new Promise<void>(resolve=>{fulfilled=resolve;});
-  await page.route(`**/api/experiments/${first}`,async route=>{
+  const firstDetail=(url:URL)=>url.pathname===`/api/experiments/${first}`;
+  await page.route(firstDetail,async route=>{
     const response=await route.fetch(); entered(); await gate; await route.fulfill({response}); fulfilled();
   });
   await page.locator('summary').filter({hasText:/^Historial/}).click();
@@ -79,8 +80,8 @@ test('navegación y selección durante cargas descartan respuestas anteriores', 
   await page.locator('summary').filter({hasText:/^Historial/}).click();
   await history.getByRole('button',{name:/Actual/}).click();
   await expect(page.getByRole('heading',{name:'Actual',exact:true})).toBeVisible();
-  const delivered=page.waitForResponse(response=>response.url().endsWith(`/api/experiments/${first}`));
-  release(); await drained; await delivered; await page.unroute(`**/api/experiments/${first}`);
+  const delivered=page.waitForResponse(response=>new URL(response.url()).pathname===`/api/experiments/${first}`);
+  release(); await drained; await delivered; await page.unroute(firstDetail);
   await idle(page);
   await expect(page.getByRole('heading',{name:'Anterior',exact:true})).toHaveCount(0);
   await page.reload(); await page.getByRole('button',{name:'Resultados',exact:true}).click();

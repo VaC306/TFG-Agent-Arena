@@ -5,7 +5,7 @@ import { Component, DestroyRef, EventEmitter, inject, Input, Output, signal } fr
 import { WorkerStatusComponent } from './worker-status.component';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ArenaService, ComparisonBody, DatasetPreview, InputData, PresetId, PromptTemplate, EvaluationMode, defaultSettings } from './arena.service';
+import { ArenaService, ComparisonBody, DatasetPreview, InputData, PresetId, PromptTemplate, EvaluationMode, defaultSettings, LibraryEntry, Preflight } from './arena.service';
 import { InputEditorComponent } from './input-editor.component';
 import { InfoDialogComponent } from './info-dialog.component';
 import { AuthService, Preferences } from './auth.service';
@@ -20,6 +20,8 @@ interface ComposerDraft {
   dataset: DatasetPreview | null; datasetName: string;
   missingFiles: Record<DraftSlot,string[]>;
   submissionPending?: boolean;
+  requestKey?:string;
+  requestSignature?:string;
 }
 
 function validDraft(value: unknown, owner: string | undefined): value is ComposerDraft {
@@ -44,6 +46,63 @@ function validDraft(value: unknown, owner: string | undefined): value is Compose
   templateUrl: './composer.component.html',
 })
 export class ComposerComponent {
+  private currentAccount() { return !this.destroyed && this.auth.user()?.id===this.ownerId; }
+  private requestKey='';
+  private requestSignature='';
+  libraryEntries=signal<LibraryEntry[]>([]);
+  libraryName=''; libraryTags='';
+  libraryNotice=signal('');
+  datasetEditor='';
+  prepareDatasetEdit() {this.datasetEditor=(this.dataset()?.cases ?? []).map(c=>JSON.stringify(c)).join('\n');}
+  async applyDatasetEdit() {
+    if(this.busy() || this.datasetBusy())return;const version=++this.datasetVersion;
+    this.datasetBusy.set(true);this.datasetError.set('');
+    try {const dataset=await this.api.validateDataset('edicion.jsonl',this.datasetEditor);
+      if(this.currentAccount() && version===this.datasetVersion){this.dataset.set(dataset);this.datasetName.set('Copia editada');this.source='dataset';this.queueSave();}}
+    catch(error){if(this.currentAccount() && version===this.datasetVersion)this.datasetError.set(this.operationError(error));}
+    finally{if(version===this.datasetVersion)this.datasetBusy.set(false);}
+  }
+  preflightReport=signal<Preflight|null>(null);
+  batchItems=signal<ComparisonBody[]>([]);
+  batchNotice=signal('');
+  private buildBody():ComparisonBody {
+    return {name:this.name,adapter:this.adapter,comparison:this.mode,repetitions:this.repetitions,
+      evaluation:this.evaluation,settings:this.sentSettings(),split:this.split,
+      agents:{A:{model:this.modelA.trim(),system_prompt:this.promptA.text,prompt_template:this.promptA.template},B:{model:(this.mode==='same_model'?this.modelA:this.modelB).trim(),system_prompt:this.promptB.text,prompt_template:this.promptB.template}},
+      ...(this.source==='dataset'?{dataset:this.dataset()!.cases}:this.usesIndependentInputs()?{branch_inputs:{A:this.pack(this.inputA),B:this.pack(this.inputB)}}:{shared_input:this.pack(this.shared)})};
+  }
+  private operationError(error:unknown) {const detail=(error as {error?:{detail?:unknown}}).error?.detail;return typeof detail==='string'?detail:'No se pudo completar la operación. Comprueba los datos y la conexión.';}
+  async loadLibrary() {if(this.busy())return;this.libraryNotice.set('Cargando biblioteca…');try {const rows=await this.api.library();if(this.currentAccount()){this.libraryEntries.set(rows);this.libraryNotice.set('Versiones guardadas en tu cuenta.');}}catch(error){if(this.currentAccount())this.libraryNotice.set(this.operationError(error));}}
+  async saveToLibrary(kind:'dataset'|'prompt',side:'A'|'B'='A') {
+    if(this.busy())return;this.busy.set(true);this.libraryNotice.set('');
+    try {
+      const result=await this.api.saveLibrary({kind,name:this.libraryName.trim(),tags:this.libraryTags.split(',').map(t=>t.trim()).filter(Boolean),
+        ...(kind==='dataset'?{cases:this.dataset()?.cases ?? []}:{text:side==='A'?this.promptA.text:this.promptB.text})});
+      if(this.currentAccount()) {this.libraryEntries.set(await this.api.library());this.libraryNotice.set('Versión '+result.version+' guardada.');}
+    }catch(error){if(this.currentAccount())this.libraryNotice.set(this.operationError(error));}finally{this.busy.set(false);}
+  }
+  useLibrary(entry:LibraryEntry,side:'A'|'B'='A') {
+    if(entry.kind==='dataset' && entry.content.cases) {++this.datasetVersion;this.source='dataset';this.dataset.set({cases:entry.content.cases.map(c=>({...c})),count:entry.content.cases.length,scored:entry.content.cases.filter(c=>c.expected_answer!=null).length});this.datasetName.set(entry.name+' · v'+entry.version);this.datasetBusy.set(false);this.datasetError.set('');}
+    else if(entry.content.text) {if(side==='A')this.promptA={template:'custom',text:entry.content.text};else this.promptB={template:'custom',text:entry.content.text};}
+    this.queueSave();this.libraryNotice.set('Copia cargada de '+entry.name+' · v'+entry.version+'.');
+  }
+  async checkPreparation() {
+    const issue=this.preparationIssues()[0];if(issue){this.error.set(issue.message);this.focusField(issue.id);return;}
+    if(this.busy())return;this.busy.set(true);this.preflightReport.set(null);
+    try {const report=await this.api.preflight(this.buildBody());if(this.currentAccount())this.preflightReport.set(report);}
+    catch(error){if(this.currentAccount())this.error.set(this.operationError(error));}finally{this.busy.set(false);}
+  }
+  addToBatch() {
+    if(this.busy() || this.batchItems().length>=10)return;const issue=this.preparationIssues()[0];if(issue){this.error.set(issue.message);this.focusField(issue.id);return;}
+    const body=JSON.parse(JSON.stringify(this.buildBody())) as ComparisonBody;body.request_id=crypto.randomUUID();
+    this.batchItems.update(items=>[...items,body]);this.batchNotice.set('Configuración copiada al lote. Cada entrada conserva sus propios datos y parámetros.');
+  }
+  removeBatch(index:number) {if(!this.busy())this.batchItems.update(items=>items.filter((_,i)=>i!==index));}
+  async runBatch() {
+    if(this.busy() || !this.batchItems().length)return;this.busy.set(true);this.batchNotice.set('Comprobando y guardando lote…');
+    try {const result=await this.api.batch(this.batchItems());if(this.currentAccount() && this.auth.user()?.id===this.ownerId){this.batchItems.set([]);this.batchNotice.set(result.ids.length+' comparaciones creadas.');this.created.emit(result.ids[0]);}}
+    catch(error){if(this.currentAccount())this.batchNotice.set(this.operationError(error)+' El lote conserva las claves para reintentarlo sin duplicados.');}finally{this.busy.set(false);}
+  }
   @Input() active = true;
   @Input() exampleBusy = false;
   @Output() example = new EventEmitter<void>();
@@ -182,6 +241,8 @@ export class ComposerComponent {
     this.dataset.set(draft.dataset); this.datasetName.set(draft.datasetName);
     this.missingFiles.set(draft.missingFiles);
     this.submissionPending.set(draft.submissionPending === true);
+    this.requestKey=typeof draft.requestKey==='string'?draft.requestKey:'';
+    this.requestSignature=typeof draft.requestSignature==='string'?draft.requestSignature:'';
     this.pendingDraft.set(null); this.datasetBusy.set(false); this.datasetError.set('');
     this.draftNotice.set('Borrador recuperado: texto, referencias, configuración y dataset normalizado.');
     if (this.adapter !== 'simulated') void this.loadModels();
@@ -193,6 +254,7 @@ export class ComposerComponent {
     ++this.datasetVersion;
     this.pendingDraft.set(null); this.missingFiles.set({});
     this.submissionPending.set(false);
+    this.requestKey='';this.requestSignature='';
     this.inputA = {text:'',files:[],expected_answer:''}; this.inputB = {text:'',files:[],expected_answer:''}; this.shared = {text:'',files:[],expected_answer:''};
     this.dataset.set(null); this.datasetName.set(''); this.datasetError.set(''); this.datasetBusy.set(false);
     this.error.set(''); this.invalidField.set('');
@@ -210,7 +272,7 @@ export class ComposerComponent {
     const inputs = Object.fromEntries((['inputA','inputB','shared'] as const).map(slot => [slot,{text:this[slot].text,expected_answer:this[slot].expected_answer}]));
     const missingFiles = Object.fromEntries((['inputA','inputB','shared'] as const).map(slot => [slot,[...new Set([...(this.missingFiles()[slot] ?? []),...this[slot].files.map(f => f.name)])]]));
     try {
-      localStorage.setItem(this.draftKey, JSON.stringify({version:1,owner:this.ownerId,config:this.config(),inputs,dataset:this.dataset(),datasetName:this.datasetName(),missingFiles,submissionPending:this.submissionPending()}));
+      localStorage.setItem(this.draftKey, JSON.stringify({version:1,owner:this.ownerId,config:this.config(),inputs,dataset:this.dataset(),datasetName:this.datasetName(),missingFiles,submissionPending:this.submissionPending(),requestKey:this.requestKey,requestSignature:this.requestSignature}));
       this.draftNotice.set('Borrador guardado en este navegador: texto, referencias, configuración y dataset normalizado. Los adjuntos requieren reselección tras recargar.');
     } catch { this.draftNotice.set('No se pudo guardar el borrador local. Conserva una copia antes de recargar.'); }
   }
@@ -378,19 +440,22 @@ export class ComposerComponent {
     this.busy.set(true);
     this.invalidField.set('');
     this.error.set('');
-    const body: ComparisonBody = {
-      name:this.name, adapter:this.adapter, comparison:this.mode, repetitions:this.repetitions,
-      evaluation:this.evaluation, settings:this.sentSettings(), split:this.split,
-      agents:{
-        A:{model:this.modelA.trim(), system_prompt:this.promptA.text, prompt_template:this.promptA.template},
-        B:{model:(this.mode === 'same_model' ? this.modelA : this.modelB).trim(), system_prompt:this.promptB.text, prompt_template:this.promptB.template},
-      },
-      ...(this.source === 'dataset' ? {dataset:this.dataset()!.cases} : this.usesIndependentInputs() ? {branch_inputs:{A:this.pack(this.inputA), B:this.pack(this.inputB)}} : {shared_input:this.pack(this.shared)}),
-    };
-    this.submissionPending.set(true); this.saveDraft();
+    const body=this.buildBody();
     try {
+      const bytes=Uint8Array.from(unescape(encodeURIComponent(JSON.stringify(body))),c=>c.charCodeAt(0));
+      const signature=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))).map(b=>b.toString(16).padStart(2,'0')).join('');
+      const retry=this.submissionPending() && this.requestSignature===signature && !!this.requestKey;
+      if(this.requestSignature!==signature || !this.requestKey) {this.requestKey=crypto.randomUUID();this.requestSignature=signature;}
+      body.request_id=this.requestKey;
+      if(!retry && this.api.preflight) {
+        const report=await this.api.preflight(body);this.preflightReport.set(report);
+        if(!report.ready) {this.error.set(report.errors.join(' '));return;}
+      }
+      if(this.destroyed || this.auth.user()?.id!==this.ownerId)return;
+      this.submissionPending.set(true);this.saveDraft();
       const result = await this.api.compare(body);
       if (!this.destroyed && this.auth.user()?.id === this.ownerId) {
+        this.requestKey='';this.requestSignature='';
         this.submissionPending.set(false); this.saveDraft(); this.created.emit(result.id);
       }
     }

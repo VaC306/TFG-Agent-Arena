@@ -144,6 +144,6 @@ def test_once_worker_records_stopped_and_exceptions_release_signal(tmp_path,monk
     store = Store(tmp_path/'empty.sqlite')
     asyncio.run(work(store,once=True))
     assert store.worker_status()['state'] == 'no_recent_signal'
-    monkeypatch.setattr(store,'claim',lambda: (_ for _ in ()).throw(RuntimeError('broken')))
+    monkeypatch.setattr(store,'claim',lambda *args: (_ for _ in ()).throw(RuntimeError('broken')))
     with pytest.raises(RuntimeError): asyncio.run(work(store))
     assert store.worker_status()['active_workers'] == 0

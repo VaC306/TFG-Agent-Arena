@@ -19,7 +19,7 @@ async def work(store, once=False,*,heartbeat_wait=asyncio.sleep):
     heartbeat = asyncio.create_task(signal())
     try:
         while True:
-            run = store.claim()
+            run = store.claim(worker_id)
             if run is None:
                 if once:
                     return
