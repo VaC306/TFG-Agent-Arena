@@ -123,7 +123,7 @@ class Accounts:
                 db.execute('INSERT INTO users VALUES (?,?,?,?,?,?)',
                            (user_id, username, display_name, salt, hashed, Preferences().model_dump_json()))
                 if first:
-                    db.execute('INSERT OR IGNORE INTO experiment_owners SELECT id,? FROM experiments', (user_id,))
+                    db.execute('INSERT INTO experiment_owners SELECT id,? FROM experiments WHERE 1=1 ON CONFLICT(experiment_id) DO NOTHING', (user_id,))
         except sqlite3.IntegrityError:
             raise HTTPException(409, 'Ese nombre de usuario ya existe')
         return user_id

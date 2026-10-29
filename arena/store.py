@@ -1,10 +1,9 @@
 import json
 import hashlib
-import sqlite3
 import time
 from contextlib import contextmanager
-from pathlib import Path
 from .contracts import Event
+from .database import connect, is_postgres, initialize_postgres
 
 
 class Store:
@@ -15,7 +14,8 @@ class Store:
         self._transaction = None
         if not initialize:
             return
-        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        if is_postgres(self.path):
+            initialize_postgres(self.path)
         with self.connect() as db:
             db.executescript("""
                 PRAGMA journal_mode=WAL;
@@ -75,14 +75,12 @@ class Store:
         if self._transaction is not None:
             yield self._transaction
             return
-        db = sqlite3.connect(self.path, timeout=30)
-        try:
-            with db:
-                db.row_factory = sqlite3.Row
-                db.execute("PRAGMA foreign_keys=ON")
-                yield db
-        finally:
-            db.close()  # sqlite's transaction context does not close the connection.
+        with connect(self.path) as db:
+            yield db
+
+    def for_owner(self, owner_id):
+        # Keep owner scoping separate from schema initialization on both backends.
+        return type(self)(self.path, owner_id=owner_id, clock=self.clock, initialize=False)
 
     @contextmanager
     def atomic(self):
@@ -147,7 +145,7 @@ class Store:
                 if plan.get('latency_study') and sequence > plan['planned_attempts']:
                     raise ValueError('El estudio ya alcanzó los intentos previstos. Fija un nuevo diseño para ampliarlo, sin detener o ampliar la muestra según el resultado.')
                 snapshot['campaign'] = {k:v for k,v in campaign.items() if k != 'request_id'} | {'sequence':sequence}
-            db.execute("INSERT INTO experiments VALUES (?,?)", (experiment_id, json.dumps(snapshot)))
+            db.execute("INSERT INTO experiments(id,snapshot) VALUES (?,?)", (experiment_id, json.dumps(snapshot)))
             if self.owner_id is not None:
                 db.execute('INSERT INTO experiment_owners VALUES (?,?)', (experiment_id, self.owner_id))
             for run in runs:
@@ -183,7 +181,7 @@ class Store:
                 return previous[0]  # Retrying creation after a lost response cannot duplicate a campaign.
             if db.execute("SELECT 1 FROM runs WHERE experiment_id=? AND status IN ('queued','running')",(source_id,)).fetchone():
                 raise ValueError('Finaliza o cancela la comparación antes de crear una campaña.')
-            db.execute('INSERT INTO campaigns VALUES (?,?,?,?,?,?)',
+            db.execute('INSERT INTO campaigns(id,owner_id,name,created_at,source_id,data) VALUES (?,?,?,?,?,?)',
                        (campaign_id,self.owner_id,name,time.time(),source_id,json.dumps(data)))
             db.execute('INSERT INTO campaign_attempts VALUES (?,?,1,NULL)',(source_id,campaign_id))
             return campaign_id
@@ -232,7 +230,7 @@ class Store:
                 if (previous['experiment_id'],previous['kind'],previous['text']) != (experiment_id,kind,text):
                     raise ValueError('La clave de anotación ya corresponde a otro contenido.')
                 return request_id
-            db.execute('INSERT INTO attempt_annotations VALUES (?,?,?,?,?)',(request_id,experiment_id,time.time(),kind,text))
+            db.execute('INSERT INTO attempt_annotations(id,experiment_id,created_at,kind,text) VALUES (?,?,?,?,?)',(request_id,experiment_id,time.time(),kind,text))
             return request_id
 
     def worker_signal(self, worker_id, state):
@@ -290,25 +288,29 @@ class Store:
             return [json.loads(r[0]) for r in rows]
 
     def list_experiments(self, limit=50, offset=0, search='', adapter=None, status=None, since=None, until=None):
+        pattern = '%' + search.lower().replace('!', '!!').replace('%', '!%').replace('_', '!_') + '%'
         with self.connect() as db:
             rows = db.execute("""
-                SELECT e.id, json_extract(e.snapshot, '$.config.name') AS name,
-                       json_extract(e.snapshot, '$.config.adapter') AS adapter,
-                       json_extract(e.snapshot, '$.config.split') AS split,
-                       COUNT(r.id) AS total,
-                       SUM(CASE WHEN r.status NOT IN ('queued','running') THEN 1 ELSE 0 END) AS completed,
-                       MIN(json_extract(r.data, '$.queued_at')) AS created_at
-                FROM experiments e LEFT JOIN runs r ON r.experiment_id=e.id
-                WHERE (? IS NULL OR EXISTS (SELECT 1 FROM experiment_owners o WHERE o.experiment_id=e.id AND o.owner_id=?))
-                  AND (?='' OR instr(lower(json_extract(e.snapshot,'$.config.name')),lower(?))>0
-                    OR instr(lower(json_extract(e.snapshot,'$.config.agents.A.model')),lower(?))>0
-                    OR instr(lower(json_extract(e.snapshot,'$.config.agents.B.model')),lower(?))>0)
-                  AND (? IS NULL OR json_extract(e.snapshot,'$.config.adapter')=?)
-                GROUP BY e.id
-                HAVING (? IS NULL OR (?='pending' AND completed<total) OR (?='finished' AND completed=total))
+                SELECT id,name,adapter,split,total,completed,created_at FROM (
+                    SELECT e.id, e.rowid AS sort_order,
+                           json_extract(e.snapshot, '$.config.name') AS name,
+                           json_extract(e.snapshot, '$.config.adapter') AS adapter,
+                           json_extract(e.snapshot, '$.config.split') AS split,
+                           COUNT(r.id) AS total,
+                           SUM(CASE WHEN r.status NOT IN ('queued','running') THEN 1 ELSE 0 END) AS completed,
+                           MIN(CAST(json_extract(r.data, '$.queued_at') AS DOUBLE PRECISION)) AS created_at
+                    FROM experiments e LEFT JOIN runs r ON r.experiment_id=e.id
+                    WHERE (? IS NULL OR EXISTS (SELECT 1 FROM experiment_owners o WHERE o.experiment_id=e.id AND o.owner_id=?))
+                      AND (?='' OR lower(json_extract(e.snapshot,'$.config.name')) LIKE ? ESCAPE '!'
+                        OR lower(json_extract(e.snapshot,'$.config.agents.A.model')) LIKE ? ESCAPE '!'
+                        OR lower(json_extract(e.snapshot,'$.config.agents.B.model')) LIKE ? ESCAPE '!')
+                      AND (? IS NULL OR json_extract(e.snapshot,'$.config.adapter')=?)
+                    GROUP BY e.id,e.rowid
+                ) AS history
+                WHERE (? IS NULL OR (?='pending' AND completed<total) OR (?='finished' AND completed=total))
                   AND (? IS NULL OR created_at>=?) AND (? IS NULL OR created_at<=?)
-                ORDER BY e.rowid DESC LIMIT ? OFFSET ?
-            """, (self.owner_id, self.owner_id, search,search,search,search,adapter,adapter,
+                ORDER BY sort_order DESC LIMIT ? OFFSET ?
+            """, (self.owner_id,self.owner_id,search,pattern,pattern,pattern,adapter,adapter,
                   status,status,status,since,since,until,until,limit,offset)).fetchall()
             return [dict(row) for row in rows]
 
@@ -399,7 +401,7 @@ class Store:
             run.update(status="running", started_at=time.time())
             db.execute("UPDATE runs SET status='running',data=? WHERE id=?", (json.dumps(run), run["id"]))
             if worker_id:
-                db.execute('INSERT OR REPLACE INTO run_workers VALUES (?,?)',(run['id'],worker_id))
+                db.execute('INSERT INTO run_workers(run_id,worker_id) VALUES (?,?) ON CONFLICT(run_id) DO UPDATE SET worker_id=excluded.worker_id',(run['id'],worker_id))
             return run
 
     def event(self, run_id, kind, payload):

@@ -14,6 +14,7 @@ def pytest_addoption(parser):
 def pytest_configure(config):
     config._arena_temporary = tempfile.TemporaryDirectory(prefix='arena-tests-')
     config._arena_previous_db = os.environ.get('ARENA_DB')
+    config._arena_previous_url = os.environ.pop('ARENA_DATABASE_URL', None)
     os.environ['ARENA_DB'] = str(Path(config._arena_temporary.name)/'default.sqlite')
 
 
@@ -22,6 +23,8 @@ def pytest_unconfigure(config):
         previous=config._arena_previous_db
         if previous is None:os.environ.pop('ARENA_DB',None)
         else:os.environ['ARENA_DB']=previous
+        if config._arena_previous_url is not None:
+            os.environ['ARENA_DATABASE_URL'] = config._arena_previous_url
         gc.collect()
         config._arena_temporary.cleanup()
 

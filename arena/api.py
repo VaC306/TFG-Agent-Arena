@@ -10,6 +10,7 @@ from fastapi.exceptions import RequestValidationError
 from typing import Literal
 from .contracts import Contract, Experiment
 from .store import Store
+from .database import database_target
 from .scheduler import submit
 from .export import csv_text
 from .comparisons import ComparisonRequest, PROMPTS, submit_comparison
@@ -39,7 +40,7 @@ class ClearHistory(Contract):
 
 def create_app(db_path=None, root=None):
     app = FastAPI(title="Agent Arena Local", version="0.1.0")
-    store = Store(db_path or os.environ.get("ARENA_DB", "runtime/arena.sqlite"))
+    store = Store(db_path or database_target())
     accounts = Accounts(store)
     root = Path(root or os.environ.get("ARENA_ROOT", "."))
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=['127.0.0.1', 'localhost', 'testserver'])
@@ -65,7 +66,7 @@ def create_app(db_path=None, root=None):
         return response
 
     def user_store(request: Request):
-        return Store(store.path, owner_id=request.state.user['id'],initialize=False)
+        return store.for_owner(request.state.user['id'])
 
     async def bounded_body(request, limit):
         body = bytearray()

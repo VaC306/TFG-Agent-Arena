@@ -182,3 +182,20 @@ fallos correspondían a un interceptor que esperaba la URL anterior de detalle y
 otro ocurrió durante recarga de desarrollo mientras se editaba el frontend. Tras
 ajustar el interceptor y cerrar los cambios, la repetición de 18 recorridos cubrió
 los tres casos y pasó. No se volvió a repetir la batería completa de 76 después.
+
+## Integración con PostgreSQL/Supabase
+
+Al integrar el cambio de persistencia del equipo se conservaron ambos trabajos.
+Las consultas de búsqueda/paginación, el orden de versiones de biblioteca, las
+transacciones de lotes y el registro del worker funcionan con SQLite y PostgreSQL.
+La migración a un destino vacío también conserva biblioteca, revisiones humanas
+y claves de idempotencia. La CLI de copias descrita arriba sigue siendo exclusiva
+de SQLite y rechaza destinos PostgreSQL; para ellos se utiliza el procedimiento
+de backup de PostgreSQL o del proveedor.
+
+La integración se verificó con PostgreSQL 17 en bases locales desechables, sin
+conectarse a Supabase: cuentas, cola, campañas, migración, endpoints de biblioteca,
+revisión humana, búsqueda e idempotencia, incluido rollback de un lote. Las dos
+pruebas opcionales están en `tests/test_postgres_integration.py`. El servidor E2E
+elimina una posible variable `ARENA_DATABASE_URL` heredada para utilizar siempre
+su SQLite temporal y no la base del desarrollador.

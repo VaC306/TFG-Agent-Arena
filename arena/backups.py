@@ -16,6 +16,9 @@ def verify(db):
 
 
 def copy_database(source, destination, restore=False):
+    from .database import is_postgres
+    if is_postgres(source) or is_postgres(destination):
+        raise ValueError('Esta copia/restauración admite solo SQLite. Para PostgreSQL utiliza su procedimiento de backup.')
     source, destination = Path(source).resolve(),Path(destination).resolve()
     if not source.is_file() or source == destination:
         raise ValueError('Selecciona una base origen existente y un destino nuevo')

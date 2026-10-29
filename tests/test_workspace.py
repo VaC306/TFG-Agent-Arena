@@ -64,6 +64,7 @@ def test_history_search_pagination_and_compact_progress(workspace):
     assert client.get('/experiments?search=segunda').json()[0]['id']==two
     assert len(client.get('/experiments?search=demo&status=pending').json())==2
     assert client.get('/experiments?adapter=ollama').json()==[]
+    assert client.get('/experiments?search=%25').json()==[]
     original=store.snapshot(one)
     compact=client.get(f'/experiments/{one}?compact=true').json()['snapshot']
     assert 'source' not in compact and 'source' in original

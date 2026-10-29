@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import json
 from .store import Store
+from .database import database_target
 from .scheduler import submit
 from .worker import work
 from .export import export_bundle
@@ -10,7 +11,7 @@ from .resources import provenance
 
 def main():
     parser = argparse.ArgumentParser(description="Agent Arena Local")
-    parser.add_argument("--db", default="runtime/arena.sqlite")
+    parser.add_argument("--db", default=database_target())
     commands = parser.add_subparsers(dest="command", required=True)
     backup = commands.add_parser('backup',help='Copia consistente de toda la base local, incluidas cuentas')
     backup.add_argument('--output',required=True)

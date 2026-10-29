@@ -279,7 +279,7 @@ def register_workspace(app, user_store, auth_body):
             version = db.execute('SELECT COALESCE(MAX(version),0)+1 FROM library_items WHERE owner_id=? AND kind=? AND name=?',
                                  (store.owner_id,data.kind,data.name)).fetchone()[0]
             ident = str(uuid.uuid4())
-            db.execute('INSERT INTO library_items VALUES (?,?,?,?,?,?,?,?)',
+            db.execute('INSERT INTO library_items(id,owner_id,kind,name,version,created_at,content,sha256) VALUES (?,?,?,?,?,?,?,?)',
                        (ident,store.owner_id,data.kind,data.name,version,time.time(),content,digest))
         return {'id':ident,'version':version}
 

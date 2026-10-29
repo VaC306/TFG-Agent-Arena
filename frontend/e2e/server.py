@@ -36,6 +36,7 @@ if __name__ == '__main__':
     if not temporary.is_dir() or not temporary.name.startswith('arena-e2e-'):
         raise ValueError('Use npm run e2e to create a temporary database directory')
     os.environ['ARENA_DB'] = str(temporary/'arena.sqlite')
+    os.environ.pop('ARENA_DATABASE_URL', None)  # Never inherit a developer's cloud database.
     os.environ['ARENA_ROOT'] = str(ROOT)
     import json
     os.environ['ARENA_CODEX_COMMAND'] = json.dumps([sys.executable,str(ROOT/'tests/fake_codex.py')])
