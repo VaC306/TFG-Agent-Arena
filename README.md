@@ -128,6 +128,11 @@ conclusiones sobre modelos requieren experimentos reales y casos revisados.
 
 ## Documentación
 
+Para trabajar en este repositorio con asistentes de código, consulta
+[AGENTS.md](AGENTS.md): contexto duradero, reglas de evaluación y persistencia,
+comandos de comprobación y enlaces a la documentación pertinente. Mantén ese
+archivo como guía compartida, sin duplicar el historial de chats ni guardar secretos.
+
 - [Nuevas herramientas de análisis, fiabilidad y copias de seguridad](docs/mejoras-investigacion.md).
 - [PostgreSQL en Supabase: conexión e importación desde SQLite](docs/supabase.md).
 
